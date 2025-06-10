@@ -1,5 +1,6 @@
 package io.kestra.plugin.kestra.flows;
 
+import io.kestra.core.models.annotations.Example;
 import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.model.Flow;
 import io.kestra.core.models.annotations.Plugin;
@@ -17,15 +18,46 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "List Kestra flows"
+        title = "List Kestra flows",
+        description = "Lists all flows within a specified namespace or the current flow's namespace if none is provided."
 )
 @Plugin(
-    examples = {
-        @io.kestra.core.models.annotations.Example(
-            title = "Simple revert",
-            code = { "format: \"Text to be reverted\"" }
-        )
-    }
+        examples = {
+                @Example(
+                        title = "List flows in the current namespace",
+                        full = true,
+                        code = """
+                id: list_current_namespace_flows
+                namespace: company.team.myflow
+
+                tasks:
+                  - id: list_flows
+                    type: io.kestra.plugin.kestra.flows.List
+                    kestraUrl: http://localhost:8080
+                    auth:
+                      username: user
+                      password: pass
+                """
+                ),
+                @Example(
+                        title = "List flows in a specific namespace",
+                        full = true,
+                        code = """
+                id: list_specific_namespace_flows
+                namespace: company.team.admin
+
+                tasks:
+                  - id: list_dev_flows
+                    type: io.kestra.plugin.kestra.flows.List
+                    kestraUrl: https://my-ee-instance.io
+                    auth:
+                      username: myuser
+                      password: mypassword
+                    namespace: dev.flows
+                    tenantId: myorganization
+                """
+                )
+        }
 )
 public class List extends AbstractKestraTask implements RunnableTask<List.Output> {
     @Schema(title = "The namespace to list flows on, if null, will default to the namespace of the current flow.")
@@ -47,6 +79,9 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
+        @Schema(
+                title = "A list of Kestra flows found."
+        )
         private java.util.List<Flow> flows;
     }
 }

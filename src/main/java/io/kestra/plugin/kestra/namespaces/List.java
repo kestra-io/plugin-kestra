@@ -1,5 +1,6 @@
 package io.kestra.plugin.kestra.namespaces;
 
+import io.kestra.core.models.annotations.Example;
 import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.model.PagedResultsNamespaceWithDisabled;
 import io.kestra.core.models.annotations.Plugin;
@@ -20,15 +21,66 @@ import java.util.ArrayList;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "List Kestra flows"
+        title = "List Kestra Namespaces",
+        description = "Retrieves a list of Kestra namespaces, offering options for filtering by prefix, pagination, and excluding non-existent namespaces."
 )
 @Plugin(
-    examples = {
-        @io.kestra.core.models.annotations.Example(
-            title = "Simple revert",
-            code = { "format: \"Text to be reverted\"" }
-        )
-    }
+        examples = {
+                @Example(
+                        title = "List all namespaces with pagination",
+                        full = true,
+                        code = """
+                id: list_paginated_namespaces
+                namespace: company.team
+
+                tasks:
+                  - id: list_namespaces_paged
+                    type: io.kestra.plugin.kestra.flows.List
+                    kestraUrl: http://localhost:8080
+                    auth:
+                      username: admin
+                      password: password
+                    page: 1
+                    size: 20
+                """
+                ),
+                @Example(
+                        title = "List only existing namespaces starting with 'dev.'",
+                        full = true,
+                        code = """
+                id: list_filtered_namespaces
+                namespace: company.team
+
+                tasks:
+                  - id: list_dev_namespaces
+                    type: io.kestra.plugin.kestra.flows.List
+                    kestraUrl: https://cloud.kestra.io
+                    auth:
+                      username: user
+                      password: secret
+                    tenantId: mytenant
+                    prefix: dev.
+                    existingOnly: true
+                """
+                ),
+                @Example(
+                        title = "List all namespaces without pagination (fetch all pages)",
+                        full = true,
+                        code = """
+                id: list_all_namespaces
+                namespace: company.team
+
+                tasks:
+                  - id: fetch_all_namespaces
+                    type: io.kestra.plugin.kestra.flows.List
+                    kestraUrl: http://localhost:8080
+                    auth:
+                      username: admin
+                      password: password
+                    # No 'page' or 'size' properties to fetch all
+                """
+                )
+        }
 )
 public class List extends AbstractKestraTask implements RunnableTask<List.Output> {
     @Schema(title = "The namespace prefix, if null, all namespaces will be listed.")
@@ -41,6 +93,7 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
 
     @Nullable
     @Builder.Default
+    @Schema(title = "The number of namespaces to return per page.")
     private Property<Integer> size = Property.ofValue(10);
 
     @Builder.Default
@@ -98,6 +151,9 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
+        @Schema(
+            title = "A list of Kestra namespaces."
+        )
         private java.util.List<String> namespaces;
     }
 }
