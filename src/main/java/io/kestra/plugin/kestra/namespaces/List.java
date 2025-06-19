@@ -106,7 +106,7 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         Integer rPage = runContext.render(this.page).as(Integer.class).orElse(null);
         Integer rSize = runContext.render(this.size).as(Integer.class).orElse(10);
         String ns = runContext.render(prefix).as(String.class).orElse("");
-        String tId = runContext.render(tenantId).as(String.class).orElse("main");
+        String tId = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         Boolean rExistingOnly = runContext.render(existingOnly).as(Boolean.class).orElse(false);
 
         KestraClient kestraClient = kestraClient(runContext);

@@ -79,7 +79,7 @@ public class Export extends AbstractKestraTask implements RunnableTask<Export.Ou
 
     @Override
     public Export.Output run(RunContext runContext) throws Exception {
-        String tId = runContext.render(tenantId).as(String.class).orElse("main");
+        String tId = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         List<IdWithNamespace> ids = runContext.render(idsWithNamespace).asList(IdWithNamespace.class);
 
         KestraClient kestraClient = kestraClient(runContext);

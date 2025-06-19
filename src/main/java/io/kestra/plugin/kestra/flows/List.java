@@ -66,7 +66,7 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
     @Override
     public List.Output run(RunContext runContext) throws Exception {
         String ns = runContext.render(namespace).as(String.class).orElseGet(() -> runContext.flowInfo().namespace());
-        String tId = runContext.render(tenantId).as(String.class).orElse("main");
+        String tId = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
 
         KestraClient kestraClient = kestraClient(runContext);
         java.util.List<Flow> flows = kestraClient.flows().listFlowsByNamespace(ns, tId);

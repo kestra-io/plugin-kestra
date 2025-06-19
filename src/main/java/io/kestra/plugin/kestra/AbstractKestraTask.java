@@ -1,10 +1,10 @@
 package io.kestra.plugin.kestra;
 
-import io.kestra.sdk.KestraClient;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
+import io.kestra.sdk.KestraClient;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -23,9 +23,9 @@ public abstract class AbstractKestraTask extends Task {
     @Schema(title = "Authentication information.")
     private Auth auth;
 
-    @Schema(title = "The tenant ID to use for the request, defaults to 'main'.")
-    @Builder.Default
-    protected Property<String> tenantId = Property.ofValue("main");
+    @Schema(title = "The tenant ID to use for the request, defaults to current tenant.")
+    @Setter
+    protected Property<String> tenantId;
 
     protected KestraClient kestraClient(RunContext runContext) throws IllegalVariableEvaluationException {
         String rKestraUrl = runContext.render(kestraUrl).as(String.class).orElse("http://localhost:8080");

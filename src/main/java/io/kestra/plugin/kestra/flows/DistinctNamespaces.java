@@ -65,7 +65,7 @@ public class DistinctNamespaces extends AbstractKestraTask implements RunnableTa
     @Override
     public DistinctNamespaces.Output run(RunContext runContext) throws Exception {
         String ns = runContext.render(prefix).as(String.class).orElse("");
-        String tId = runContext.render(tenantId).as(String.class).orElse("main");
+        String tId = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
 
         KestraClient kestraClient = kestraClient(runContext);
         java.util.List<String> results = kestraClient.flows().listDistinctNamespaces(tId, ns);
