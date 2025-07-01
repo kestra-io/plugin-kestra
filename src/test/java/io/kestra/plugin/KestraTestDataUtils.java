@@ -101,4 +101,18 @@ public class KestraTestDataUtils {
         );
     }
 
+    public ExecutionControllerExecutionResponse createRandomizedExecution(String flowId, @Nullable String namespace) throws ApiException {
+        String np = namespace != null ? namespace : NAMESPACE;
+
+        return kestraClient.executions().createExecution(
+            np,
+            flowId,
+            false,
+            tenantId,
+            null,
+            null,
+            null
+        ).getFirst();
+    }
+
 }
