@@ -96,7 +96,7 @@ public class Search extends AbstractKestraTask implements RunnableTask<FetchOutp
     private Property<FetchType> fetchType = Property.ofValue(FetchType.STORE);
 
     @Nullable
-    @Schema(title = "The flow scope, if its a USER or a SYSTEM flow scope, being both by default.")
+    @Schema(title = "Can be set to USER to fetch only user-created executions, or to SYSTEM to fetch only system executions. By default, the task will handle both.")
     private Property<List<FlowScope>> flowScopes;
 
     @Nullable
