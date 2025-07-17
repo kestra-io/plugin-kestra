@@ -69,7 +69,7 @@ import java.util.Map;
                     type: io.kestra.plugin.kestra.executions.Search
                     kestraUrl: http://localhost:8080
                     timeRange: PT10H # In the last 10 hours
-                    state:
+                    states:
                       - SUCCESS
                     auth:
                       username: root@root.com
