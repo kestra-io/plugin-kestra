@@ -120,7 +120,7 @@ public class Search extends AbstractKestraTask implements RunnableTask<FetchOutp
     private Property<Duration> timeRange;
 
     @Nullable
-    @Schema(title = "A list of execution states to filter by.")
+    @Schema(title = "To list only executions in given states.")
     private Property<List<StateType>> state;
 
     @Nullable
