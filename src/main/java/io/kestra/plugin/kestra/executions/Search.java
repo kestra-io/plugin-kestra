@@ -58,7 +58,7 @@ import java.util.Map;
                 """
         ),
         @Example(
-            title = "Search for execution in success",
+            title = "Search for successful executions",
             full = true,
             code = """
                 id: search_success_executions
