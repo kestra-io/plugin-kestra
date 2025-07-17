@@ -39,15 +39,15 @@ import java.util.Map;
 @Plugin(
     examples = {
         @Example(
-            title = "Search for executions with a specific label>",
+            title = "Search for executions with a specific label",
             full = true,
             code = """
                 id: search_executions_by_label
                 namespace: company.team.myflow
-                
+
                 tasks:
                   - id: hello
-                    type: io.kestra.plugin.kestra.executions.Search
+                    type: io.kestra.plugin.kestra.executions.Query
                     kestraUrl: http://localhost:8080
                     labels:
                       key: value
@@ -58,15 +58,15 @@ import java.util.Map;
                 """
         ),
         @Example(
-            title = "Search for successful executions",
+            title = "Search for successful executions in the last 10 hours",
             full = true,
             code = """
                 id: search_successful_executions
                 namespace: company.team.myflow
-                
+
                 tasks:
                   - id: search_executions
-                    type: io.kestra.plugin.kestra.executions.Search
+                    type: io.kestra.plugin.kestra.executions.Query
                     kestraUrl: http://localhost:8080
                     timeRange: PT10H # In the last 10 hours
                     states:
@@ -79,7 +79,7 @@ import java.util.Map;
         )
     }
 )
-public class Search extends AbstractKestraTask implements RunnableTask<FetchOutput> {
+public class Query extends AbstractKestraTask implements RunnableTask<FetchOutput> {
     @Nullable
     @Schema(title = "If not provided, all pages are fetched",
         description = "To efficiently fetch only the first 10 API results, you can use `page: 1` along with `size: 10`.")
@@ -112,7 +112,7 @@ public class Search extends AbstractKestraTask implements RunnableTask<FetchOutp
     private Property<ZonedDateTime> startDate;
 
     @Nullable
-    @Schema(title = "To list only executions that finished at or before a given end date.")
+    @Schema(title = "To list only executions created before a given end date.")
     private Property<ZonedDateTime> endDate;
 
     @Nullable
@@ -121,7 +121,7 @@ public class Search extends AbstractKestraTask implements RunnableTask<FetchOutp
 
     @Nullable
     @Schema(title = "To list only executions in given states.")
-    private Property<List<StateType>> state;
+    private Property<List<StateType>> states;
 
     @Nullable
     @Schema(title = "To list only executions with given labels.")
@@ -197,7 +197,7 @@ public class Search extends AbstractKestraTask implements RunnableTask<FetchOutp
         ZonedDateTime rStartDate = runContext.render(this.startDate).as(ZonedDateTime.class).orElse(null);
         ZonedDateTime rEndDate = runContext.render(this.endDate).as(ZonedDateTime.class).orElse(null);
         Duration rTimerange = runContext.render(this.timeRange).as(Duration.class).orElse(null);
-        List<StateType> rState = runContext.render(this.state).asList(StateType.class);
+        List<StateType> rState = runContext.render(this.states).asList(StateType.class);
         Map<String, String> rLabels = runContext.render(this.labels).asMap(String.class, String.class);
         String rTriggerExecutionId = runContext.render(this.triggerExecutionId).as(String.class).orElse(null);
         ExecutionRepositoryInterfaceChildFilter rChildFilter = runContext.render(this.childFilter).as(ExecutionRepositoryInterfaceChildFilter.class).orElse(null);

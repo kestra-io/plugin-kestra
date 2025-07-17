@@ -32,28 +32,8 @@ public class KestraTestDataUtils {
         log.debug("KestraSDKHelper initialized with URL: {} and tenant ID: {}", kestraUrl, tenantId);
     }
 
-    private Role createRandomizedRole() throws ApiException {
-        RolePermissions permissions = new RolePermissions()
-            .addFLOWItem(String.valueOf(Action.CREATE));
-
-        String name = "Role-" + random.nextInt(10000);
-        Role role = new Role()
-            .name(name)
-            .permissions(permissions);
-
-        return kestraClient.roles().createRole(tenantId, role);
-    }
-
-    public Group createRandomizedGroup() throws ApiException {
-        String name = "Group-" + random.nextInt(10000);
-        AbstractGroupControllerGroupWithMembers group = new AbstractGroupControllerGroupWithMembers()
-            .name(name);
-
-        return kestraClient.groups().createGroup(tenantId, group);
-    }
-
-    public AbstractBindingControllerBindingDetail createGroupBinding(String groupId, String roleId) throws ApiException {
-        Binding binding = new Binding()
+    public IAMBindingControllerApiBindingDetail createGroupBinding(String groupId, String roleId) throws ApiException {
+        IAMBindingControllerApiCreateBindingRequest binding = new IAMBindingControllerApiCreateBindingRequest()
             .type(BindingType.GROUP)
             .externalId(groupId)
             .roleId(roleId);
@@ -77,14 +57,6 @@ public class KestraTestDataUtils {
         return kestraClient.flows().createFlow(tenantId, flow);
     }
 
-    public Invitation createRandomizedInvitation(@Nullable String email) throws ApiException {
-
-        return kestraClient.invitations().createInvitation(
-            tenantId,
-            new Invitation().email(email != null ? email : "random" + random.nextInt(1000000) + "@random.com") // Increased range for email
-        );
-    }
-
     public Namespace createRandomizedNamespace(@Nullable String namespaceId) throws ApiException {
         String nId = "namespace-" + UUID.randomUUID().toString().substring(0, 8).replace("-", "_");
         Namespace namespace = new Namespace().id(namespaceId != null ? namespaceId : nId);
@@ -101,18 +73,30 @@ public class KestraTestDataUtils {
         );
     }
 
-    public ExecutionControllerExecutionResponse createRandomizedExecution(String flowId, @Nullable String namespace) throws ApiException {
+    /**
+     * Creates a randomized execution for a given flow ID and namespace.
+     * If the namespace is null, it defaults to "default".
+     * This method always throws an ApiException because the result can not be parsed, so its only used
+     * for testing the Query executions task.
+     *
+     * @param flowId    The ID of the flow to trigger.
+     * @param namespace The namespace in which to trigger the execution, or null for default.
+     * @throws ApiException If there is an error triggering the execution.
+     */
+    public void createRandomizedExecution(String flowId, @Nullable String namespace) throws ApiException {
         String np = namespace != null ? namespace : NAMESPACE;
-
-        return kestraClient.executions().createExecution(
-            np,
-            flowId,
-            false,
-            tenantId,
-            null,
-            null,
-            null
-        ).getFirst();
+        try {
+            kestraClient.executions().triggerExecution(
+                np,
+                flowId,
+                false,
+                tenantId,
+                null,
+                null
+            );
+        } catch (ApiException e) {
+            log.error("ApiException thrown, probably false positive as we are in `createRandomizedExecution` :" + e.getMessage());
+        }
     }
 
 }

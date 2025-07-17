@@ -7,8 +7,7 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.AbstractKestraContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.plugin.kestra.executions.Search;
-import io.kestra.sdk.model.ExecutionControllerExecutionResponse;
+import io.kestra.plugin.kestra.executions.Query;
 import io.kestra.sdk.model.FlowWithSource;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
@@ -17,7 +16,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @KestraTest
-public class SearchTest extends AbstractKestraContainerTest {
+public class QueryTest extends AbstractKestraContainerTest {
     @Inject
     protected RunContextFactory runContextFactory;
 
@@ -29,9 +28,9 @@ public class SearchTest extends AbstractKestraContainerTest {
 
         // Create a flow and trigger an execution to ensure there is at least one execution to find
         FlowWithSource flow = kestraTestDataUtils.createRandomizedFlow(NAMESPACE);
-        ExecutionControllerExecutionResponse executionResponse = kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
+        kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
 
-        Search searchTask = Search.builder()
+        Query searchTask = Query.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
             .auth(AbstractKestraTask.Auth.builder()
                 .username(Property.ofValue(USERNAME))
