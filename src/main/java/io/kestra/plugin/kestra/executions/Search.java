@@ -87,7 +87,7 @@ public class Search extends AbstractKestraTask implements RunnableTask<FetchOutp
 
     @Nullable
     @Builder.Default
-    @Schema(title = "The number of namespaces to return per page.")
+    @Schema(title = "The number of results to return per page.")
     private Property<Integer> size = Property.ofValue(10);
 
     @Nullable
