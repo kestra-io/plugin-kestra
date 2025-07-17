@@ -132,7 +132,7 @@ public class Search extends AbstractKestraTask implements RunnableTask<FetchOutp
     private Property<String> triggerExecutionId;
 
     @Nullable
-    @Schema(title = "Child filter for execution repository interface.")
+    @Schema(title = "To list only child executions of a given flow.")
     private Property<ExecutionRepositoryInterfaceChildFilter> childFilter;
 
     @Override
