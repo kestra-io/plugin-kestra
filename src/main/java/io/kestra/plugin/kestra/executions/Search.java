@@ -100,7 +100,7 @@ public class Search extends AbstractKestraTask implements RunnableTask<FetchOutp
     private Property<List<FlowScope>> flowScopes;
 
     @Nullable
-    @Schema(title = "The namespace to filter executions.")
+    @Schema(title = "To list only executions from a given namespace.")
     private Property<String> namespace;
 
     @Nullable
