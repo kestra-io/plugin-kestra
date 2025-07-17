@@ -124,7 +124,7 @@ public class Search extends AbstractKestraTask implements RunnableTask<FetchOutp
     private Property<List<StateType>> state;
 
     @Nullable
-    @Schema(title = "A list of labels to filter executions.")
+    @Schema(title = "To list only executions with given labels.")
     private Property<Map<String, String>> labels;
 
     @Nullable
