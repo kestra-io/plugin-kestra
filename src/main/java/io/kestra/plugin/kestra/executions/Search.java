@@ -128,7 +128,7 @@ public class Search extends AbstractKestraTask implements RunnableTask<FetchOutp
     private Property<Map<String, String>> labels;
 
     @Nullable
-    @Schema(title = "The trigger execution id to filter executions.")
+    @Schema(title = "To list all downstream executions started from a given execution id.")
     private Property<String> triggerExecutionId;
 
     @Nullable
