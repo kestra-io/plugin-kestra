@@ -61,7 +61,7 @@ import java.util.Map;
             title = "Search for successful executions",
             full = true,
             code = """
-                id: search_success_executions
+                id: search_successful_executions
                 namespace: company.team.myflow
                 
                 tasks:
