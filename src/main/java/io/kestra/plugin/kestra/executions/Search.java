@@ -82,7 +82,7 @@ import java.util.Map;
 public class Search extends AbstractKestraTask implements RunnableTask<FetchOutput> {
     @Nullable
     @Schema(title = "If not provided, every pages are fetched",
-        description = "For example, set to 1, it can be used to only fetch the first 10 results used with `size`.")
+        description = "To efficiently fetch only the first 10 API results, you can use `page: 1` along with `size: 10`.")
     private Property<Integer> page;
 
     @Nullable
