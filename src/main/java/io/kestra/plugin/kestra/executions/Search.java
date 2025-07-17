@@ -108,7 +108,7 @@ public class Search extends AbstractKestraTask implements RunnableTask<FetchOutp
     private Property<String> flowId;
 
     @Nullable
-    @Schema(title = "The start date to filter executions.")
+    @Schema(title = "To list only executions created after a given start date.")
     private Property<ZonedDateTime> startDate;
 
     @Nullable
