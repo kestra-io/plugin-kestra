@@ -112,7 +112,7 @@ public class Search extends AbstractKestraTask implements RunnableTask<FetchOutp
     private Property<ZonedDateTime> startDate;
 
     @Nullable
-    @Schema(title = "The end date to filter executions.")
+    @Schema(title = "To list only executions that finished at or before a given end date.")
     private Property<ZonedDateTime> endDate;
 
     @Nullable
