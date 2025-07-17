@@ -39,7 +39,7 @@ import java.util.Map;
 @Plugin(
     examples = {
         @Example(
-            title = "Search for execution with specific label>",
+            title = "Search for executions with a specific label>",
             full = true,
             code = """
                 id: search_executions_by_label
