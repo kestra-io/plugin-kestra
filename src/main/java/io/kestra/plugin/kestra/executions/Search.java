@@ -116,7 +116,7 @@ public class Search extends AbstractKestraTask implements RunnableTask<FetchOutp
     private Property<ZonedDateTime> endDate;
 
     @Nullable
-    @Schema(title = "The time range to filter executions.")
+    @Schema(title = "To list only executions created within a given time range duration.")
     private Property<Duration> timeRange;
 
     @Nullable
