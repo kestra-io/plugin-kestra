@@ -32,14 +32,6 @@ public class KestraTestDataUtils {
         log.debug("KestraSDKHelper initialized with URL: {} and tenant ID: {}", kestraUrl, tenantId);
     }
 
-    public IAMBindingControllerApiBindingDetail createGroupBinding(String groupId, String roleId) throws ApiException {
-        IAMBindingControllerApiCreateBindingRequest binding = new IAMBindingControllerApiCreateBindingRequest()
-            .type(BindingType.GROUP)
-            .externalId(groupId)
-            .roleId(roleId);
-
-        return kestraClient.bindings().createBinding(tenantId, binding);
-    }
 
     public FlowWithSource createRandomizedFlow(@Nullable String namespace) throws ApiException {
         String np = namespace != null ? namespace : "default";
@@ -48,6 +40,24 @@ public class KestraTestDataUtils {
                 id: random_flow_%s
                 namespace: %s
 
+                tasks:
+                  - id: hello
+                    type: io.kestra.plugin.core.log.Log
+                    message: Hello from KestraSDKHelper! 🚀
+                """.formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np);
+
+        return kestraClient.flows().createFlow(tenantId, flow);
+    }
+
+
+    public FlowWithSource createRandomizedFlowWithLabel(@Nullable String namespace) throws ApiException {
+        String np = namespace != null ? namespace : "default";
+        String flow =
+            """
+                id: random_flow_%s
+                namespace: %s
+                labels:
+                  - key: value
                 tasks:
                   - id: hello
                     type: io.kestra.plugin.core.log.Log
