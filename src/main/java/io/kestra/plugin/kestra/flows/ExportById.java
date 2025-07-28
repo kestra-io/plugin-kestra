@@ -7,6 +7,7 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
+import io.kestra.sdk.model.IdWithNamespace;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -72,29 +73,18 @@ import java.util.List;
         )
     }
 )
-public class Export extends AbstractKestraTask implements RunnableTask<ExportById.Output> {
+public class ExportById extends AbstractKestraTask implements RunnableTask<ExportById.Output> {
 
-    @Schema(title = "A namespace prefix filter.")
-    public Property<String> namespace;
-
-    @Schema(title = "A list of label with the format `key:value`")
-    public Property<List<String>> labels;
+    @Schema(title = "The flows to export.")
+    public Property<List<IdWithNamespace>> flows;
 
     @Override
     public ExportById.Output run(RunContext runContext) throws Exception {
         String tId = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
-        String rNamespace = runContext.render(namespace).as(String.class).orElse(null);
-        List<String> rLabels = runContext.render(labels).asList(String.class);
+        List<IdWithNamespace> ids = runContext.render(flows).asList(IdWithNamespace.class);
 
         KestraClient kestraClient = kestraClient(runContext);
-        byte[] zipBytes = kestraClient.flows().exportFlowsByQuery(
-            tId,
-            null,
-            null,
-            null,
-            rNamespace,
-            rLabels
-        );
+        byte[] zipBytes = kestraClient.flows().exportFlowsByIds(tId, ids);
 
 
         InputStream inputStream = new ByteArrayInputStream(zipBytes);
