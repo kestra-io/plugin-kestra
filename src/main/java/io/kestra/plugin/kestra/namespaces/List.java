@@ -1,13 +1,13 @@
 package io.kestra.plugin.kestra.namespaces;
 
 import io.kestra.core.models.annotations.Example;
-import io.kestra.sdk.KestraClient;
-import io.kestra.sdk.model.PagedResultsNamespaceWithDisabled;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
+import io.kestra.sdk.KestraClient;
+import io.kestra.sdk.model.PagedResultsNamespaceWithDisabled;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import lombok.*;
@@ -21,15 +21,15 @@ import java.util.ArrayList;
 @Getter
 @NoArgsConstructor
 @Schema(
-        title = "List Kestra Namespaces",
-        description = "Retrieves a list of Kestra namespaces, offering options for filtering by prefix, pagination, and excluding non-existent namespaces."
+    title = "List Kestra Namespaces",
+    description = "Retrieves a list of Kestra namespaces, offering options for filtering by prefix, pagination, and excluding non-existent namespaces."
 )
 @Plugin(
-        examples = {
-                @Example(
-                        title = "List all namespaces with pagination",
-                        full = true,
-                        code = """
+    examples = {
+        @Example(
+            title = "List all namespaces with pagination",
+            full = true,
+            code = """
                 id: list_paginated_namespaces
                 namespace: company.team
 
@@ -43,11 +43,11 @@ import java.util.ArrayList;
                     page: 1
                     size: 20
                 """
-                ),
-                @Example(
-                        title = "List only existing namespaces starting with 'dev.'",
-                        full = true,
-                        code = """
+        ),
+        @Example(
+            title = "List only existing namespaces starting with 'dev.'",
+            full = true,
+            code = """
                 id: list_filtered_namespaces
                 namespace: company.team
 
@@ -62,11 +62,11 @@ import java.util.ArrayList;
                     prefix: dev.
                     existingOnly: true
                 """
-                ),
-                @Example(
-                        title = "List all namespaces without pagination (fetch all pages)",
-                        full = true,
-                        code = """
+        ),
+        @Example(
+            title = "List all namespaces without pagination (fetch all pages)",
+            full = true,
+            code = """
                 id: list_all_namespaces
                 namespace: company.team
 
@@ -79,8 +79,8 @@ import java.util.ArrayList;
                       password: password
                     # No 'page' or 'size' properties to fetch all
                 """
-                )
-        }
+        )
+    }
 )
 public class List extends AbstractKestraTask implements RunnableTask<List.Output> {
     @Schema(title = "The namespace prefix, if null, all namespaces will be listed.")

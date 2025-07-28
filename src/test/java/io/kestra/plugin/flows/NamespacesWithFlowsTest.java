@@ -6,7 +6,7 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.AbstractKestraContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.plugin.kestra.flows.DistinctNamespaces;
+import io.kestra.plugin.kestra.namespaces.NamespacesWithFlows;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
@@ -14,24 +14,24 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
-public class DistinctNamespacesTest extends AbstractKestraContainerTest {
+public class NamespacesWithFlowsTest extends AbstractKestraContainerTest {
 
     @Inject
     protected RunContextFactory runContextFactory;
 
-    protected static final String NAMESPACE = "kestra.tests.flows.distinctnamespaces";
+    protected static final String NAMESPACE = "kestra.tests.namespaces.distinctnamespaces";
 
     @Test
     public void shouldListNamespaces() throws Exception {
         RunContext runContext = runContextFactory.of();
         String subNamespace = NAMESPACE + ".sub";
 
-        DistinctNamespaces listNamespaces = distinctNamespacesTask(NAMESPACE);
+        NamespacesWithFlows listNamespaces = distinctNamespacesTask(NAMESPACE);
 
         kestraTestDataUtils.createRandomizedFlow(NAMESPACE);
         kestraTestDataUtils.createRandomizedFlow(subNamespace);
 
-        DistinctNamespaces.Output listNamespacesOutput = listNamespaces.run(runContext);
+        NamespacesWithFlows.Output listNamespacesOutput = listNamespaces.run(runContext);
 
         assertThat(listNamespacesOutput.getNamespaces().size(), is(2));
 
@@ -43,8 +43,8 @@ public class DistinctNamespacesTest extends AbstractKestraContainerTest {
     /**
      * Required because using `toBuilder()` with Property does not work as expected
      */
-    private DistinctNamespaces distinctNamespacesTask(String prefix) {
-        return DistinctNamespaces.builder()
+    private NamespacesWithFlows distinctNamespacesTask(String prefix) {
+        return NamespacesWithFlows.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
             .auth(AbstractKestraTask.Auth.builder()
                 .username(Property.ofValue(USERNAME))

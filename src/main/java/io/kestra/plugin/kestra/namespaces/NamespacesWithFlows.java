@@ -1,4 +1,4 @@
-package io.kestra.plugin.kestra.flows;
+package io.kestra.plugin.kestra.namespaces;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -32,7 +32,7 @@ import lombok.experimental.SuperBuilder;
 
                 tasks:
                   - id: list_namespaces
-                    type: io.kestra.plugin.kestra.flows.DistinctNamespaces
+                    type: io.kestra.plugin.kestra.namespaces.NamespacesWithFlows
                     kestraUrl: http://localhost:8080
                 """
         ),
@@ -45,7 +45,7 @@ import lombok.experimental.SuperBuilder;
 
                 tasks:
                   - id: list_prefixed_namespaces
-                    type: io.kestra.plugin.kestra.flows.DistinctNamespaces
+                    type: io.kestra.plugin.kestra.namespaces.NamespacesWithFlows
                     kestraUrl: https://my-ee-instance.io
                     auth:
                       username: myuser
@@ -56,21 +56,21 @@ import lombok.experimental.SuperBuilder;
         )
     }
 )
-public class DistinctNamespaces extends AbstractKestraTask implements RunnableTask<DistinctNamespaces.Output> {
+public class NamespacesWithFlows extends AbstractKestraTask implements RunnableTask<NamespacesWithFlows.Output> {
 
     @Schema(title = "The namespace prefix, if null, all namespaces will be listed.")
     @Nullable
     private Property<String> prefix;
 
     @Override
-    public DistinctNamespaces.Output run(RunContext runContext) throws Exception {
+    public NamespacesWithFlows.Output run(RunContext runContext) throws Exception {
         String ns = runContext.render(prefix).as(String.class).orElse("");
         String tId = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
 
         KestraClient kestraClient = kestraClient(runContext);
         java.util.List<String> results = kestraClient.flows().listDistinctNamespaces(tId, ns);
 
-        return DistinctNamespaces.Output.builder()
+        return NamespacesWithFlows.Output.builder()
             .namespaces(results)
             .build();
     }
