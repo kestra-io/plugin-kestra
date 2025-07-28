@@ -33,4 +33,5 @@ jobs:
     uses: kestra-io/actions/.github/workflows/plugins.yml@main
     with:
       skip-test: ${{ github.event.inputs.skip-test == 'true' }}
+      pullDockerEE: true # Need for test
     secrets: inherit
