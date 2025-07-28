@@ -1,7 +1,5 @@
 package io.kestra.plugin.flows;
 
-import io.kestra.sdk.model.FlowWithSource;
-import io.kestra.sdk.model.IdWithNamespace;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
@@ -9,13 +7,16 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.AbstractKestraContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.flows.Export;
+import io.kestra.sdk.model.FlowWithSource;
+import io.kestra.sdk.model.IdWithNamespace;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 @KestraTest
 public class ExportTest extends AbstractKestraContainerTest {
@@ -42,7 +43,7 @@ public class ExportTest extends AbstractKestraContainerTest {
                 .build()
             )
             .tenantId(Property.ofValue(TENANT_ID))
-            .idsWithNamespace(
+            .flows(
                 Property.ofValue(
                     List.of(
                         new IdWithNamespace().id(flow1.getId()).namespace(flow1.getNamespace()),
