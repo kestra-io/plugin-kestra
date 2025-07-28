@@ -23,7 +23,7 @@ import java.util.List;
 @NoArgsConstructor
 @Schema(
     title = "Export Kestra flows",
-    description = "Exports one or more Kestra flows as a ZIP archive. You can specify flows by their ID and namespace."
+    description = "Exports one or more Kestra flows as a ZIP archive. You can specify from a namespace prefix and/or labels to filter the flows to export. "
 )
 @Plugin(
     examples = {
@@ -36,43 +36,17 @@ import java.util.List;
 
                 tasks:
                   - id: export_flow
-                    type: io.kestra.plugin.kestra.flows.ExportById
+                    type: io.kestra.plugin.kestra.flows.Export
                     kestraUrl: http://localhost:8080
                     auth:
                       username: admin
                       password: password
-                    flows:
-                      - id: my_flow_id
-                        namespace: my.flow.namespace
-                """
-        ),
-        @Example(
-            title = "Export multiple flows from different namespaces",
-            full = true,
-            code = """
-                id: export_multiple_flows
-                namespace: company.team
-
-                tasks:
-                  - id: export_flows
-                    type: io.kestra.plugin.kestra.flows.ExportById
-                    kestraUrl: https://my-ee-instance.io
-                    auth:
-                      username: myuser
-                      password: mypassword
-                    tenantId: mytenant
-                    flows:
-                      - id: flow_one
-                        namespace: prod.data
-                      - id: flow_two
-                        namespace: dev.analytics
-                      - id: flow_three
-                        namespace: common.utils
+                    namespace: company.team
                 """
         )
     }
 )
-public class Export extends AbstractKestraTask implements RunnableTask<ExportById.Output> {
+public class Export extends AbstractKestraTask implements RunnableTask<Export.Output> {
 
     @Schema(title = "A namespace prefix filter.")
     public Property<String> namespace;
@@ -81,7 +55,7 @@ public class Export extends AbstractKestraTask implements RunnableTask<ExportByI
     public Property<List<String>> labels;
 
     @Override
-    public ExportById.Output run(RunContext runContext) throws Exception {
+    public Export.Output run(RunContext runContext) throws Exception {
         String tId = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         String rNamespace = runContext.render(namespace).as(String.class).orElse(null);
         List<String> rLabels = runContext.render(labels).asList(String.class);
@@ -102,7 +76,7 @@ public class Export extends AbstractKestraTask implements RunnableTask<ExportByI
         URI storedFileUri = runContext.storage().putFile(inputStream, fileName);
 
 
-        return ExportById.Output.builder()
+        return Export.Output.builder()
             .flowsZip(storedFileUri)
             .build();
     }

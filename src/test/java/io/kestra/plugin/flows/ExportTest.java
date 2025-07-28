@@ -7,9 +7,6 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.AbstractKestraContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.flows.Export;
-import io.kestra.plugin.kestra.flows.ExportById;
-import io.kestra.sdk.model.FlowWithSource;
-import io.kestra.sdk.model.IdWithNamespace;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
@@ -52,8 +49,7 @@ public class ExportTest extends AbstractKestraContainerTest {
             .build();
 
 
-        ExportById.Output listFlowsOutput = exportFlows.run(runContext);
-
+        Export.Output listFlowsOutput = exportFlows.run(runContext);
         int fileCount = countFilesInZip(listFlowsOutput.getFlowsZip(), runContext);
 
         assertThat(listFlowsOutput.getFlowsZip(), is(notNullValue()));
