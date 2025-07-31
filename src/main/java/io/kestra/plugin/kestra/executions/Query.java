@@ -43,17 +43,17 @@ import java.util.Map;
             full = true,
             code = """
                 id: search_executions_by_label
-                namespace: company.team.myflow
+                namespace: company.team
 
                 tasks:
-                  - id: hello
+                  - id: query
                     type: io.kestra.plugin.kestra.executions.Query
                     kestraUrl: http://localhost:8080
                     labels:
                       key: value
                     auth:
-                      username: root@root.com
-                      password: Root!1234
+                      username: admin@kestra.io # pass your Kestra username as secret or KV pair
+                      password: Admin1234 # pass your Kestra password as secret or KV pair
                     fetchType: STORE # Store the results in a file
                 """
         ),
@@ -62,7 +62,7 @@ import java.util.Map;
             full = true,
             code = """
                 id: search_successful_executions
-                namespace: company.team.myflow
+                namespace: company.team
 
                 tasks:
                   - id: search_executions
@@ -72,8 +72,8 @@ import java.util.Map;
                     states:
                       - SUCCESS
                     auth:
-                      username: root@root.com
-                      password: Root!1234
+                      username: admin@kestra.io # pass your Kestra username as secret or KV pair
+                      password: Admin1234 # pass your Kestra password as secret or KV pair
                     fetchType: FETCH # Fetch the results directly in the task output
                 """
         )

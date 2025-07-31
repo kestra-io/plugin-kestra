@@ -39,8 +39,8 @@ import java.util.List;
                     type: io.kestra.plugin.kestra.flows.Export
                     kestraUrl: http://localhost:8080
                     auth:
-                      username: admin
-                      password: password
+                      username: admin@kestra.io # pass your Kestra username as secret or KV pair
+                      password: Admin1234 # pass your Kestra password as secret or KV pair
                     namespace: company.team
                 """
         )
