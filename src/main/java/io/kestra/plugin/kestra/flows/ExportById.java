@@ -36,12 +36,12 @@ import java.util.List;
                 namespace: company.team
 
                 tasks:
-                  - id: export_flow
+                  - id: export_flow_by_id
                     type: io.kestra.plugin.kestra.flows.ExportById
                     kestraUrl: http://localhost:8080
                     auth:
-                      username: admin
-                      password: password
+                      username: admin@kestra.io # pass your Kestra username as secret or KV pair
+                      password: Admin1234 # pass your Kestra password as secret or KV pair
                     flows:
                       - id: my_flow_id
                         namespace: my.flow.namespace
@@ -59,9 +59,9 @@ import java.util.List;
                     type: io.kestra.plugin.kestra.flows.ExportById
                     kestraUrl: https://my-ee-instance.io
                     auth:
-                      username: myuser
-                      password: mypassword
-                    tenantId: mytenant
+                      username: admin@kestra.io # pass your Kestra username as secret or KV pair
+                      password: Admin1234 # pass your Kestra password as secret or KV pair
+                    tenantId: main
                     flows:
                       - id: flow_one
                         namespace: prod.data
