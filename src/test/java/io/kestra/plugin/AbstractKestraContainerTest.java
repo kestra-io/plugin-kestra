@@ -43,8 +43,7 @@ public class AbstractKestraContainerTest {
                     type: jdbc
                     jdbc:
                       secret: I6EGNzRESu3X3pKZidrqCGOHQFUFC0yK
-
-                    """)
+                """)
             .withCommand("server local")
             .waitingFor(
                 Wait.forHttp("/ui/login")

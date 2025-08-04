@@ -14,7 +14,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-public class AbstractKestraTaskTest {
+public class AbstractKestraTaskTest extends AbstractKestraContainerTest {
 
     @Inject
     protected RunContextFactory runContextFactory;
@@ -50,5 +50,23 @@ public class AbstractKestraTaskTest {
         expectedMessage = "Both username and password are required for HTTP Basic authentication";
         assertThat(exception.getMessage(), is(expectedMessage));
 
+    }
+
+    @Test
+    public void shouldFallbackToDefaultUrlAndFailConnection() throws Exception {
+        RunContext runContext = runContextFactory.of();
+
+        List task = List.builder()
+            .tenantId(Property.ofValue(TENANT_ID))
+            .auth(AbstractKestraTask.Auth.builder()
+                .username(Property.ofValue(USERNAME))
+                .password(Property.ofValue(PASSWORD))
+                .build())
+            .build();
+
+        Exception exception = assertThrows(Exception.class, () -> task.run(runContext));
+
+        String message = exception.getMessage().toLowerCase();
+        assertThat(message.contains("failed: connection refused") && message.contains("localhost:8080"), is(true));
     }
 }
