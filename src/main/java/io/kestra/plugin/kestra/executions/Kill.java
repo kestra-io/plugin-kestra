@@ -73,11 +73,11 @@ public class Kill extends AbstractKestraTask implements RunnableTask<VoidOutput>
         description = "Whether to also kill the child executions (subflows) when this execution is killed."
     )
     @Builder.Default
-    private Property<Boolean> propagateKill = Property.ofValue(false);
+    private Property<Boolean> propagateKill = Property.ofValue(true);
 
     @Override
     public VoidOutput run(RunContext runContext) throws Exception {
-        boolean rPropagateKill = runContext.render(this.propagateKill).as(Boolean.class).orElse(false);
+        boolean rPropagateKill = runContext.render(this.propagateKill).as(Boolean.class).orElse(true);
         String rTenantId = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         String rExecutionId = runContext.render(this.executionId).as(String.class).orElse(runContext.render("{{ execution.id }}"));
 
