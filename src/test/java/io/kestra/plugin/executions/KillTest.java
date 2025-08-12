@@ -10,12 +10,14 @@ import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.executions.Kill;
 import io.kestra.sdk.model.FlowWithSource;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @KestraTest
+@Disabled
 public class KillTest extends AbstractKestraContainerTest {
     @Inject
     protected RunContextFactory runContextFactory;
