@@ -35,7 +35,7 @@ import java.util.ArrayList;
 
                 tasks:
                   - id: list_namespaces_paged
-                    type: io.kestra.plugin.kestra.flows.List
+                    type: io.kestra.plugin.kestra.namespaces.List
                     kestraUrl: http://localhost:8080
                     auth:
                       username: admin@kestra.io # pass your Kestra username as secret or KV pair
@@ -53,7 +53,7 @@ import java.util.ArrayList;
 
                 tasks:
                   - id: list_dev_namespaces
-                    type: io.kestra.plugin.kestra.flows.List
+                    type: io.kestra.plugin.kestra.namespaces.List
                     kestraUrl: https://cloud.kestra.io
                     auth:
                       username: admin@kestra.io # pass your Kestra username as secret or KV pair
@@ -72,7 +72,7 @@ import java.util.ArrayList;
 
                 tasks:
                   - id: fetch_all_namespaces
-                    type: io.kestra.plugin.kestra.flows.List
+                    type: io.kestra.plugin.kestra.namespaces.List
                     kestraUrl: http://localhost:8080
                     auth:
                       username: admin@kestra.io # pass your Kestra username as secret or KV pair
