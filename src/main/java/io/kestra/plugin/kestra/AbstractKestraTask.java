@@ -44,8 +44,10 @@ public abstract class AbstractKestraTask extends Task {
 
         runContext.logger().info("Kestra URL: {}", rKestraUrl);
 
+        String normalizedUrl = rKestraUrl.trim().replaceAll("/+$", "");
+
         var builder = KestraClient.builder();
-        builder.url(rKestraUrl);
+        builder.url(normalizedUrl);
         if (auth != null) {
             if (auth.apiToken != null && (auth.username != null || auth.password != null)) {
                 throw new IllegalArgumentException("Cannot use both API Token authentication and HTTP Basic authentication");
