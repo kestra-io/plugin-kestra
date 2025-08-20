@@ -7,7 +7,7 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
-import io.kestra.sdk.model.PagedResultsNamespaceWithDisabled;
+import io.kestra.sdk.model.PagedResultsNamespace;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import lombok.*;
@@ -114,28 +114,28 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
 
         // If page is provided, fetch only that specific page
         if (rPage != null) {
-            PagedResultsNamespaceWithDisabled results = kestraClient.namespaces()
+            PagedResultsNamespace results = kestraClient.namespaces()
                 .searchNamespaces(
                     rPage,
                     rSize,
+                    rExistingOnly,
                     tId,
                     ns,
-                    null,
-                    rExistingOnly
+                    null
                 );
             results.getResults().forEach(namespace -> allNamespaces.add(namespace.getId()));
         } else {
             int currentPage = 1;
             long total;
             do {
-                PagedResultsNamespaceWithDisabled results = kestraClient.namespaces()
+                PagedResultsNamespace results = kestraClient.namespaces()
                     .searchNamespaces(
                         currentPage,
                         rSize,
+                        rExistingOnly,
                         tId,
                         ns,
-                        null,
-                        rExistingOnly
+                        null
                     );
                 results.getResults().forEach(namespace -> allNamespaces.add(namespace.getId()));
                 total = results.getTotal();

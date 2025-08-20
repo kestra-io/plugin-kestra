@@ -109,4 +109,30 @@ public class KestraTestDataUtils {
         }
     }
 
+    public TestSuite createRandomizedTestSuite(String namespace, String flowId) throws ApiException {
+        String np = namespace != null ? namespace : "default";
+        String testSuite =
+            """
+                id: random_testsuite_%s
+                namespace: %s
+                flowId: %s
+                testCases:
+                  - id: test_case_1
+                    type: io.kestra.core.tests.flow.UnitTest
+                    assertions:
+                      - value: 200
+                        equalTo: 200
+                  - id: test_case_2
+                    type: io.kestra.core.tests.flow.UnitTest
+                    assertions:
+                      - value: 300
+                        equalTo: 300
+                """.formatted(
+                UUID.randomUUID().toString().substring(0, 8).replace("-", "_"),
+                np,
+                flowId
+            );
+        return kestraClient.testSuites().createTestSuite(tenantId, testSuite);
+    }
+
 }
