@@ -1,5 +1,6 @@
 package io.kestra.plugin.kestra.ee.tests;
 
+import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.flows.State;
 import io.kestra.core.models.property.Property;
@@ -9,6 +10,7 @@ import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.model.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -23,21 +25,63 @@ import java.util.stream.Collectors;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run a test",
-    description = "This task will run a test."
+    title = "Run an unit test",
+    description = "Run a single unit test. You can filter specific test cases to run, or all of them by default."
 )
 @Plugin(
+    examples = {
+        @Example(
+            title = "Run a test",
+            full = true,
+            code = """
+               id: run_test
+               namespace: company.team
+
+               tasks:
+                 - id: do_run_one_test
+                   type: io.kestra.plugin.kestra.ee.tests.RunTest
+                   auth:
+                     apiToken: XXX_your_api_token_XXX
+                   namespace: company.team
+                   testId: simple-testsuite
+               """
+        ),
+        @Example(
+            title = "Run a specific test testcase",
+            full = true,
+            code = """
+                id: run_test_single_testcase
+                namespace: company.team
+
+                tasks:
+                  - id: do_run_one_test
+                    type: io.kestra.plugin.kestra.ee.tests.RunTest
+                    auth:
+                      apiToken: XXX_your_api_token_XXX
+                    namespace: company.team
+                    testId: simple-testsuite
+                    testCases:
+                      - testcase_1
+                """
+        )
+    }
 )
 public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.Output> {
     @Schema(title = "The namespace")
+    @NotNull
     private Property<String> namespace;
 
     @Schema(title = "The test id")
+    @NotNull
     private Property<String> testId;
 
     @Schema(title = "Specific test cases to run")
     @Nullable
     private Property<List<String>> testCases;
+
+    @Schema(title= "Should the task be marked as FAILED when a test fails")
+    @Builder.Default
+    private Property<Boolean> failOnTestFailure = Property.ofValue(false);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -48,6 +92,7 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
         var rNamespace = runContext.render(namespace).as(String.class).orElseThrow();
         var rId = runContext.render(testId).as(String.class).orElseThrow();
         var rTestCases = runContext.render(testCases).asList(String.class);
+        var rFailOnTestFailure = runContext.render(failOnTestFailure).as(Boolean.class).orElseThrow();
 
         var testFullId = rNamespace + "." + rId;
         var runRequest = new TestSuiteControllerRunRequest().testCases(rTestCases);
@@ -82,8 +127,16 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
                 runContext.logger().error("Test '{}' ended with ERROR", testFullId);
                 outputBuilder.taskStateOverride(Optional.of(State.Type.FAILED));
             }
-            case FAILED, SKIPPED -> {
+            case FAILED -> {
                 runContext.logger().warn("Test '{}' ended with {}", testFullId, result.getState());
+                if(rFailOnTestFailure){
+                    outputBuilder.taskStateOverride(Optional.of(State.Type.FAILED));
+                } else {
+                    outputBuilder.taskStateOverride(Optional.of(State.Type.WARNING));
+                }
+            }
+            case SKIPPED -> {
+                runContext.logger().warn("Test '{}' SKIPPED", testFullId);
                 outputBuilder.taskStateOverride(Optional.of(State.Type.WARNING));
             }
             case SUCCESS -> {
