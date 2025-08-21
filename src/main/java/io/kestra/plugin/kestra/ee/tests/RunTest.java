@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
                  - id: do_run_one_test
                    type: io.kestra.plugin.kestra.ee.tests.RunTest
                    auth:
-                     apiToken: XXX_your_api_token_XXX
+                     apiToken: "{{ secret('KESTRA_API_TOKEN') }}"
                    namespace: company.team
                    testId: simple-testsuite
                """
