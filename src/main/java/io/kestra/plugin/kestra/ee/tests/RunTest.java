@@ -92,7 +92,7 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
         var rNamespace = runContext.render(namespace).as(String.class).orElseThrow();
         var rId = runContext.render(testId).as(String.class).orElseThrow();
         var rTestCases = runContext.render(testCases).asList(String.class);
-        var rFailOnTestFailure = runContext.render(failOnTestFailure).as(Boolean.class).orElseThrow();
+        var rFailOnTestFailure = runContext.render(failOnTestFailure).as(Boolean.class).orElse(false);
 
         var testFullId = rNamespace + "." + rId;
         var runRequest = new TestSuiteControllerRunRequest().testCases(rTestCases);
