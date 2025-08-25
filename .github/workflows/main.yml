@@ -29,7 +29,7 @@ jobs:
       KESTRA_EE_LICENSE_ID: ${{ secrets.KESTRA_EE_LICENSE_ID }}
       KESTRA_EE_LICENSE_KEY: ${{ secrets.KESTRA_EE_LICENSE_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Caches
       - name: Gradle cache
