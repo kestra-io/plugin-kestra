@@ -13,6 +13,7 @@ import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Objects;
@@ -102,23 +103,7 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
         Objects.requireNonNull(result.getResults());
 
         result.getResults().forEach(testCaseResult -> {
-            var executionId = testCaseResult.getExecutionId();
-            var url = testCaseResult.getUrl();
-            var state = testCaseResult.getState();
-            if (state == TestState.ERROR) {
-                runContext.logger().error("Test case '{}' ended with status: {}.\nexecutionId: {}\nexecution url: {}\nerrors: {}",
-                    testCaseResult.getTestId(), state, executionId, url,
-                    formatErrors(testCaseResult)
-                );
-            } else {
-                runContext.logger().info("Test case '{}' ended with status: {}.\nexecutionId: {}\nexecution url: {}", testCaseResult.getTestId(), state, executionId, url);
-            }
-
-            if (runContext.logger().isDebugEnabled()) {
-                testCaseResult.getAssertionResults().forEach(assertionResult -> {
-                    runContext.logger().debug("Assertion result: {}", formatAssertionResult(assertionResult));
-                });
-            }
+            logTestCase(runContext.logger(), testFullId, testCaseResult);
         });
 
         var outputBuilder = Output.builder().result(result);
@@ -146,7 +131,28 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
         return outputBuilder.build();
     }
 
-    private String formatAssertionResult(AssertionResult assertionResult) {
+    protected static void logTestCase(Logger logger, String testSuiteId, UnitTestResult testCaseResult) {
+        var executionId = testCaseResult.getExecutionId();
+        var url = testCaseResult.getUrl();
+        var state = testCaseResult.getState();
+        if (state == TestState.ERROR) {
+            logger.error("{} > Test case '{}' ended with status: {}.\nexecutionId: {}\nexecution url: {}\nerrors: {}",
+                testSuiteId,
+                testCaseResult.getTestId(), state, executionId, url,
+                formatErrors(testCaseResult)
+            );
+        } else {
+            logger.info("{} > Test case '{}' ended with status: {}.\nexecutionId: {}\nexecution url: {}", testSuiteId, testCaseResult.getTestId(), state, executionId, url);
+        }
+
+        if (logger.isDebugEnabled()) {
+            testCaseResult.getAssertionResults().forEach(assertionResult -> {
+                logger.debug("{} > {} > Assertion result: {}", testSuiteId, testCaseResult.getTestId(), formatAssertionResult(assertionResult));
+            });
+        }
+    }
+
+    private static String formatAssertionResult(AssertionResult assertionResult) {
         var status = assertionResult.getIsSuccess() ? "SUCCESS" : "FAILED";
         var str = "assertion %s: expected %s %s %s".formatted(status, assertionResult.getExpected(), assertionResult.getOperator(), assertionResult.getActual());
         if (assertionResult.getDescription() != null) {
