@@ -41,7 +41,7 @@ public class RunTestsTest extends AbstractKestraContainerTest {
 
         // then
         assertThat(runTestOutput.getResult().getResults()).hasSize(1);
-        assertThat(runTestOutput.getResult().getResults().get(0).getId()).isEqualTo(testSuite.getId());
+        assertThat(runTestOutput.getResult().getResults().get(0).getTestSuiteId()).isEqualTo(testSuite.getId());
         assertThat(runTestOutput.getResult().getResults().get(0).getState()).isEqualTo(TestState.SUCCESS);
     }
 }
