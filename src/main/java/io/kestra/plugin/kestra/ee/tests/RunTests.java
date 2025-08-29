@@ -144,8 +144,17 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
         )
         private TestSuiteServiceTestRunByQueryResult result;
 
+        @Schema(
+            title = "Number of test suites run in success"
+        )
         private Long testSuitesRunSuccessCount;
+        @Schema(
+            title = "Number of test suites skipped"
+        )
         private Long testSuitesRunSkippedCount;
+        @Schema(
+            title = "Number of test suites failed"
+        )
         private Long testSuitesRunFailedCount;
 
         @Builder.Default
