@@ -134,5 +134,54 @@ public class KestraTestDataUtils {
             );
         return kestraClient.testSuites().createTestSuite(tenantId, testSuite);
     }
-
+    public TestSuite createRandomizedCrashingTestSuite(String namespace, String flowId) throws ApiException {
+        String np = namespace != null ? namespace : "default";
+        String testSuite =
+            """
+                id: random_crashing_testsuite_%s
+                namespace: %s
+                flowId: %s
+                testCases:
+                  - id: test_case_1
+                    type: io.kestra.core.tests.flow.UnitTest
+                    assertions:
+                      - value: 200
+                        equalTo: 200
+                  - id: test_case_2_crashing
+                    type: io.kestra.core.tests.flow.UnitTest
+                    assertions:
+                      - value: "{{ unknown_pebble_expression_causing_error }}"
+                        equalTo: 111
+                """.formatted(
+                UUID.randomUUID().toString().substring(0, 8).replace("-", "_"),
+                np,
+                flowId
+            );
+        return kestraClient.testSuites().createTestSuite(tenantId, testSuite);
+    }
+    public TestSuite createRandomizedFailingTestSuite(String namespace, String flowId) throws ApiException {
+        String np = namespace != null ? namespace : "default";
+        String testSuite =
+            """
+                id: random_failing_testsuite_%s
+                namespace: %s
+                flowId: %s
+                testCases:
+                  - id: test_case_1
+                    type: io.kestra.core.tests.flow.UnitTest
+                    assertions:
+                      - value: 200
+                        equalTo: 200
+                  - id: test_case_2_failing
+                    type: io.kestra.core.tests.flow.UnitTest
+                    assertions:
+                      - value: 333
+                        equalTo: 111
+                """.formatted(
+                UUID.randomUUID().toString().substring(0, 8).replace("-", "_"),
+                np,
+                flowId
+            );
+        return kestraClient.testSuites().createTestSuite(tenantId, testSuite);
+    }
 }

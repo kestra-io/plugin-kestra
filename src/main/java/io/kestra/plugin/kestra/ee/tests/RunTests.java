@@ -115,6 +115,9 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
                 }
             }
         });
+        if(errorState.get().isPresent()) {
+            outputBuilder.taskStateOverride(Optional.of(errorState.get().get()));
+        }
 
         var testSuitesRunCount = result.getResults().size();
         var testSuitesRunSuccessCount = result.getResults().stream().filter(t -> TestState.SUCCESS.equals(t.getState())).count();
@@ -133,10 +136,10 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
     }
 
     private static Optional<State.Type> markTaskAsWarning(Optional<State.Type> errorState) {
-        if (errorState.isPresent() && errorState.get() != State.Type.FAILED) {
-            return Optional.of(State.Type.WARNING);
-        } else {
+        if (errorState.isPresent() && errorState.get() == State.Type.FAILED) {
             return errorState;
+        } else {
+            return Optional.of(State.Type.WARNING);
         }
     }
 
