@@ -17,6 +17,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static io.kestra.plugin.kestra.ee.tests.RunTest.logTestCase;
 
@@ -86,6 +87,7 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
         runContext.logger().info("Requested to run {} test suites, {} test cases", result.getNumberOfTestSuitesToBeRun(), result.getNumberOfTestCasesToBeRun());
 
         var outputBuilder = Output.builder().result(result);
+        AtomicReference<Optional<State.Type>> errorState = new AtomicReference<>(Optional.empty());
         result.getResults().forEach(testSuiteRunResult -> {
             var testSuiteFullId = testSuiteRunResult.getNamespace() + "." + testSuiteRunResult.getTestSuiteId();
             testSuiteRunResult.getResults()
@@ -94,19 +96,19 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
             switch (testSuiteRunResult.getState()) {
                 case ERROR -> {
                     runContext.logger().error("Test '{}' ended with ERROR", testSuiteFullId);
-                    markTaskAsError(outputBuilder);
+                    errorState.set(markTaskAsError(errorState.get()));
                 }
                 case FAILED -> {
                     runContext.logger().warn("Test '{}' ended with {}", testSuiteFullId, testSuiteRunResult.getState());
                     if (rFailOnTestFailure) {
-                        markTaskAsError(outputBuilder);
+                        errorState.set(markTaskAsError(errorState.get()));
                     } else {
-                        markTaskAsWarning(outputBuilder);
+                        errorState.set(markTaskAsWarning(errorState.get()));
                     }
                 }
                 case SKIPPED -> {
                     runContext.logger().warn("Test '{}' SKIPPED", testSuiteFullId);
-                    markTaskAsWarning(outputBuilder);
+                    errorState.set(markTaskAsWarning(errorState.get()));
                 }
                 case SUCCESS -> {
                     runContext.logger().info("Test '{}' ended with SUCCESS", testSuiteFullId);
@@ -126,13 +128,15 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
         return outputBuilder.build();
     }
 
-    protected static void markTaskAsError(RunTests.Output.OutputBuilder outputBuilder) {
-        outputBuilder.taskStateOverride(Optional.of(State.Type.FAILED));
+    private static Optional<State.Type> markTaskAsError(Optional<State.Type> errorState) {
+        return Optional.of(State.Type.FAILED);
     }
 
-    protected static void markTaskAsWarning(RunTests.Output.OutputBuilder outputBuilder) {
-        if (outputBuilder.taskStateOverride$value.isPresent() && outputBuilder.taskStateOverride$value.get() != State.Type.FAILED) {
-            outputBuilder.taskStateOverride(Optional.of(State.Type.FAILED));
+    private static Optional<State.Type> markTaskAsWarning(Optional<State.Type> errorState) {
+        if (errorState.isPresent() && errorState.get() != State.Type.FAILED) {
+            return Optional.of(State.Type.WARNING);
+        } else {
+            return errorState;
         }
     }
 
