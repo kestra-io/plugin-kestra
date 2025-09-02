@@ -9,8 +9,11 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+
+import java.util.Map;
 
 @SuperBuilder
 @ToString
@@ -43,9 +46,10 @@ import lombok.experimental.SuperBuilder;
 )
 public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutput> {
     @Schema(title = "The execution ID to delete",
-        description = "The ID of the execution to delete. If null, will delete the current execution."
+        description = "The ID of the execution to delete. It's not allowed to delete the current execution."
     )
-    private Property<String> executionId;
+    @NotNull
+    private String executionId;
 
     @Schema(title = "Whether to delete execution logs")
     @Builder.Default
@@ -60,14 +64,23 @@ public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutpu
     private Property<Boolean> deleteStorage = Property.ofValue(true);
 
     @Override
+    @SuppressWarnings("unchecked")
     public VoidOutput run(RunContext runContext) throws Exception {
         boolean rDeleteLogs = runContext.render(this.deleteLogs).as(Boolean.class).orElse(true);
         boolean rDeleteMetrics = runContext.render(this.deleteMetrics).as(Boolean.class).orElse(true);
         boolean rDeleteStorage = runContext.render(this.deleteStorage).as(Boolean.class).orElse(true);
         String rTenantId = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
-        String rExecutionId = runContext.render(this.executionId).as(String.class).orElse(runContext.render("{{ execution.id }}"));
+        String rExecutionId = runContext.render(this.executionId);
 
-        runContext.logger().info("Deleteing execution {} with deleteLogs={},deleteMetrics={},deleteLogs={}", rExecutionId, rDeleteLogs,rDeleteMetrics, rDeleteStorage);
+        var currentExecution = (Map<String, Object>) runContext.getVariables().get("execution");
+        var currentExecutionId = currentExecution != null ? (String) currentExecution.get("id") : null;
+
+        if (rExecutionId.equals(currentExecutionId)) {
+            runContext.logger().error("It's not allowed to delete the current execution {}", rExecutionId);
+            throw new IllegalArgumentException("It's not allowed to delete the current execution " + rExecutionId );
+        }
+
+        runContext.logger().info("Deleting execution {} with deleteLogs={},deleteMetrics={},deleteLogs={}", rExecutionId, rDeleteLogs,rDeleteMetrics, rDeleteStorage);
         KestraClient kestraClient = kestraClient(runContext);
 
         kestraClient.executions().deleteExecution(rExecutionId, rDeleteLogs,rDeleteMetrics,rDeleteStorage, rTenantId);
