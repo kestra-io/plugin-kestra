@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.util.Objects;
 import java.util.Optional;
 
 @SuperBuilder
@@ -62,9 +61,7 @@ public abstract class AbstractKestraTask extends Task {
                 return builder.build();
             }
 
-            if (maybeUsername.isPresent() || maybePassword.isPresent()) {
-                throw new IllegalArgumentException("Both username and password are required for HTTP Basic authentication");
-            }
+            throw new IllegalArgumentException("Both username and password are required for HTTP Basic authentication");
         }
         return builder.build();
     }

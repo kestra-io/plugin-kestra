@@ -65,10 +65,10 @@ public class AbstractKestraContainerTest {
             TENANT_ID
         );
 
-        generateDatas();
+        generateData();
     }
 
-    static void generateDatas() throws ApiException {
+    static void generateData() throws ApiException {
         KestraClient kc = kestraTestDataUtils.getKestraClient();
 
         Tenant tenant = new Tenant().id(TENANT_ID).name(TENANT_ID);
