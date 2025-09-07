@@ -49,6 +49,24 @@ public class KestraTestDataUtils {
         return kestraClient.flows().createFlow(tenantId, flow);
     }
 
+    public FlowWithSource createRandomizedPauseFlow(@Nullable String namespace) throws ApiException {
+        String np = namespace != null ? namespace : "default";
+    String flow =
+        """
+                id: random_flow_%s
+                namespace: %s
+
+                tasks:
+                  - id: hello
+                    type: io.kestra.plugin.core.log.Log
+                    message: Hello from KestraSDKHelper! 🚀
+                  - id: pause
+                    type: io.kestra.plugin.core.flow.Pause
+                """
+            .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np);
+
+        return kestraClient.flows().createFlow(tenantId, flow);
+    }
 
     public FlowWithSource createRandomizedFlowWithLabel(@Nullable String namespace) throws ApiException {
         String np = namespace != null ? namespace : "default";
@@ -106,6 +124,18 @@ public class KestraTestDataUtils {
             );
         } catch (ApiException e) {
             log.error("ApiException thrown, probably false positive as we are in `createRandomizedExecution` :" + e.getMessage());
+        }
+    }
+
+    public void killExecution(String executionId, boolean isOnKillCascade) throws ApiException {
+        try {
+            kestraClient.executions().killExecution(
+                executionId,
+                isOnKillCascade,
+                tenantId
+            );
+        } catch (ApiException e) {
+            log.error("ApiException thrown, probably false positive as we are in `killExecution` :" + e.getMessage());
         }
     }
 
