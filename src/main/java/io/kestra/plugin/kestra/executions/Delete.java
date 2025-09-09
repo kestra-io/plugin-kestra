@@ -43,6 +43,8 @@ import lombok.experimental.SuperBuilder;
                     deleteLogs: true
                     deleteMetrics: true
                     deleteStorage: true
+                    auth:
+                      apiToken: "{{ secrets('KESTRA_API_TOKEN') }}"
                 """)
     })
 public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutput> {
