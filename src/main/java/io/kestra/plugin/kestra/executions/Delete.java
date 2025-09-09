@@ -77,7 +77,7 @@ public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutpu
     String rTenantId =
         runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
     String rExecutionId =
-        runContext.render(this.executionId).as(String.class).orElse(currentExecutionId);
+        runContext.render(this.executionId).as(String.class).orElseThrow();
 
     if (rExecutionId.isBlank()) {
       throw new IllegalArgumentException("The execution id is required");
