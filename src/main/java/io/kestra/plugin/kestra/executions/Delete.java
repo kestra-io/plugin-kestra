@@ -12,7 +12,6 @@ import io.kestra.sdk.model.Execution;
 import io.kestra.sdk.model.StateType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
-
 import java.util.Map;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -78,8 +77,7 @@ public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutpu
     boolean rDeleteStorage = runContext.render(this.deleteStorage).as(Boolean.class).orElse(true);
     String rTenantId =
         runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
-    String rExecutionId =
-        runContext.render(this.executionId).as(String.class).orElseThrow();
+    String rExecutionId = runContext.render(this.executionId).as(String.class).orElseThrow();
 
     if (rExecutionId.isBlank()) {
       throw new IllegalArgumentException("The execution id is required");
@@ -107,14 +105,11 @@ public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutpu
     } else {
 
       StateType state = execution.getState().getCurrent();
+      boolean isTerminated = isTerminated(state);
 
-      if (state != StateType.KILLED
-          && state != StateType.FAILED
-          && state != StateType.CANCELLED
-          && state != StateType.SKIPPED
-          && state != StateType.SUCCESS) {
+      if (!isTerminated) {
         throw new IllegalArgumentException(
-            "Execution " + rExecutionId + " is not in a final state (" + state + ")");
+            "Execution " + rExecutionId + " is not in a terminate state (" + state + ")");
       }
 
       kestraClient
@@ -124,5 +119,15 @@ public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutpu
     }
 
     return null;
+  }
+
+  private boolean isTerminated(StateType stateType) {
+    return stateType == StateType.FAILED
+        || stateType == StateType.WARNING
+        || stateType == StateType.SUCCESS
+        || stateType == StateType.KILLED
+        || stateType == StateType.CANCELLED
+        || stateType == StateType.RETRIED
+        || stateType == StateType.SKIPPED;
   }
 }
