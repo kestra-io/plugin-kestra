@@ -48,6 +48,8 @@ import lombok.experimental.SuperBuilder;
                     runIf: "{{ inputs.shouldKill == true }}"
                     executionId: "{{ execution.id }}"
                     propagateKill: true
+                    auth:
+                      apiToken: "{{ secrets('KESTRA_API_TOKEN') }}"
                 """),
       @Example(
           title =
@@ -63,6 +65,8 @@ import lombok.experimental.SuperBuilder;
                       type: io.kestra.plugin.kestra.executions.Kill
                       executionId: "{{ vars.targetExecutionId }}"
                       propagateKill: false
+                      auth:
+                        apiToken: "{{ secrets('KESTRA_API_TOKEN') }}"
                   """)
     })
 public class Kill extends AbstractKestraTask implements RunnableTask<VoidOutput> {
