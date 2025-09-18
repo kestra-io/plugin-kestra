@@ -52,7 +52,11 @@ public abstract class AbstractKestraTask extends Task {
                 throw new IllegalArgumentException("Cannot use both API Token authentication and HTTP Basic authentication");
             }
 
-            runContext.render(auth.apiToken).as(String.class).ifPresent(token -> builder.tokenAuth(token));
+            String rApiToken = runContext.render(auth.apiToken).as(String.class).orElse(null);
+            if (rApiToken != null) {
+                builder.tokenAuth(rApiToken);
+                return builder.build();
+            }
 
             Optional<String> maybeUsername = runContext.render(auth.username).as(String.class);
             Optional<String> maybePassword = runContext.render(auth.password).as(String.class);
