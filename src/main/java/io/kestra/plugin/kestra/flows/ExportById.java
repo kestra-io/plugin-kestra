@@ -23,7 +23,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Export Kestra flows",
+    title = "Export Kestra flows.",
     description = "Exports one or more Kestra flows as a ZIP archive. You can specify flows by their ID and namespace."
 )
 @Plugin(
@@ -75,7 +75,7 @@ import java.util.List;
 )
 public class ExportById extends AbstractKestraTask implements RunnableTask<ExportById.Output> {
 
-    @Schema(title = "The flows to export.")
+    @Schema(title = "The flows to export")
     public Property<List<IdWithNamespace>> flows;
 
     @Override
