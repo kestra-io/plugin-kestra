@@ -21,7 +21,7 @@ import java.util.ArrayList;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "List Kestra Namespaces",
+    title = "List Kestra namespaces.",
     description = "Retrieves a list of Kestra namespaces, offering options for filtering by prefix, pagination, and excluding non-existent namespaces."
 )
 @Plugin(
@@ -87,18 +87,18 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
     private Property<String> prefix;
 
     @Nullable
-    @Schema(title = "If not provided, every pages are fetched",
+    @Schema(title = "If not provided, all pages are fetched",
         description = "For example, set to 1, it can be used to only fetch the first 10 results used with `size`.")
     private Property<Integer> page;
 
     @Nullable
     @Builder.Default
-    @Schema(title = "The number of namespaces to return per page.")
+    @Schema(title = "The number of namespaces to return per page")
     private Property<Integer> size = Property.ofValue(10);
 
     @Builder.Default
-    @Schema(title = "Return only existing namespace",
-        description = "Set to true, namespaces that exists only because a flow is using it will not be returned.")
+    @Schema(title = "Return only the existing namespace",
+        description = "Set to true, namespaces that exist only because a flow is using it will be returned.")
     private Property<Boolean> existingOnly = Property.ofValue(false);
 
     @Override
@@ -152,7 +152,7 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "A list of Kestra namespaces."
+            title = "A list of Kestra namespaces"
         )
         private java.util.List<String> namespaces;
     }

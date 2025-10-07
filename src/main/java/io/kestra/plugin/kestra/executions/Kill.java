@@ -19,10 +19,10 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Kill an execution",
+    title = "Kill an execution.",
     description =
         """
-            This task will kill an execution and optionally propagate the kill to child executions,
+            This task will kill an execution and optionally propagate the kill to child executions;
             only the non-terminated executions can be killed.
             """)
 @Plugin(

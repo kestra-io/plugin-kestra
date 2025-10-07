@@ -34,7 +34,7 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Search for Kestra Executions"
+    title = "Search for Kestra executions."
 )
 @Plugin(
     examples = {
@@ -87,12 +87,12 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
 
     @Nullable
     @Builder.Default
-    @Schema(title = "The number of results to return per page.")
+    @Schema(title = "The number of results to return per page")
     private Property<Integer> size = Property.ofValue(10);
 
     @Nullable
     @Builder.Default
-    @Schema(title = "The way the fetched data will be stored.")
+    @Schema(title = "The way the fetched data will be stored")
     private Property<FetchType> fetchType = Property.ofValue(FetchType.STORE);
 
     @Nullable
@@ -100,39 +100,39 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
     private Property<List<FlowScope>> flowScopes;
 
     @Nullable
-    @Schema(title = "To list only executions from a given namespace.")
+    @Schema(title = "To list only executions from a given namespace")
     private Property<String> namespace;
 
     @Nullable
-    @Schema(title = "To list only executions of a given flow.")
+    @Schema(title = "To list only executions of a given flow")
     private Property<String> flowId;
 
     @Nullable
-    @Schema(title = "To list only executions created after a given start date.")
+    @Schema(title = "To list only executions created after a given start date")
     private Property<ZonedDateTime> startDate;
 
     @Nullable
-    @Schema(title = "To list only executions created before a given end date.")
+    @Schema(title = "To list only executions created before a given end date")
     private Property<ZonedDateTime> endDate;
 
     @Nullable
-    @Schema(title = "To list only executions created within a given time range duration.")
+    @Schema(title = "To list only executions created within a given time range duration")
     private Property<Duration> timeRange;
 
     @Nullable
-    @Schema(title = "To list only executions in given states.")
+    @Schema(title = "To list only executions in given states")
     private Property<List<StateType>> states;
 
     @Nullable
-    @Schema(title = "To list only executions with given labels.")
+    @Schema(title = "To list only executions with given labels")
     private Property<Map<String, String>> labels;
 
     @Nullable
-    @Schema(title = "To list all downstream executions started from a given execution id.")
+    @Schema(title = "To list all downstream executions started from a given execution ID")
     private Property<String> triggerExecutionId;
 
     @Nullable
-    @Schema(title = "To list only child executions of a given flow.")
+    @Schema(title = "To list only child executions of a given flow")
     private Property<ExecutionRepositoryInterfaceChildFilter> childFilter;
 
     @Override

@@ -22,7 +22,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Delete an execution",
+    title = "Delete an execution.",
     description =
         "This task will delete an execution and optionally propagate the delete to execution logs, metrics and files in the internal storage.")
 @Plugin(
@@ -80,7 +80,7 @@ public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutpu
     String rExecutionId = runContext.render(this.executionId).as(String.class).orElseThrow();
 
     if (rExecutionId.isBlank()) {
-      throw new IllegalArgumentException("The execution id is required");
+      throw new IllegalArgumentException("The execution ID is required.");
     }
 
     if (rExecutionId.equals(currentExecutionId)) {

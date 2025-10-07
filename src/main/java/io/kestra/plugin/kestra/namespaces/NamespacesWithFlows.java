@@ -18,7 +18,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "List distinct Kestra namespaces",
+    title = "List distinct Kestra namespaces.",
     description = "Retrieves a list of all distinct namespaces within a Kestra instance, optionally filtered by a prefix."
 )
 @Plugin(

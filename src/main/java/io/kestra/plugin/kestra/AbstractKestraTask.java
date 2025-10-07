@@ -73,13 +73,13 @@ public abstract class AbstractKestraTask extends Task {
     @Builder
     @Getter
     public static class Auth {
-        @Schema(title = "API token.")
+        @Schema(title = "API token")
         private Property<String> apiToken;
 
-        @Schema(title = "Username for HTTP Basic authentication.")
+        @Schema(title = "Username for HTTP basic authentication")
         private Property<String> username;
 
-        @Schema(title = "Password for HTTP Basic authentication.")
+        @Schema(title = "Password for HTTP basic authentication")
         private Property<String> password;
     }
 }
