@@ -53,7 +53,6 @@ dependencies {
 
     // kestra API client
     implementation "io.kestra:kestra-api-client:1.0.0"
-    implementation 'io.kestra:sdk:0.24.0'
 }
 
 /**********************************************************************************************************************\

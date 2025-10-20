@@ -111,7 +111,6 @@ public class DetectStuckSchedules extends AbstractKestraTask implements Runnable
             misconfiguredTriggers.size()
         );
 
-        // ✅ FIXED: use Lombok builder instead of constructor
         return Output.builder()
             .stuckTriggers(stuckTriggers)
             .misconfiguredTriggers(misconfiguredTriggers)
@@ -119,7 +118,6 @@ public class DetectStuckSchedules extends AbstractKestraTask implements Runnable
             .build();
     }
 
-    // ✅ CLEANED Output class
     @Data
     @Builder
     @NoArgsConstructor
@@ -134,13 +132,5 @@ public class DetectStuckSchedules extends AbstractKestraTask implements Runnable
         @Schema(title = "Total flows checked")
         private Integer totalChecked;
 
-        @Override
-        public Map<String, Object> toMap() {
-            return Map.of(
-                "stuckTriggers", stuckTriggers,
-                "misconfiguredTriggers", misconfiguredTriggers,
-                "totalChecked", totalChecked
-            );
-        }
     }
 }
