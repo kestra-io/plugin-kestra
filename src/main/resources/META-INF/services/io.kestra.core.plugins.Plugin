@@ -1,1 +1,2 @@
-io.kestra.plugin.kestra.triggers.ScheduleMonitor
+io.kestra.plugin.kestra.triggers.DetectStuckSchedules
+
