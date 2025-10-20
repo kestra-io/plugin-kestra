@@ -2,6 +2,7 @@ package io.kestra.plugin.kestra.triggers;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
@@ -47,6 +48,12 @@ import java.util.*;
 )
 public class DetectStuckSchedules extends AbstractKestraTask implements RunnableTask<DetectStuckSchedules.Output> {
 
+    @PluginProperty
+    private String namespace;
+
+    @PluginProperty
+    private List<String> flowIds;
+
     @Schema(title = "Threshold in minutes to consider a schedule stuck.")
     @Builder.Default
     private Property<Integer> thresholdMinutes = Property.ofValue(60);
@@ -63,14 +70,19 @@ public class DetectStuckSchedules extends AbstractKestraTask implements Runnable
         runContext.logger().info("Detecting stuck or misconfigured schedule triggers (threshold={} minutes)", threshold);
 
         // Example placeholder: in a real scenario, fetch these dynamically
-        String namespace = runContext.flowInfo().namespace();
-        List<String> flowIds = List.of("flow1", "flow2");
+        String namespaceToUse = this.namespace != null
+            ? this.namespace
+            : runContext.flowInfo().namespace();
+
+        List<String> flowIdsToUse = this.flowIds != null && !this.flowIds.isEmpty()
+            ? this.flowIds
+            : List.of(); // No fallback, user must specify flow IDs
 
         List<String> stuckTriggers = new ArrayList<>();
         List<String> misconfiguredTriggers = new ArrayList<>();
         Instant now = Instant.now();
 
-        for (String flowId : flowIds) {
+        for (String flowId : flowIdsToUse) {
             try {
                 Object flowObject = flowsApi.getFlow(namespace, flowId, false, false, tenantId, null);
                 JsonNode flowJson = mapper.valueToTree(flowObject);
@@ -101,7 +113,7 @@ public class DetectStuckSchedules extends AbstractKestraTask implements Runnable
                     }
                 }
             } catch (Exception e) {
-                misconfiguredTriggers.add(namespace + "." + flowId + " (error: " + e.getMessage() + ")");
+                misconfiguredTriggers.add(namespaceToUse + "." + flowId + " (error: " + e.getMessage() + ")");
             }
         }
 
@@ -114,7 +126,7 @@ public class DetectStuckSchedules extends AbstractKestraTask implements Runnable
         return Output.builder()
             .stuckTriggers(stuckTriggers)
             .misconfiguredTriggers(misconfiguredTriggers)
-            .totalChecked(flowIds.size())
+            .totalChecked(flowIdsToUse.size())
             .build();
     }
 
