@@ -1,16 +1,14 @@
 package io.kestra.plugin.kestra.triggers;
 
-import io.kestra.plugin.kestra.triggers.DetectStuckSchedules;
-
 import io.kestra.core.junit.annotations.KestraTest;
-import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.AbstractKestraContainerTest;
+import io.kestra.plugin.kestra.triggers.DetectStuckOrDisabledSchedules.Output;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -19,26 +17,39 @@ import static org.hamcrest.Matchers.*;
 public class DetectStuckSchedulesTest extends AbstractKestraContainerTest {
 
     @Inject
-    protected RunContextFactory runContextFactory;
+    private RunContextFactory runContextFactory;
 
     @Test
-    public void shouldDetectSchedulesSuccessfully() throws Exception {
-        RunContext runContext = runContextFactory.of(Map.of());
+    void shouldRunSuccessfully() throws Exception {
+        // ✅ Create a real RunContext from factory
+        RunContext runContext = runContextFactory.of();
 
-        // Create instance of the custom task
-        DetectStuckSchedules task = DetectStuckSchedules.builder()
-            .thresholdMinutes(Property.ofValue(60))
-            .build();
+        // ✅ Instantiate your task
+        DetectStuckOrDisabledSchedules task = new DetectStuckOrDisabledSchedules();
 
-        // Run the task
-        DetectStuckSchedules.Output output = task.run(runContext);
+        // ✅ Set namespace reflectively (same as your version)
+        var field = task.getClass().getDeclaredField("namespace");
+        field.setAccessible(true);
+        field.set(task, "company.team");
 
-        // Validate output
+        // ✅ Run the task with real context
+        Output output = task.run(runContext);
         assertThat(output, notNullValue());
-        assertThat(output.getTotalChecked(), greaterThanOrEqualTo(0));
-        assertThat(output.getStuckTriggers(), notNullValue());
-        assertThat(output.getMisconfiguredTriggers(), notNullValue());
 
-        runContext.logger().info("✅ Test executed successfully with output: {}", output.toMap());
+        // ✅ Access fields reflectively
+        var issuesField = output.getClass().getDeclaredField("issues");
+        issuesField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<String> issues = (List<String>) issuesField.get(output);
+
+        var totalField = output.getClass().getDeclaredField("totalFound");
+        totalField.setAccessible(true);
+        Integer totalFound = (Integer) totalField.get(output);
+
+        // ✅ Validate results
+        assertThat(issues, notNullValue());
+        assertThat(totalFound, greaterThanOrEqualTo(0));
+
+        System.out.println("✅ Test completed successfully. Found " + totalFound + " issues: " + issues);
     }
 }
