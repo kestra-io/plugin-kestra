@@ -1,8 +1,6 @@
 package io.kestra.plugin.kestra.triggers;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -12,6 +10,8 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.api.TriggersApi;
+import io.kestra.sdk.model.PagedResultsTriggerControllerTriggers;
+import io.kestra.sdk.model.TriggerControllerTriggers;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -67,8 +67,6 @@ public class DetectStuckOrDisabledSchedules extends AbstractKestraTask
         KestraClient kestraClient = kestraClient(runContext);
         TriggersApi triggersApi = kestraClient.triggers();
 
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
 
         int threshold = runContext.render(this.thresholdMinutes).as(Integer.class).orElse(60);
         String tenantId = runContext.flowInfo().tenantId();
@@ -86,81 +84,75 @@ public class DetectStuckOrDisabledSchedules extends AbstractKestraTask
         int size = 100;
         boolean more = true;
 
-        try {
-            while (more) {
-                Object triggersResponse = triggersApi.searchTriggers(
-                    page,
-                    size,
-                    tenantId,
-                    null,
-                    null,
-                    null,
-                    namespaceToUse,
-                    null,
-                    null
-                );
 
-                String json = mapper.writeValueAsString(triggersResponse);
-                JsonNode root = mapper.readTree(json);
-                JsonNode results = root.path("results");
-                int returned = results == null ? 0 : results.size();
-                runContext.logger().info("📦 Trigger API returned {} triggers (page {})", returned, page);
+        while (more) {
+            PagedResultsTriggerControllerTriggers triggersResponse = triggersApi.searchTriggers(
+                page,
+                size,
+                tenantId,
+                null,
+                null,
+                null,
+                namespaceToUse,
+                null,
+                null
+            );
 
-                if (results == null || returned == 0) break;
+            List<TriggerControllerTriggers> results = triggersResponse.getResults();
+            int returned = results.size();
+            runContext.logger().info("📦 Trigger API returned {} triggers (page {})", returned, page);
 
-                for (JsonNode triggerNode : results) {
-                    try {
-                        String type = triggerNode.path("abstractTrigger").path("type").asText(null);
-                        if (type == null || !type.contains("Schedule")) continue;
+            if (results.isEmpty()) {
+                break;
+            }
 
-                        String flowNamespace = triggerNode.path("triggerContext").path("namespace").asText(null);
-                        String flowId = triggerNode.path("triggerContext").path("flowId").asText(null);
-                        String triggerId = triggerNode.path("triggerContext").path("triggerId").asText(null);
-                        boolean disabled = triggerNode.path("triggerContext").path("disabled").asBoolean(false);
-                        double epoch = triggerNode.path("triggerContext").path("date").asDouble(0);
+            for (TriggerControllerTriggers trigger : results) {
 
-                        String name = flowNamespace + "." + flowId + "#" + triggerId;
-                        runContext.logger().info("Trigger: {} -> disabled={} lastExecEpoch={}", name, disabled, epoch);
+                if (trigger.getAbstractTrigger() == null ||
+                    !trigger.getAbstractTrigger().getType().contains("Schedule")) {
+                    continue;
+                }
+                var context = trigger.getTriggerContext();
+                if (context == null) continue;
 
-                        // 🚫 Disabled triggers
-                        if (disabled) {
-                            issues.add(name + " (🚫 Disabled trigger)");
-                            runContext.logger().warn("⚠️ Disabled: {}", name);
-                            continue;
-                        }
+                String flowNamespace = context.getNamespace();
+                String flowId = context.getFlowId();
+                String triggerId = context.getTriggerId();
+                boolean disabled = Boolean.TRUE.equals(context.getDisabled());
+                Instant lastExec = context.getDate() != null ? context.getDate().toInstant() : null;
 
-                        // ⏰ Stuck detection
-                        if (epoch > 0) {
-                            Instant lastExec = Instant.ofEpochSecond((long) epoch);
-                            long minutesLate = Duration.between(lastExec, now).toMinutes();
+                String name = flowNamespace + "." + flowId + "#" + triggerId;
 
-                            if (minutesLate >= threshold) {
-                                issues.add(name + " (⏰ Stuck: last execution was " + minutesLate + " min ago)");
-                                runContext.logger().warn("⚠️ Stuck: {} ({} minutes late)", name, minutesLate);
-                            } else {
-                                runContext.logger().info("✅ {} OK | last execution {} min ago", name, minutesLate);
-                            }
-                        } else {
-                            runContext.logger().warn("⚠️ Missing last execution timestamp for {}", name);
-                        }
-
-                    } catch (Exception e) {
-                        runContext.logger().error("Error evaluating trigger node: {}", e.getMessage(), e);
-                    }
+                // 🚫 Disabled triggers
+                if (disabled) {
+                    issues.add(name + " (🚫 Disabled trigger)");
+                    continue;
                 }
 
-                more = returned == size;
-                page++;
+                if (lastExec != null) {
+                    long minutesLate = Duration.between(lastExec, now).toMinutes();
+                    if (minutesLate >= threshold) {
+                        issues.add(name + " (⏰ Stuck: last execution was " + minutesLate + " min ago)");
+                    }
+                } else {
+                    issues.add(name + " (⚠️ Missing last execution timestamp)");
+                }
+
+
             }
-        } catch (Exception e) {
-            runContext.logger().error("❌ Error while checking triggers via Trigger API: {}", e.getMessage(), e);
+
+            more = returned == size;
+            page++;
         }
 
-        runContext.logger().info("✅ Detection complete: {} issues found", issues.size());
+
         if (!issues.isEmpty()) {
-            runContext.logger().warn("⚠️ Problematic triggers:\n - {}", String.join("\n - ", issues));
+            runContext.logger().warn("⚠️ Problematic triggers found: {}", issues.size());
+            for (String issue : issues) {
+                runContext.logger().warn(" - {}", issue);
+            }
         }
-
+        runContext.logger().info("✅ Detection complete: {} issues found", issues.size());
         return new Output(issues, issues.size());
     }
 
