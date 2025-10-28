@@ -44,7 +44,7 @@ import java.util.*;
                   - id: detect_stuck_schedules
                     type: io.kestra.plugin.kestra.triggers.DetectStuckOrDisabledSchedules
                     namespace: "company.team"
-                    thresholdMinutes: 60
+                    thresholdMinutes: 5
                     auth:
                       username: "admin"
                       password: "yourpassword"
@@ -60,7 +60,7 @@ public class DetectStuckOrDisabledSchedules extends AbstractKestraTask
 
     @Schema(title = "Threshold in minutes to consider a schedule overdue.")
     @Builder.Default
-    private Property<Integer> thresholdMinutes = Property.ofValue(60);
+    private Property<Integer> thresholdMinutes = Property.ofValue(5);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -68,16 +68,17 @@ public class DetectStuckOrDisabledSchedules extends AbstractKestraTask
         TriggersApi triggersApi = kestraClient.triggers();
 
 
-        int threshold = runContext.render(this.thresholdMinutes).as(Integer.class).orElse(60);
+        int threshold = runContext.render(this.thresholdMinutes).as(Integer.class).orElse(5);
         String tenantId = runContext.flowInfo().tenantId();
         String namespaceToUse = this.namespace != null ? this.namespace : runContext.flowInfo().namespace();
 
         runContext.logger().info(
-            "🔍 Detecting stuck or disabled schedule triggers (tenant='{}', namespace='{}', threshold={} min)",
+            "Detecting stuck or disabled schedule triggers (tenant='{}', namespace='{}', threshold={} min)",
             tenantId, namespaceToUse, threshold
         );
 
-        List<String> issues = new ArrayList<>();
+        List<TriggerId> disabledTriggers = new ArrayList<>();
+        List<TriggerId> stuckTriggers = new ArrayList<>();
         Instant now = Instant.now();
 
         int page = 1;
@@ -99,8 +100,7 @@ public class DetectStuckOrDisabledSchedules extends AbstractKestraTask
             );
 
             List<TriggerControllerTriggers> results = triggersResponse.getResults();
-            int returned = results.size();
-            runContext.logger().info("📦 Trigger API returned {} triggers (page {})", returned, page);
+
 
             if (results.isEmpty()) {
                 break;
@@ -109,64 +109,78 @@ public class DetectStuckOrDisabledSchedules extends AbstractKestraTask
             for (TriggerControllerTriggers trigger : results) {
 
                 if (trigger.getAbstractTrigger() == null ||
-                    !trigger.getAbstractTrigger().getType().contains("Schedule")) {
+                    !trigger.getAbstractTrigger().getType().equals("io.kestra.plugin.core.trigger.Schedule")) {
                     continue;
                 }
                 var context = trigger.getTriggerContext();
                 if (context == null) continue;
 
-                String flowNamespace = context.getNamespace();
-                String flowId = context.getFlowId();
-                String triggerId = context.getTriggerId();
-                boolean disabled = Boolean.TRUE.equals(context.getDisabled());
-                Instant lastExec = context.getDate() != null ? context.getDate().toInstant() : null;
+                TriggerId triggerId = new TriggerId(
+                    tenantId,
+                    context.getNamespace(),
+                    context.getFlowId(),
+                    context.getTriggerId()
+                );
+                boolean isDisabled = Boolean.TRUE.equals(trigger.getAbstractTrigger().getDisabled());
+                Instant nextExec = context.getNextExecutionDate() != null
+                    ? context.getNextExecutionDate().toInstant()
+                    : null;
 
-                String name = flowNamespace + "." + flowId + "#" + triggerId;
 
-                // 🚫 Disabled triggers
                 if (disabled) {
-                    issues.add(name + " (🚫 Disabled trigger)");
-                    continue;
+                    disabledTriggers.add(triggerId);
+                } else if (nextExec != null && now.isAfter(nextExec.plus(Duration.ofMinutes(threshold)))) {
+                    stuckTriggers.add(triggerId);
+
                 }
-
-                if (lastExec != null) {
-                    long minutesLate = Duration.between(lastExec, now).toMinutes();
-                    if (minutesLate >= threshold) {
-                        issues.add(name + " (⏰ Stuck: last execution was " + minutesLate + " min ago)");
-                    }
-                } else {
-                    issues.add(name + " (⚠️ Missing last execution timestamp)");
-                }
-
-
             }
 
-            more = returned == size;
+            more = results.size() == size;
             page++;
         }
 
+        int totalIssues = disabledTriggers.size() + stuckTriggers.size();
 
-        if (!issues.isEmpty()) {
-            runContext.logger().warn("⚠️ Problematic triggers found: {}", issues.size());
-            for (String issue : issues) {
-                runContext.logger().warn(" - {}", issue);
-            }
-        }
-        runContext.logger().info("✅ Detection complete: {} issues found", issues.size());
-        return new Output(issues, issues.size());
+        runContext.logger().info("Detection complete: {} issues found", totalIssues);
+        return new Output(disabledTriggers, stuckTriggers, totalIssues,
+            String.format("Detection complete: %d issues found", totalIssues));
     }
 
     @Data
+    public static class TriggerId {
+        private String tenantId;
+        private String namespace;
+        private String flowId;
+        private String triggerId;
+
+        public TriggerId(String tenantId, String namespace, String flowId, String triggerId) {
+            this.tenantId = tenantId;
+            this.namespace = namespace;
+            this.flowId = flowId;
+            this.triggerId = triggerId;
+        }
+    }
+
+
+    @Data
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "List of stuck or disabled schedule triggers")
-        private List<String> issues;
+        @Schema(title = "List of disabled schedule triggers")
+        private List<TriggerId> disabledTriggers;
+
+        @Schema(title = "List of stuck schedule triggers")
+        private List<TriggerId> stuckTriggers;
 
         @Schema(title = "Total number of issues found")
         private Integer totalFound;
 
-        public Output(List<String> issues, Integer totalFound) {
-            this.issues = issues;
+        @Schema(title = "Readable summary for logging and UI")
+        private String summary;
+
+        public Output(List<TriggerId> disabledTriggers, List<TriggerId> stuckTriggers, Integer totalFound, String format) {
+            this.disabledTriggers = disabledTriggers;
+            this.stuckTriggers = stuckTriggers;
             this.totalFound = totalFound;
+            this.summary = summary;
         }
     }
 }
