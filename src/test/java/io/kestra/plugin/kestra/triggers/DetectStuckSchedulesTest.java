@@ -5,10 +5,12 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.AbstractKestraContainerTest;
 import io.kestra.plugin.kestra.triggers.DetectStuckOrDisabledSchedules.Output;
+import io.kestra.core.models.property.Property;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.time.Duration;
+import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -21,35 +23,24 @@ public class DetectStuckSchedulesTest extends AbstractKestraContainerTest {
 
     @Test
     void shouldRunSuccessfully() throws Exception {
-        // ✅ Create a real RunContext from factory
+        // Create a real RunContext from factory
         RunContext runContext = runContextFactory.of();
 
-        // ✅ Instantiate your task
-        DetectStuckOrDisabledSchedules task = new DetectStuckOrDisabledSchedules();
-
-        // ✅ Set namespace reflectively (same as your version)
-        var field = task.getClass().getDeclaredField("namespace");
-        field.setAccessible(true);
-        field.set(task, "company.team");
-
-        // ✅ Run the task with real context
+        // Build the task using its builder
+        DetectStuckOrDisabledSchedules task = DetectStuckOrDisabledSchedules.builder()
+            .namespace("company.team")
+            .threshold(Property.ofValue(Duration.ofMinutes(1))) // matches your plugin definition
+            .build();
         Output output = task.run(runContext);
+
+
+        // Validate output
+
         assertThat(output, notNullValue());
+        assertThat(output.getDisabledTriggers(), notNullValue());
+        assertThat(output.getStuckTriggers(), notNullValue());
+        assertThat(output.getTotalFound(), greaterThanOrEqualTo(0));
 
-        // ✅ Access fields reflectively
-        var issuesField = output.getClass().getDeclaredField("issues");
-        issuesField.setAccessible(true);
-        @SuppressWarnings("unchecked")
-        List<String> issues = (List<String>) issuesField.get(output);
-
-        var totalField = output.getClass().getDeclaredField("totalFound");
-        totalField.setAccessible(true);
-        Integer totalFound = (Integer) totalField.get(output);
-
-        // ✅ Validate results
-        assertThat(issues, notNullValue());
-        assertThat(totalFound, greaterThanOrEqualTo(0));
-
-        System.out.println("✅ Test completed successfully. Found " + totalFound + " issues: " + issues);
+        System.out.println("Test completed successfully. Total issues found: " + output.getTotalFound());
     }
 }

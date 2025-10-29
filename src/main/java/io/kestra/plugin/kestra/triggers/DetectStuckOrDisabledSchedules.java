@@ -16,8 +16,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.time.*;
-import java.util.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @SuperBuilder
 @ToString
@@ -44,7 +46,7 @@ import java.util.*;
                   - id: detect_stuck_schedules
                     type: io.kestra.plugin.kestra.triggers.DetectStuckOrDisabledSchedules
                     namespace: "company.team"
-                    thresholdMinutes: 5
+                    threshold: "PT5M"   # ISO-8601 duration (5 minutes)
                     auth:
                       username: "admin"
                       password: "yourpassword"
@@ -58,23 +60,26 @@ public class DetectStuckOrDisabledSchedules extends AbstractKestraTask
     @PluginProperty
     private String namespace;
 
-    @Schema(title = "Threshold in minutes to consider a schedule overdue.")
+    @Schema(title = "Threshold duration to consider a schedule overdue (default 1 minute).")
     @Builder.Default
-    private Property<Integer> thresholdMinutes = Property.ofValue(5);
+    private Property<Duration> threshold = Property.ofValue(Duration.ofMinutes(1));
 
     @Override
     public Output run(RunContext runContext) throws Exception {
         KestraClient kestraClient = kestraClient(runContext);
         TriggersApi triggersApi = kestraClient.triggers();
 
+Duration thresholdDuration = runContext.render(this.threshold)
+            .as(Duration.class)
+            .orElse(Duration.ofMinutes(1));
 
-        int threshold = runContext.render(this.thresholdMinutes).as(Integer.class).orElse(5);
+        
         String tenantId = runContext.flowInfo().tenantId();
         String namespaceToUse = this.namespace != null ? this.namespace : runContext.flowInfo().namespace();
 
         runContext.logger().info(
             "Detecting stuck or disabled schedule triggers (tenant='{}', namespace='{}', threshold={} min)",
-            tenantId, namespaceToUse, threshold
+            tenantId, namespaceToUse, thresholdDuration
         );
 
         List<TriggerId> disabledTriggers = new ArrayList<>();
@@ -83,10 +88,10 @@ public class DetectStuckOrDisabledSchedules extends AbstractKestraTask
 
         int page = 1;
         int size = 100;
-        boolean more = true;
+       
 
 
-        while (more) {
+        while (true) {
             PagedResultsTriggerControllerTriggers triggersResponse = triggersApi.searchTriggers(
                 page,
                 size,
@@ -102,7 +107,7 @@ public class DetectStuckOrDisabledSchedules extends AbstractKestraTask
             List<TriggerControllerTriggers> results = triggersResponse.getResults();
 
 
-            if (results.isEmpty()) {
+            if (results == null ||results.isEmpty()) {
                 break;
             }
 
@@ -127,23 +132,24 @@ public class DetectStuckOrDisabledSchedules extends AbstractKestraTask
                     : null;
 
 
-                if (disabled) {
+                if (isDisabled) {
                     disabledTriggers.add(triggerId);
-                } else if (nextExec != null && now.isAfter(nextExec.plus(Duration.ofMinutes(threshold)))) {
+                } else if (nextExec != null && now.isAfter(nextExec.plus(thresholdDuration))) {
                     stuckTriggers.add(triggerId);
-
                 }
             }
-
-            more = results.size() == size;
+        // Break if we have no more pages
+            if (results.size() < size) {
+                break;
+            }
+            
             page++;
         }
 
         int totalIssues = disabledTriggers.size() + stuckTriggers.size();
 
         runContext.logger().info("Detection complete: {} issues found", totalIssues);
-        return new Output(disabledTriggers, stuckTriggers, totalIssues,
-            String.format("Detection complete: %d issues found", totalIssues));
+        return new Output(disabledTriggers, stuckTriggers, totalIssues);
     }
 
     @Data
@@ -173,14 +179,13 @@ public class DetectStuckOrDisabledSchedules extends AbstractKestraTask
         @Schema(title = "Total number of issues found")
         private Integer totalFound;
 
-        @Schema(title = "Readable summary for logging and UI")
-        private String summary;
+       
 
-        public Output(List<TriggerId> disabledTriggers, List<TriggerId> stuckTriggers, Integer totalFound, String format) {
+        public Output(List<TriggerId> disabledTriggers, List<TriggerId> stuckTriggers, Integer totalFound) {
             this.disabledTriggers = disabledTriggers;
             this.stuckTriggers = stuckTriggers;
             this.totalFound = totalFound;
-            this.summary = summary;
+            
         }
     }
 }
