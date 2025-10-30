@@ -58,7 +58,7 @@ public class DetectStuckOrDisabledSchedules extends AbstractKestraTask
     implements RunnableTask<DetectStuckOrDisabledSchedules.Output> {
 
     @PluginProperty
-    private String namespace;
+    private Property<String> namespace;
 
     @Schema(title = "Threshold duration to consider a schedule overdue (default 1 minute).")
     @Builder.Default
@@ -69,13 +69,16 @@ public class DetectStuckOrDisabledSchedules extends AbstractKestraTask
         KestraClient kestraClient = kestraClient(runContext);
         TriggersApi triggersApi = kestraClient.triggers();
 
-Duration thresholdDuration = runContext.render(this.threshold)
+        Duration thresholdDuration = runContext.render(this.threshold)
             .as(Duration.class)
             .orElse(Duration.ofMinutes(1));
 
-        
+
         String tenantId = runContext.flowInfo().tenantId();
-        String namespaceToUse = this.namespace != null ? this.namespace : runContext.flowInfo().namespace();
+
+        String namespaceToUse = runContext.render(this.namespace)
+            .as(String.class)
+            .orElse(runContext.flowInfo().namespace());
 
         runContext.logger().info(
             "Detecting stuck or disabled schedule triggers (tenant='{}', namespace='{}', threshold={} min)",
@@ -88,7 +91,6 @@ Duration thresholdDuration = runContext.render(this.threshold)
 
         int page = 1;
         int size = 100;
-       
 
 
         while (true) {
@@ -107,7 +109,7 @@ Duration thresholdDuration = runContext.render(this.threshold)
             List<TriggerControllerTriggers> results = triggersResponse.getResults();
 
 
-            if (results == null ||results.isEmpty()) {
+            if (results == null || results.isEmpty()) {
                 break;
             }
 
@@ -138,11 +140,11 @@ Duration thresholdDuration = runContext.render(this.threshold)
                     stuckTriggers.add(triggerId);
                 }
             }
-        // Break if we have no more pages
+            // Break if we have no more pages
             if (results.size() < size) {
                 break;
             }
-            
+
             page++;
         }
 
@@ -179,13 +181,12 @@ Duration thresholdDuration = runContext.render(this.threshold)
         @Schema(title = "Total number of issues found")
         private Integer totalFound;
 
-       
 
         public Output(List<TriggerId> disabledTriggers, List<TriggerId> stuckTriggers, Integer totalFound) {
             this.disabledTriggers = disabledTriggers;
             this.stuckTriggers = stuckTriggers;
             this.totalFound = totalFound;
-            
+
         }
     }
 }
