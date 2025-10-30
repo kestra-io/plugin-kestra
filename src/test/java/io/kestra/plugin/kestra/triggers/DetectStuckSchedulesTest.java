@@ -10,6 +10,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -18,8 +19,11 @@ import static org.hamcrest.Matchers.*;
 @KestraTest
 public class DetectStuckSchedulesTest extends AbstractKestraContainerTest {
 
-    protected String kestraImage = "kestra/kestra:latest";
+    static {
+        System.setProperty("KESRA_IMAGE", "ghcr.io/kestra-io/kestra:develop");
+    }
 
+    protected String kestraImage = "ghcr.io/kestra-io/kestra:develop";
 
     @Inject
     private RunContextFactory runContextFactory;
@@ -32,98 +36,78 @@ public class DetectStuckSchedulesTest extends AbstractKestraContainerTest {
     }
 
     @Test
-    void shouldRunSuccessfully() throws Exception {
-        // Create a real RunContext from factory
+    void shouldDetectDisabledAndStuckTriggers() throws Exception {
         RunContext runContext = runContextFactory.of();
         KestraClient client = buildClient();
 
         String namespace = "company.team.detect." + UUID.randomUUID().toString().substring(0, 6);
 
-        // Create flows with schedule triggers
-        // Normal (non-stuck, enabled)
-        String flowEnabledYaml =
-            """
-                id: flow_enabled
-                namespace: %s
-                tasks:
-                  - id: log
-                    type: io.kestra.plugin.core.log.Log
-                    message: "Enabled trigger test"
-                triggers:
-                  - id: schedule_enabled
-                    type: io.kestra.plugin.core.trigger.Schedule
-                    cron: "* * * * *"
-                    disabled: false
-                """.formatted(namespace);
-        //client.flows().createFlow(TENANT_ID, flowEnabledYaml);
+        // 1️⃣ Enabled trigger
+        client.flows().createFlow(TENANT_ID, """
+            id: flow_enabled
+            namespace: %s
+            tasks:
+              - id: log
+                type: io.kestra.plugin.core.log.Log
+                message: "Enabled trigger test"
+            triggers:
+              - id: schedule_enabled
+                type: io.kestra.plugin.core.trigger.Schedule
+                cron: "* * * * *"
+                disabled: false
+        """.formatted(namespace));
 
-        //Disabled trigger
-        String flowDisabledYaml =
-            """
-                id: flow_disabled
-                namespace: %s
-                tasks:
-                  - id: log
-                    type: io.kestra.plugin.core.log.Log
-                    message: "Disabled trigger test"
-                triggers:
-                  - id: schedule_disabled
-                    type: io.kestra.plugin.core.trigger.Schedule
-                    cron: "* * * * *"
-                    disabled: true
-                """.formatted(namespace);
-        //client.flows().createFlow(TENANT_ID, flowDisabledYaml);
+        // 2️⃣ Disabled trigger
+        client.flows().createFlow(TENANT_ID, """
+            id: flow_disabled
+            namespace: %s
+            tasks:
+              - id: log
+                type: io.kestra.plugin.core.log.Log
+                message: "Disabled trigger test"
+            triggers:
+              - id: schedule_disabled
+                type: io.kestra.plugin.core.trigger.Schedule
+                cron: "* * * * *"
+                disabled: true
+        """.formatted(namespace));
 
-        // Stuck trigger (simulate by setting past nextExecutionDate)
-        // For testing, we�ll just rely on threshold comparison to catch this one.
-        String flowStuckYaml =
-            """
-                id: flow_stuck
-                namespace: %s
-                tasks:
-                  - id: log
-                    type: io.kestra.plugin.core.log.Log
-                    message: "Stuck trigger test"
-                triggers:
-                  - id: schedule_stuck
-                    type: io.kestra.plugin.core.trigger.Schedule
-                    cron: "* * * * *"
-                    disabled: false
-                """.formatted(namespace);
-        try {
-            client.flows().createFlow(TENANT_ID, flowEnabledYaml);
-            client.flows().createFlow(TENANT_ID, flowDisabledYaml);
-            client.flows().createFlow(TENANT_ID, flowStuckYaml);
-        } catch (io.kestra.sdk.internal.ApiException e) {
-            System.out.println("Skipping flow creation: likely OSS mode (" + e.getCode() + ")");
-        }
+        // 3️⃣ Stuck trigger
+        client.flows().createFlow(TENANT_ID, """
+            id: flow_stuck
+            namespace: %s
+            tasks:
+              - id: log
+                type: io.kestra.plugin.core.log.Log
+                message: "Stuck trigger test"
+            triggers:
+              - id: schedule_stuck
+                type: io.kestra.plugin.core.trigger.Schedule
+                cron: "* * * * *"
+                disabled: false
+        """.formatted(namespace));
+
+        Thread.sleep(3000); // wait a little
+
         DetectStuckOrDisabledSchedules task = DetectStuckOrDisabledSchedules.builder()
             .namespace(Property.ofValue(namespace))
-            .threshold(Property.ofValue(Duration.ofSeconds(10)))
+            .threshold(Property.ofValue(Duration.ofSeconds(5)))
             .build();
-        DetectStuckOrDisabledSchedules.Output output = null;
-        try {
-            output = task.run(runContext);
-        } catch (io.kestra.sdk.internal.ApiException e) {
-            // OSS mode returns 400 (missing tenant)
-            if (e.getCode() == 400 || e.getCode() == 401) {
-                // Skip gracefully, test passes in OSS
-                return;
-            }
-            throw e; // rethrow other unexpected errors
-        }
 
-
-        // Validate output
+        DetectStuckOrDisabledSchedules.Output output = task.run(runContext);
 
         assertThat(output, notNullValue());
-        assertThat(output.getDisabledTriggers(), notNullValue());
-        assertThat(output.getStuckTriggers(), notNullValue());
 
-        // The number of detected issues should match: 1 disabled + possibly 1 stuck
-        assertThat(output.getDisabledTriggers().size(), greaterThanOrEqualTo(1));
-        assertThat(output.getStuckTriggers().size(), greaterThanOrEqualTo(1));
-        assertThat(output.getTotalFound(), greaterThanOrEqualTo(2));
+        // Convert TriggerId -> String
+        List<String> disabledIds = output.getDisabledTriggers().stream()
+            .map(DetectStuckOrDisabledSchedules.TriggerId::getTriggerId)
+            .toList();
+        List<String> stuckIds = output.getStuckTriggers().stream()
+            .map(DetectStuckOrDisabledSchedules.TriggerId::getTriggerId)
+            .toList();
 
+        assertThat(disabledIds, hasItem("schedule_disabled"));
+        assertThat(stuckIds, hasItem("schedule_stuck"));
+        assertThat(output.getTotalFound(), equalTo(2));
     }
 }
