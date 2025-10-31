@@ -19,11 +19,7 @@ import static org.hamcrest.Matchers.*;
 @KestraTest
 public class DetectStuckSchedulesTest extends AbstractKestraContainerTest {
 
-    static {
-        System.setProperty("KESRA_IMAGE", "ghcr.io/kestra-io/kestra:develop");
-    }
 
-    protected String kestraImage = "ghcr.io/kestra-io/kestra:develop";
 
     @Inject
     private RunContextFactory runContextFactory;
@@ -42,7 +38,7 @@ public class DetectStuckSchedulesTest extends AbstractKestraContainerTest {
 
         String namespace = "company.team.detect." + UUID.randomUUID().toString().substring(0, 6);
 
-        // 1️⃣ Enabled trigger
+        // Enabled trigger
         client.flows().createFlow(TENANT_ID, """
             id: flow_enabled
             namespace: %s
@@ -57,7 +53,7 @@ public class DetectStuckSchedulesTest extends AbstractKestraContainerTest {
                 disabled: false
         """.formatted(namespace));
 
-        // 2️⃣ Disabled trigger
+        // Disabled trigger
         client.flows().createFlow(TENANT_ID, """
             id: flow_disabled
             namespace: %s
@@ -72,7 +68,7 @@ public class DetectStuckSchedulesTest extends AbstractKestraContainerTest {
                 disabled: true
         """.formatted(namespace));
 
-        // 3️⃣ Stuck trigger
+        // Stuck trigger
         client.flows().createFlow(TENANT_ID, """
             id: flow_stuck
             namespace: %s
@@ -87,7 +83,7 @@ public class DetectStuckSchedulesTest extends AbstractKestraContainerTest {
                 disabled: false
         """.formatted(namespace));
 
-        Thread.sleep(3000); // wait a little
+
 
         DetectStuckOrDisabledSchedules task = DetectStuckOrDisabledSchedules.builder()
             .namespace(Property.ofValue(namespace))
