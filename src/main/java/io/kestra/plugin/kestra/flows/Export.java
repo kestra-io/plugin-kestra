@@ -65,10 +65,21 @@ public class Export extends AbstractKestraTask implements RunnableTask<Export.Ou
         String rNamespace = runContext.render(namespace).as(String.class).orElse(null);
         List<String> rLabels = runContext.render(labels).asList(String.class);
 
-        List<QueryFilter> filters = Stream.of(
-                rNamespace != null ? new QueryFilter().field(QueryFilterField.NAMESPACE).operation(QueryFilterOp.EQUALS).value(rNamespace) : null,
-                rLabels != null ? new QueryFilter().field(QueryFilterField.LABELS).operation(QueryFilterOp.EQUALS).value(rLabels) : null
-        ).filter(Objects::nonNull).toList();
+        List<QueryFilter> filters = new java.util.ArrayList<>(Stream.of(
+                rNamespace != null ? new QueryFilter().field(QueryFilterField.NAMESPACE).operation(QueryFilterOp.EQUALS).value(rNamespace) : null
+                ).filter(Objects::nonNull).toList());
+
+        if (rLabels != null && !rLabels.isEmpty()) {
+            rLabels.forEach(label -> {
+                filters.add(
+                        new QueryFilter()
+                                .field(QueryFilterField.STATE)
+                                .operation(QueryFilterOp.EQUALS)
+                                .value(label)
+                );
+            });
+        }
+
 
         KestraClient kestraClient = kestraClient(runContext);
         byte[] zipBytes = kestraClient.flows().exportFlowsByQuery(
