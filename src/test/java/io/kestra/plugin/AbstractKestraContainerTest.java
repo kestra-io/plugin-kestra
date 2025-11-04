@@ -25,7 +25,7 @@ public class AbstractKestraContainerTest {
     @Container
     protected static GenericContainer<?> kestraContainer =
         new GenericContainer<>(
-            DockerImageName.parse("ghcr.io/kestra-io/kestra-ee:develop"))
+            DockerImageName.parse("europe-west1-docker.pkg.dev/kestra-host/docker/kestra-ee:develop"))
             .withExposedPorts(8080)
             .withEnv("KESTRA_SECURITY_SUPER_ADMIN_USERNAME", USERNAME)
             .withEnv("KESTRA_SECURITY_SUPER_ADMIN_PASSWORD", PASSWORD)
@@ -45,11 +45,11 @@ public class AbstractKestraContainerTest {
                     type: jdbc
                     jdbc:
                       secret: I6EGNzRESu3X3pKZidrqCGOHQFUFC0yK
-                      security:
-                        super-admin:
-                          username: admin@admin.com
-                          password: Root!1234
-                          tenantAdminAccess: main
+                    security:
+                      super-admin:
+                        username: admin@admin.com
+                        password: Root!1234
+                        tenantAdminAccess: main
                 """)
             .withCommand("server local")
             .waitingFor(
