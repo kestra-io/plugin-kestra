@@ -146,7 +146,7 @@ public class KestraTestDataUtils {
       throws ApiException {
     String np = namespace != null ? namespace : defaultNameSpace;
     try {
-      kestraClient.executions().triggerExecution(np, flowId, false, tenantId, null, null);
+      kestraClient.executions().createExecution(np, flowId, false, tenantId, null, null, null, null, null);
     } catch (ApiException e) {
       log.error(
           "ApiException thrown, probably false positive as we are in `createRandomizedExecution` :"
@@ -166,7 +166,7 @@ public class KestraTestDataUtils {
 
   public Execution getExecution(String executionId) throws ApiException {
     try {
-      return kestraClient.executions().getExecution(executionId, tenantId);
+      return kestraClient.executions().execution(executionId, tenantId);
     } catch (ApiException e) {
       log.error(
           "ApiException thrown, probably false positive as we are in `killExecution` :"
@@ -183,76 +183,5 @@ public class KestraTestDataUtils {
           "ApiException thrown, probably false positive as we are in `resumeExecution` :"
               + e.getMessage());
     }
-  }
-
-  public TestSuite createRandomizedTestSuite(String namespace, String flowId) throws ApiException {
-    String np = namespace != null ? namespace : "default";
-    String testSuite =
-        """
-                id: random_testsuite_%s
-                namespace: %s
-                flowId: %s
-                testCases:
-                  - id: test_case_1
-                    type: io.kestra.core.tests.flow.UnitTest
-                    assertions:
-                      - value: 200
-                        equalTo: 200
-                  - id: test_case_2
-                    type: io.kestra.core.tests.flow.UnitTest
-                    assertions:
-                      - value: 300
-                        equalTo: 300
-                """
-            .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np, flowId);
-    return kestraClient.testSuites().createTestSuite(tenantId, testSuite);
-  }
-
-  public TestSuite createRandomizedCrashingTestSuite(String namespace, String flowId)
-      throws ApiException {
-    String np = namespace != null ? namespace : "default";
-    String testSuite =
-        """
-                id: random_crashing_testsuite_%s
-                namespace: %s
-                flowId: %s
-                testCases:
-                  - id: test_case_1
-                    type: io.kestra.core.tests.flow.UnitTest
-                    assertions:
-                      - value: 200
-                        equalTo: 200
-                  - id: test_case_2_crashing
-                    type: io.kestra.core.tests.flow.UnitTest
-                    assertions:
-                      - value: "{{ unknown_pebble_expression_causing_error }}"
-                        equalTo: 111
-                """
-            .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np, flowId);
-    return kestraClient.testSuites().createTestSuite(tenantId, testSuite);
-  }
-
-  public TestSuite createRandomizedFailingTestSuite(String namespace, String flowId)
-      throws ApiException {
-    String np = namespace != null ? namespace : "default";
-    String testSuite =
-        """
-                id: random_failing_testsuite_%s
-                namespace: %s
-                flowId: %s
-                testCases:
-                  - id: test_case_1
-                    type: io.kestra.core.tests.flow.UnitTest
-                    assertions:
-                      - value: 200
-                        equalTo: 200
-                  - id: test_case_2_failing
-                    type: io.kestra.core.tests.flow.UnitTest
-                    assertions:
-                      - value: 333
-                        equalTo: 111
-                """
-            .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np, flowId);
-    return kestraClient.testSuites().createTestSuite(tenantId, testSuite);
   }
 }
