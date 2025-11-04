@@ -98,7 +98,7 @@ public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutpu
             rDeleteStorage);
 
     KestraClient kestraClient = kestraClient(runContext);
-    Execution execution = kestraClient.executions().getExecution(rExecutionId, rTenantId);
+    Execution execution = kestraClient.executions().execution(rExecutionId, rTenantId);
 
     if (execution == null) {
       throw new IllegalArgumentException("Execution " + rExecutionId + " not found");
@@ -114,7 +114,7 @@ public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutpu
 
       kestraClient
           .executions()
-          .deleteExecution(rExecutionId, rDeleteLogs, rDeleteMetrics, rDeleteStorage, rTenantId);
+          .deleteExecution(rExecutionId, rTenantId, rDeleteLogs, rDeleteMetrics, rDeleteStorage);
       runContext.logger().debug("Successfully deleted execution {}", rExecutionId);
     }
 
