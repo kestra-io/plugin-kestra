@@ -45,11 +45,11 @@ public class AbstractKestraContainerTest {
                     type: jdbc
                     jdbc:
                       secret: I6EGNzRESu3X3pKZidrqCGOHQFUFC0yK
-                    security:
-                      super-admin:
-                        username: admin@admin.com
-                        password: Root!1234
-                        tenantAdminAccess: main
+                  security:
+                    super-admin:
+                      username: admin@admin.com
+                      password: Root!1234
+                      tenantAdminAccess: main
                 """)
             .withCommand("server local")
             .waitingFor(
