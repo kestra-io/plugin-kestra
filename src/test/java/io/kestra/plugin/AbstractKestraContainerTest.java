@@ -35,10 +35,10 @@ public class AbstractKestraContainerTest {
             .withEnv("KESTRA_CONFIGURATION",
                 """
                 kestra:
-                      ee:
-                        tenants:
-                          enabled: false
-                          defaultTenant: true
+                  ee:
+                    tenants:
+                      enabled: false
+                      defaultTenant: true
                   encryption:
                     secret-key: I6EGNzRESu3X3pKZidrqCGOHQFUFC0yK
                   secret:
