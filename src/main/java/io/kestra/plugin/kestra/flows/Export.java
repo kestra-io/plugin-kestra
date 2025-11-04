@@ -7,6 +7,9 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
+import io.kestra.sdk.model.QueryFilter;
+import io.kestra.sdk.model.QueryFilterField;
+import io.kestra.sdk.model.QueryFilterOp;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -15,6 +18,8 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 @SuperBuilder
 @ToString
@@ -60,14 +65,26 @@ public class Export extends AbstractKestraTask implements RunnableTask<Export.Ou
         String rNamespace = runContext.render(namespace).as(String.class).orElse(null);
         List<String> rLabels = runContext.render(labels).asList(String.class);
 
+        List<QueryFilter> filters = new java.util.ArrayList<>(Stream.of(
+                rNamespace != null ? new QueryFilter().field(QueryFilterField.NAMESPACE).operation(QueryFilterOp.EQUALS).value(rNamespace) : null
+                ).filter(Objects::nonNull).toList());
+
+        if (rLabels != null && !rLabels.isEmpty()) {
+            rLabels.forEach(label -> {
+                filters.add(
+                        new QueryFilter()
+                                .field(QueryFilterField.STATE)
+                                .operation(QueryFilterOp.EQUALS)
+                                .value(label)
+                );
+            });
+        }
+
+
         KestraClient kestraClient = kestraClient(runContext);
         byte[] zipBytes = kestraClient.flows().exportFlowsByQuery(
             tId,
-            null,
-            null,
-            null,
-            rNamespace,
-            rLabels
+            filters
         );
 
 

@@ -27,6 +27,8 @@ import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 @SuperBuilder(toBuilder = true)
 @ToString
@@ -197,28 +199,70 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
         ZonedDateTime rStartDate = runContext.render(this.startDate).as(ZonedDateTime.class).orElse(null);
         ZonedDateTime rEndDate = runContext.render(this.endDate).as(ZonedDateTime.class).orElse(null);
         Duration rTimerange = runContext.render(this.timeRange).as(Duration.class).orElse(null);
+
+        if (rTimerange != null) {
+            if (rStartDate != null && rEndDate != null) {
+                throw new IllegalVariableEvaluationException("`timeRange` cannot be used together with both `startDate` and `endDate`.");
+            } else if (rStartDate == null && rEndDate == null) {
+                ZonedDateTime now = ZonedDateTime.now();
+                rEndDate = now;
+                rStartDate = now.minus(rTimerange);
+            }
+        }
+
         List<StateType> rState = runContext.render(this.states).asList(StateType.class);
         Map<String, String> rLabels = runContext.render(this.labels).asMap(String.class, String.class);
         String rTriggerExecutionId = runContext.render(this.triggerExecutionId).as(String.class).orElse(null);
         ExecutionRepositoryInterfaceChildFilter rChildFilter = runContext.render(this.childFilter).as(ExecutionRepositoryInterfaceChildFilter.class).orElse(null);
 
+        List<QueryFilter> filters = new java.util.ArrayList<>(Stream.of(
+                rNamespace != null ? new QueryFilter().field(QueryFilterField.NAMESPACE).operation(QueryFilterOp.EQUALS).value(rNamespace) : null,
+                rFlowId != null ? new QueryFilter().field(QueryFilterField.FLOW_ID).operation(QueryFilterOp.EQUALS).value(rFlowId) : null,
+                rStartDate != null ? new QueryFilter().field(QueryFilterField.START_DATE).operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO).value(rStartDate) : null,
+                rEndDate != null ? new QueryFilter().field(QueryFilterField.START_DATE).operation(QueryFilterOp.GREATER_THAN_OR_EQUAL_TO).value(rEndDate) : null,
+                rTriggerExecutionId != null ? new QueryFilter().field(QueryFilterField.TRIGGER_EXECUTION_ID).operation(QueryFilterOp.EQUALS).value(rTriggerExecutionId) : null,
+                rChildFilter != null ? new QueryFilter().field(QueryFilterField.CHILD_FILTER).operation(QueryFilterOp.EQUALS).value(rChildFilter) : null
+        ).filter(Objects::nonNull).toList());
+
+        if (rFlowScopes != null && !rFlowScopes.isEmpty()) {
+            rFlowScopes.forEach(flowScope -> {
+                filters.add(
+                        new QueryFilter()
+                                .field(QueryFilterField.SCOPE)
+                                .operation(QueryFilterOp.EQUALS)
+                                .value(flowScope)
+                );
+            });
+        }
+
+        if (rState != null && !rState.isEmpty()) {
+            rState.forEach(state -> {
+                filters.add(
+                        new QueryFilter()
+                                .field(QueryFilterField.STATE)
+                                .operation(QueryFilterOp.EQUALS)
+                                .value(state)
+                );
+            });
+        }
+
+        if (rLabels != null && !rLabels.isEmpty()) {
+            rLabels.forEach((key, value) -> {
+                filters.add(
+                        new QueryFilter()
+                                .field(QueryFilterField.STATE)
+                                .operation(QueryFilterOp.EQUALS)
+                                .value(key + ":" + value)
+                );
+            });
+        }
+
         return kestraClient.executions().searchExecutions(
             page,
             size,
             tId,
-            null, // TODO: implement something for sorting?
-            null, // Filters is not working correctly in the SDK yet
             null,
-            rFlowScopes,
-            rNamespace,
-            rFlowId,
-            rStartDate != null ? rStartDate.toOffsetDateTime() : null,
-            rEndDate != null ? rEndDate.toOffsetDateTime() : null,
-            rTimerange != null ? rTimerange.toString() : null,
-            rState,
-            rLabels.entrySet().stream().map(label -> label.getKey() + ":" + label.getValue()).toList(),
-            rTriggerExecutionId,
-            rChildFilter
+            filters
         );
     }
 

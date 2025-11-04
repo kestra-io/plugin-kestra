@@ -1,8 +1,6 @@
 package io.kestra.plugin;
 
-import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.internal.ApiException;
-import io.kestra.sdk.model.Tenant;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.GenericContainer;
@@ -37,12 +35,21 @@ public class AbstractKestraContainerTest {
             .withEnv("KESTRA_CONFIGURATION",
                 """
                 kestra:
+                  ee:
+                    tenants:
+                      enabled: false
+                      defaultTenant: true
                   encryption:
                     secret-key: I6EGNzRESu3X3pKZidrqCGOHQFUFC0yK
                   secret:
                     type: jdbc
                     jdbc:
                       secret: I6EGNzRESu3X3pKZidrqCGOHQFUFC0yK
+                  security:
+                    super-admin:
+                      username: admin@admin.com
+                      password: Root!1234
+                      tenantAdminAccess: main
                 """)
             .withCommand("server local")
             .waitingFor(
@@ -64,14 +71,5 @@ public class AbstractKestraContainerTest {
             PASSWORD,
             TENANT_ID
         );
-
-        generateData();
-    }
-
-    static void generateData() throws ApiException {
-        KestraClient kc = kestraTestDataUtils.getKestraClient();
-
-        Tenant tenant = new Tenant().id(TENANT_ID).name(TENANT_ID);
-        kc.tenants().create(tenant);
     }
 }
