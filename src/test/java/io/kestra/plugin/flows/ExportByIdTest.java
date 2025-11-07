@@ -5,6 +5,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.AbstractKestraContainerTest;
+import io.kestra.plugin.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.flows.ExportById;
 import io.kestra.sdk.model.FlowWithSource;
@@ -19,7 +20,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @KestraTest
-public class ExportByIdTest extends AbstractKestraContainerTest {
+public class ExportByIdTest extends AbstractKestraOssContainerTest {
 
     @Inject
     protected RunContextFactory runContextFactory;
