@@ -5,6 +5,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.AbstractKestraContainerTest;
+import io.kestra.plugin.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.flows.Export;
 import jakarta.inject.Inject;
@@ -12,7 +13,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.net.URI;
-import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -21,7 +21,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @KestraTest
-public class ExportTest extends AbstractKestraContainerTest {
+public class ExportTest extends AbstractKestraOssContainerTest {
 
     @Inject
     protected RunContextFactory runContextFactory;

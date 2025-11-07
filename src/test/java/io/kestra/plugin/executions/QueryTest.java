@@ -6,6 +6,7 @@ import io.kestra.core.models.tasks.common.FetchOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.AbstractKestraContainerTest;
+import io.kestra.plugin.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.executions.Query;
 import io.kestra.sdk.model.FlowWithSource;
@@ -16,7 +17,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @KestraTest
-public class QueryTest extends AbstractKestraContainerTest {
+public class QueryTest extends AbstractKestraOssContainerTest {
     @Inject
     protected RunContextFactory runContextFactory;
 

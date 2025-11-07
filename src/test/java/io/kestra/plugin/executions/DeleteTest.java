@@ -11,6 +11,7 @@ import io.kestra.core.models.tasks.common.FetchOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.AbstractKestraContainerTest;
+import io.kestra.plugin.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.executions.Delete;
 import io.kestra.plugin.kestra.executions.Query;
@@ -23,7 +24,7 @@ import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Test;
 
 @KestraTest
-public class DeleteTest extends AbstractKestraContainerTest {
+public class DeleteTest extends AbstractKestraOssContainerTest {
   @Inject protected RunContextFactory runContextFactory;
 
   protected static final String NAMESPACE = "kestra.tests.executions.delete";

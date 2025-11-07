@@ -5,16 +5,18 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.AbstractKestraContainerTest;
+import io.kestra.plugin.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.flows.List;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
+import static io.kestra.core.models.Label.USERNAME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
-public class ListTest extends AbstractKestraContainerTest {
+public class ListTest extends AbstractKestraOssContainerTest {
     @Inject
     protected RunContextFactory runContextFactory;
 

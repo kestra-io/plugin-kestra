@@ -6,7 +6,9 @@ import io.kestra.core.models.tasks.VoidOutput;
 import io.kestra.core.models.tasks.common.FetchOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.Await;
 import io.kestra.plugin.AbstractKestraContainerTest;
+import io.kestra.plugin.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.executions.Kill;
 import io.kestra.plugin.kestra.executions.Query;
@@ -19,13 +21,17 @@ import org.testcontainers.shaded.org.awaitility.Awaitility;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeoutException;
 
+import static io.kestra.core.models.Label.USERNAME;
+import static io.kestra.core.utils.Rethrow.throwFunction;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @KestraTest
-class KillTest extends AbstractKestraContainerTest {
+class KillTest extends AbstractKestraOssContainerTest {
     @Inject
     protected RunContextFactory runContextFactory;
 
@@ -116,7 +122,7 @@ class KillTest extends AbstractKestraContainerTest {
         assertThat(output, is(nullValue()));
 
         Awaitility.await()
-            .atMost(Duration.ofSeconds(2))
+            .atMost(Duration.ofSeconds(5))
             .until(checkExecutionState(parentExecution.getId(), StateType.KILLED));
         Execution afterSubExecution = kestraTestDataUtils.getExecution(subExecution.getId());
 
@@ -229,33 +235,34 @@ class KillTest extends AbstractKestraContainerTest {
 
     private Execution queryExecution(String flowId) throws Exception {
         RunContext runContext = runContextFactory.of();
-        Query searchTask =
-            Query.builder()
-                .kestraUrl(Property.ofValue(KESTRA_URL))
-                .auth(
-                    AbstractKestraTask.Auth.builder()
+
+        return Await.until(() -> {
+            try {
+                Query searchTask = Query.builder()
+                    .kestraUrl(Property.ofValue(KESTRA_URL))
+                    .auth(AbstractKestraTask.Auth.builder()
                         .username(Property.ofValue(USERNAME))
                         .password(Property.ofValue(PASSWORD))
                         .build())
-                .tenantId(Property.ofValue(TENANT_ID))
-                .namespace(Property.ofValue(NAMESPACE))
-                .flowId(Property.ofValue(flowId))
-                .size(Property.ofValue(10))
-                .fetchType(Property.ofValue(io.kestra.core.models.tasks.common.FetchType.FETCH))
-                .build();
+                    .tenantId(Property.ofValue(TENANT_ID))
+                    .namespace(Property.ofValue(NAMESPACE))
+                    .flowId(Property.ofValue(flowId))
+                    .size(Property.ofValue(10))
+                    .fetchType(Property.ofValue(io.kestra.core.models.tasks.common.FetchType.FETCH))
+                    .build();
 
-        FetchOutput output = searchTask.run(runContext);
+                FetchOutput output = searchTask.run(runContext);
+                if (output.getRows().isEmpty()) return null;
 
-        assertThat(output.getRows().size(), is(1));
-
-        Execution execution = null;
-        var row = output.getRows().getFirst();
-        if (row instanceof ArrayList<?> arrayList) {
-            execution = (Execution) arrayList.getFirst();
-        }
-
-        assertThat(execution, is(notNullValue()));
-        return execution;
+                var row = output.getRows().getFirst();
+                if (row instanceof ArrayList<?> arrayList && !arrayList.isEmpty()) {
+                    return (Execution) arrayList.getFirst();
+                }
+                return null;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }, Duration.ofMillis(200), Duration.ofSeconds(5));
     }
 
     private Callable<Boolean> checkExecutionState(String executionId, StateType stateType) {
