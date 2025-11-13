@@ -50,8 +50,8 @@ dependencies {
     compileOnly group: "io.kestra", name: "core", version: kestraVersion
     compileOnly group: "io.kestra", name: "script", version: kestraVersion
 
-    // kestra API client FIXME put last sdk release here
-    implementation "io.kestra:kestra-api-client:local-ci-version"
+    // kestra API client
+    implementation "io.kestra:kestra-api-client:1.0.2"
 }
 
 /**********************************************************************************************************************\
