@@ -5,6 +5,8 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.AbstractKestraContainerTest;
+import io.kestra.plugin.AbstractKestraEeContainerTest;
+import io.kestra.plugin.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.namespaces.List;
 import jakarta.annotation.Nullable;
@@ -15,7 +17,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
-public class ListTest extends AbstractKestraContainerTest {
+public class ListTest extends AbstractKestraEeContainerTest {
 
     @Inject
     protected RunContextFactory runContextFactory;

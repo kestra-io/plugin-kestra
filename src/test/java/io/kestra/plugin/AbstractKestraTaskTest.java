@@ -14,7 +14,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-public class AbstractKestraTaskTest extends AbstractKestraContainerTest {
+public class AbstractKestraTaskTest extends AbstractKestraOssContainerTest {
 
     @Inject
     protected RunContextFactory runContextFactory;
