@@ -6,6 +6,7 @@ import io.kestra.core.models.flows.State;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.AbstractKestraContainerTest;
+import io.kestra.plugin.AbstractKestraEeContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.ee.tests.RunTests;
 import io.kestra.sdk.model.TestState;
@@ -17,7 +18,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @KestraTest
-public class RunTestsTest extends AbstractKestraContainerTest {
+public class RunTestsTest extends AbstractKestraEeContainerTest {
     @Inject
     protected RunContextFactory runContextFactory;
 
