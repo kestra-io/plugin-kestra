@@ -86,6 +86,7 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
 
     @Override
     public Output run(RunContext runContext) throws Exception {
+        var logger = runContext.logger();
         var kestraClient = kestraClient(runContext);
         var testSuitesApi = kestraClient.testSuites();
 
@@ -97,23 +98,23 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
 
         var testFullId = rNamespace + "." + rId;
         var runRequest = new TestSuiteControllerRunRequest().testCases(rTestCases);
-        runContext.logger().info("Running test '{}", testFullId);
+        logger.info("Running test '{}", testFullId);
 
         var result = testSuitesApi.runTestSuite(rNamespace, rId, rTenantId, runRequest);
         Objects.requireNonNull(result.getResults());
 
         result.getResults().forEach(testCaseResult -> {
-            logTestCase(runContext.logger(), testFullId, testCaseResult);
+            logTestCase(logger, testFullId, testCaseResult);
         });
 
         var outputBuilder = Output.builder().result(result);
         switch (result.getState()) {
             case ERROR -> {
-                runContext.logger().error("Test '{}' ended with ERROR", testFullId);
+                logger.error("Test '{}' ended with ERROR", testFullId);
                 outputBuilder.taskStateOverride(Optional.of(State.Type.FAILED));
             }
             case FAILED -> {
-                runContext.logger().warn("Test '{}' ended with {}", testFullId, result.getState());
+                logger.warn("Test '{}' ended with {}", testFullId, result.getState());
                 if(rFailOnTestFailure){
                     outputBuilder.taskStateOverride(Optional.of(State.Type.FAILED));
                 } else {
@@ -121,11 +122,11 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
                 }
             }
             case SKIPPED -> {
-                runContext.logger().warn("Test '{}' SKIPPED", testFullId);
+                logger.warn("Test '{}' SKIPPED", testFullId);
                 outputBuilder.taskStateOverride(Optional.of(State.Type.WARNING));
             }
             case SUCCESS -> {
-                runContext.logger().info("Test '{}' ended with SUCCESS", testFullId);
+                logger.info("Test '{}' ended with SUCCESS", testFullId);
             }
         }
         return outputBuilder.build();

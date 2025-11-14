@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.slf4j.Logger;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -67,6 +68,7 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
 
     @Override
     public Output run(RunContext runContext) throws Exception {
+        var logger = runContext.logger();
         var kestraClient = kestraClient(runContext);
         var testSuitesApi = kestraClient.testSuites();
 
@@ -80,26 +82,26 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
             .namespace(rNamespace)
             .includeChildNamespaces(rIncludeChildNamespaces)
             .flowId(rFlowId);
-        runContext.logger().info("Running tests for query: namespace: '{}', includeChildNamespaces: '{}', flowId: '{}'", runByQueryRequest.getNamespace(), runByQueryRequest.getIncludeChildNamespaces(), runByQueryRequest.getFlowId());
+        logger.info("Running tests for query: namespace: '{}', includeChildNamespaces: '{}', flowId: '{}'", runByQueryRequest.getNamespace(), runByQueryRequest.getIncludeChildNamespaces(), runByQueryRequest.getFlowId());
 
         var result = testSuitesApi.runTestSuitesByQuery(rTenantId, runByQueryRequest);
         Objects.requireNonNull(result.getResults());
-        runContext.logger().info("Requested to run {} test suites, {} test cases", result.getNumberOfTestSuitesToBeRun(), result.getNumberOfTestCasesToBeRun());
+        logger.info("Requested to run {} test suites, {} test cases", result.getNumberOfTestSuitesToBeRun(), result.getNumberOfTestCasesToBeRun());
 
         var outputBuilder = Output.builder().result(result);
         AtomicReference<Optional<State.Type>> errorState = new AtomicReference<>(Optional.empty());
         result.getResults().forEach(testSuiteRunResult -> {
             var testSuiteFullId = testSuiteRunResult.getNamespace() + "." + testSuiteRunResult.getTestSuiteId();
             testSuiteRunResult.getResults()
-                .forEach(testCaseResult -> logTestCase(runContext.logger(), testSuiteFullId, testCaseResult));
+                .forEach(testCaseResult -> logTestCase(logger, testSuiteFullId, testCaseResult));
 
             switch (testSuiteRunResult.getState()) {
                 case ERROR -> {
-                    runContext.logger().error("Test '{}' ended with ERROR", testSuiteFullId);
+                    logger.error("Test '{}' ended with ERROR", testSuiteFullId);
                     errorState.set(markTaskAsError(errorState.get()));
                 }
                 case FAILED -> {
-                    runContext.logger().warn("Test '{}' ended with {}", testSuiteFullId, testSuiteRunResult.getState());
+                    logger.warn("Test '{}' ended with {}", testSuiteFullId, testSuiteRunResult.getState());
                     if (rFailOnTestFailure) {
                         errorState.set(markTaskAsError(errorState.get()));
                     } else {
@@ -107,11 +109,11 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
                     }
                 }
                 case SKIPPED -> {
-                    runContext.logger().warn("Test '{}' SKIPPED", testSuiteFullId);
+                    logger.warn("Test '{}' SKIPPED", testSuiteFullId);
                     errorState.set(markTaskAsWarning(errorState.get()));
                 }
                 case SUCCESS -> {
-                    runContext.logger().info("Test '{}' ended with SUCCESS", testSuiteFullId);
+                    logger.info("Test '{}' ended with SUCCESS", testSuiteFullId);
                 }
             }
         });
@@ -126,7 +128,7 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
         outputBuilder.testSuitesRunSkippedCount(testSuitesRunSkippedCount);
         var testSuitesRunFailedCount = result.getResults().stream().filter(t -> TestState.ERROR.equals(t.getState()) || TestState.FAILED.equals(t.getState())).count();
         outputBuilder.testSuitesRunFailedCount(testSuitesRunFailedCount);
-        runContext.logger().info("{} Test suites finished running, {} in success, {} skipped, {} failed", testSuitesRunCount, testSuitesRunSuccessCount, testSuitesRunSkippedCount, testSuitesRunFailedCount);
+        logger.info("{} Test suites finished running, {} in success, {} skipped, {} failed", testSuitesRunCount, testSuitesRunSuccessCount, testSuitesRunSkippedCount, testSuitesRunFailedCount);
 
         return outputBuilder.build();
     }
