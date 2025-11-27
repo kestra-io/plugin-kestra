@@ -1,0 +1,8 @@
+group: io.kestra.plugin.kestra.executions
+name: "executions"
+title: "Kestra Executions"
+description: ""
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
