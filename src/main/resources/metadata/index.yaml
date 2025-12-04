@@ -1,8 +1,8 @@
 group: io.kestra.plugin.kestra
 name: "kestra"
 title: "Kestra Plugin"
-description: "Plugin for Kestra"
-body: ""
+description: "Tasks that interact with Kestra itself to manage flows, executions, namespaces, and tests."
+body: "Point to a Kestra server URL with API token and namespace to query or kill executions, export or list flows, enumerate namespaces, and run EE test suites directly from orchestrated workflows."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"

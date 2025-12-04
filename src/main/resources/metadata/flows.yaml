@@ -1,8 +1,8 @@
 group: io.kestra.plugin.kestra.flows
 name: "flows"
 title: "Kestra Flows"
-description: ""
-body: ""
+description: "Tasks that list and export Kestra flows."
+body: "Set the Kestra API URL, namespace filters, and auth token to retrieve flow definitions or export them (by namespace or ID) for backup, promotion, or analysis."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"

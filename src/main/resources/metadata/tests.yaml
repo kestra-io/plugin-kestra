@@ -1,8 +1,8 @@
 group: io.kestra.plugin.kestra.ee.tests
 name: "tests"
 title: "Kestra Tests"
-description: ""
-body: ""
+description: "Tasks that run Kestra Enterprise test suites."
+body: "Provide the Kestra EE API endpoint, namespace, and auth token to execute flow tests (single or batch), returning results and failures to gate promotions."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"

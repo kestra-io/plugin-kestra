@@ -1,8 +1,8 @@
 group: io.kestra.plugin.kestra.executions
 name: "executions"
 title: "Kestra Executions"
-description: ""
-body: ""
+description: "Tasks that query, delete, or kill Kestra executions."
+body: "Provide the Kestra API URL, auth token, and execution IDs or search parameters to list or query executions, delete them, or send kill requests, enabling meta-orchestration inside Kestra itself."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"

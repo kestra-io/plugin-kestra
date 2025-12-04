@@ -1,8 +1,8 @@
 group: io.kestra.plugin.kestra.namespaces
 name: "namespaces"
 title: "Kestra Namespaces"
-description: ""
-body: ""
+description: "Tasks that list namespaces and flows across a Kestra instance."
+body: "Configure the Kestra API endpoint and token to enumerate namespaces and optionally include flows within them, useful for governance or promotion pipelines."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"
