@@ -1,0 +1,8 @@
+group: io.kestra.plugin.kestra.triggers
+name: "triggers"
+title: "Kestra Triggers"
+description: "Triggers that react to or monitor resources within a Kestra instance."
+body: "Use the Kestra API URL, authentication, and optional filters to monitor schedules, flows, namespaces, or other triggerable conditions and produce executions based on system state."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
