@@ -38,7 +38,7 @@ import java.util.Optional;
         """
 )
 @Plugin
-public class ScheduleMonitor extends io.kestra.core.models.triggers.AbstractTrigger implements TriggerOutput<ScheduleMonitor.Output>, PollingTriggerInterface {
+public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<ScheduleMonitor.Output>, PollingTriggerInterface {
     private static final String DEFAULT_KESTRA_URL = "http://localhost:8080";
     private static final String KESTRA_URL_TEMPLATE = "{{ kestra.url }}";
 
