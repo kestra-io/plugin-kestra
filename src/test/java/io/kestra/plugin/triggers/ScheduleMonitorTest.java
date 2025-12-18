@@ -15,6 +15,7 @@ import io.kestra.sdk.model.FlowWithSource;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
@@ -64,6 +65,34 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
 
         context = TestsUtils.mockTrigger(runContextFactory, monitor2);
         execution = monitor2.evaluate(context.getKey(), context.getValue());
+
+        assertThat(execution.isPresent(), is(true));
+    }
+
+    @Test
+    public void shouldDetectNoExecutionWithinInterval() throws Exception {
+        kestraTestDataUtils.createFlowWithSchedule(
+            NAMESPACE,
+            "intervalflow",
+            "*/5 * * * *",
+            false
+        );
+
+        ScheduleMonitor monitor = ScheduleMonitor.builder()
+            .id(ScheduleMonitorTest.class.getSimpleName() + IdUtils.create())
+            .type(ScheduleMonitorTest.class.getName())
+            .kestraUrl(Property.ofValue(KESTRA_URL))
+            .auth(basicAuth())
+            .tenantId(Property.ofValue(TENANT_ID))
+            .namespace(Property.ofValue(NAMESPACE))
+            .maxExecutionInterval(Property.ofValue(Duration.ofSeconds(1)))
+            .build();
+
+        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, monitor);
+
+        Thread.sleep(1200);
+
+        Optional<Execution> execution = monitor.evaluate(context.getKey(), context.getValue());
 
         assertThat(execution.isPresent(), is(true));
     }

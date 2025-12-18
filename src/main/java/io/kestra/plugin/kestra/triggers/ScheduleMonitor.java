@@ -70,6 +70,18 @@ public class ScheduleMonitor extends io.kestra.core.models.triggers.AbstractTrig
     @Builder.Default
     private Property<Duration> allowedDelay = Property.ofValue(Duration.ofMinutes(1));
 
+    @Schema(
+        title = "Maximum allowed execution duration",
+        description = "If set, a schedule-triggered execution RUNNING longer than this duration is considered stuck."
+    )
+    private Property<Duration> maxExecutionDuration;
+
+    @Schema(
+        title = "Expected maximum interval between executions",
+        description = "If no execution happened within this interval, the schedule is considered unhealthy."
+    )
+    private Property<Duration> maxExecutionInterval;
+
     @Override
     public Optional<Execution> evaluate(ConditionContext conditionContext, io.kestra.core.models.triggers.TriggerContext context) throws Exception {
         RunContext runContext = conditionContext.getRunContext();
@@ -89,10 +101,9 @@ public class ScheduleMonitor extends io.kestra.core.models.triggers.AbstractTrig
         String rNamespace = runContext.render(namespace).as(String.class).orElse(null);
         String rFlowId = runContext.render(flowId).as(String.class).orElse(null);
         boolean rIncludeDisabled = runContext.render(includeDisabled).as(Boolean.class).orElse(false);
-
-        Duration thresholdDuration = runContext.render(allowedDelay)
-            .as(Duration.class)
-            .orElse(Duration.ofMinutes(1));
+        Duration rMaxExecutionDuration = runContext.render(maxExecutionDuration).as(Duration.class).orElse(null);
+        Duration rMaxExecutionInterval = runContext.render(maxExecutionInterval).as(Duration.class).orElse(null);
+        Duration rAllowedDelay = runContext.render(allowedDelay).as(Duration.class).orElse(Duration.ofMinutes(1));
 
         Instant now = Instant.now();
 
@@ -166,12 +177,32 @@ public class ScheduleMonitor extends io.kestra.core.models.triggers.AbstractTrig
                     continue;
                 }
 
+                if (rMaxExecutionDuration != null && triggerContext.getExecutionId() != null) {
+                    io.kestra.sdk.model.Execution exec = client.executions().execution(triggerContext.getExecutionId(), tenantId);
+
+                    if (exec.getState() != null && exec.getState().getCurrent() == StateType.RUNNING && exec.getState().getStartDate() != null) {
+
+                        Instant start = exec.getState().getStartDate().toInstant();
+                        if (Duration.between(start, now).compareTo(rMaxExecutionDuration) > 0) {
+                            stuck.add(info);
+                            continue;
+                        }
+                    }
+                }
+
+                if (rMaxExecutionInterval != null && lastExec != null) {
+                    if (Duration.between(lastExec, now).compareTo(rMaxExecutionInterval) > 0) {
+                        stuck.add(info);
+                        continue;
+                    }
+                }
+
                 if (nextExec == null) {
                     misconfigured.add(info);
                     continue;
                 }
 
-                if (now.isAfter(nextExec.plus(thresholdDuration))) {
+                if (now.isAfter(nextExec.plus(rAllowedDelay))) {
                     stuck.add(info);
                 }
             }
