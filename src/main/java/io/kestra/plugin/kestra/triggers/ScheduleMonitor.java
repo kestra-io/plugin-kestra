@@ -12,8 +12,6 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.core.trigger.Schedule;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
-import io.kestra.sdk.api.TriggersApi;
-//import io.kestra.sdk.model.*;
 import io.kestra.sdk.model.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -88,9 +86,9 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
         KestraClient client = kestraClient(runContext);
 
         String tenantId = runContext.flowInfo().tenantId();
-        String namespaceFilter = runContext.render(namespace).as(String.class).orElse(null);
-        String flowFilter = runContext.render(flowId).as(String.class).orElse(null);
-        boolean includeDisabledValue = runContext.render(includeDisabled).as(Boolean.class).orElse(false);
+        String rNamespace = runContext.render(namespace).as(String.class).orElse(null);
+        String rFlowId = runContext.render(flowId).as(String.class).orElse(null);
+        boolean rIncludeDisabled = runContext.render(includeDisabled).as(Boolean.class).orElse(false);
 
         Duration thresholdDuration = runContext.render(allowedDelay)
             .as(Duration.class)
@@ -108,19 +106,19 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
 
         List<QueryFilter> filters = new ArrayList<>();
 
-        if (namespaceFilter != null) {
+        if (rNamespace != null) {
             filters.add(new QueryFilter()
                 .field(QueryFilterField.NAMESPACE)
                 .operation(QueryFilterOp.STARTS_WITH)
-                .value(namespaceFilter)
+                .value(rNamespace)
             );
         }
 
-        if (flowFilter != null) {
+        if (rFlowId != null) {
             filters.add(new QueryFilter()
                 .field(QueryFilterField.FLOW_ID)
                 .operation(QueryFilterOp.EQUALS)
-                .value(flowFilter)
+                .value(rFlowId)
             );
         }
 
@@ -162,7 +160,7 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
                     .build();
 
                 if (isDisabled) {
-                    if (includeDisabledValue) {
+                    if (rIncludeDisabled) {
                         disabled.add(info);
                     }
                     continue;
@@ -188,7 +186,7 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
         List<TriggerInfo> all = new ArrayList<>();
         all.addAll(stuck);
         all.addAll(misconfigured);
-        if (includeDisabledValue) {
+        if (rIncludeDisabled) {
             all.addAll(disabled);
         }
 
