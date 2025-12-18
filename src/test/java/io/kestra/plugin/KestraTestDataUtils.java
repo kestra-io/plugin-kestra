@@ -256,4 +256,30 @@ public class KestraTestDataUtils {
                 .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np, flowId);
         return kestraClient.testSuites().createTestSuite(tenantId, testSuite);
     }
+
+    public FlowWithSource createFlowWithSchedule(String namespace, String flowId, String cron, boolean disabled)
+        throws ApiException {
+
+        String np = namespace != null ? namespace : "default";
+
+        String flow =
+            """
+                    id: %s
+                    namespace: %s
+
+                    tasks:
+                      - id: log
+                        type: io.kestra.plugin.core.log.Log
+                        message: test
+
+                    triggers:
+                      - id: schedule
+                        type: io.kestra.plugin.core.trigger.Schedule
+                        cron: "%s"
+                        disabled: %s
+                    """
+            .formatted(flowId, np, cron, disabled);
+
+        return kestraClient.flows().createFlow(tenantId, flow);
+    }
 }
