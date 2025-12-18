@@ -5,14 +5,15 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
-import io.kestra.core.models.triggers.PollingTriggerInterface;
-import io.kestra.core.models.triggers.TriggerOutput;
-import io.kestra.core.models.triggers.TriggerService;
+import io.kestra.core.models.triggers.*;
+import io.kestra.core.models.triggers.AbstractTrigger;
+import io.kestra.core.models.triggers.TriggerContext;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.core.trigger.Schedule;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.model.*;
+import io.kestra.sdk.model.Trigger;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -36,7 +37,7 @@ import java.util.Optional;
         """
 )
 @Plugin
-public class ScheduleMonitor extends io.kestra.core.models.triggers.AbstractTrigger implements TriggerOutput<ScheduleMonitor.Output>, PollingTriggerInterface {
+public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<ScheduleMonitor.Output>, PollingTriggerInterface {
     private static final String DEFAULT_KESTRA_URL = "http://localhost:8080";
     private static final String KESTRA_URL_TEMPLATE = "{{ kestra.url }}";
 
@@ -83,7 +84,7 @@ public class ScheduleMonitor extends io.kestra.core.models.triggers.AbstractTrig
     private Property<Duration> maxExecutionInterval;
 
     @Override
-    public Optional<Execution> evaluate(ConditionContext conditionContext, io.kestra.core.models.triggers.TriggerContext context) throws Exception {
+    public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {
         RunContext runContext = conditionContext.getRunContext();
         Output result = runChecks(runContext);
 
