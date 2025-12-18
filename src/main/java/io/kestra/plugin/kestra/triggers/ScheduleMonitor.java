@@ -122,8 +122,6 @@ public class ScheduleMonitor extends io.kestra.core.models.triggers.AbstractTrig
             );
         }
 
-        List<Trigger> list = new  ArrayList<>();
-
         while ((long) page * size < total) {
             PagedResultsTriggerControllerTriggers response = client.triggers().searchTriggers(page, size, tenantId, null, filters);
 
@@ -135,8 +133,6 @@ public class ScheduleMonitor extends io.kestra.core.models.triggers.AbstractTrig
             }
 
             for (TriggerControllerTriggers t : results) {
-
-                list.add(t.getTriggerContext());
 
                 if (t.getAbstractTrigger() == null || !Schedule.class.getName().equals(t.getAbstractTrigger().getType())) {
                     continue;
