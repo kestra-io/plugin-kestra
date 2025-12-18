@@ -106,9 +106,7 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
         Duration rMaxExecutionInterval = runContext.render(maxExecutionInterval).as(Duration.class).orElse(null);
         Duration rAllowedDelay = runContext.render(allowedDelay).as(Duration.class).orElse(Duration.ofMinutes(1));
 
-        Instant now = Instant.now();
-
-        List<TriggerInfo> triggersToDetect = new ArrayList<>();
+        List<TriggerInfo> detectedTriggers = new ArrayList<>();
 
         int page = 1;
         int size = 100;
@@ -154,6 +152,7 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
 
                 boolean isDisabled = Boolean.TRUE.equals(t.getAbstractTrigger().getDisabled()) || Boolean.TRUE.equals(triggerContext.getDisabled());
 
+                Instant now = Instant.now();
                 Instant lastExec = triggerContext.getDate() != null ? triggerContext.getDate().toInstant() : null;
                 Instant nextExec = triggerContext.getNextExecutionDate() != null ? triggerContext.getNextExecutionDate().toInstant() : null;
 
@@ -167,7 +166,7 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
 
                 if (isDisabled) {
                     if (rIncludeDisabled) {
-                        triggersToDetect.add(info);
+                        detectedTriggers.add(info);
                     }
                     continue;
                 }
@@ -183,7 +182,7 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
 
                         Instant start = exec.getState().getStartDate().toInstant();
                         if (Duration.between(start, now).compareTo(rMaxExecutionDuration) > 0) {
-                            triggersToDetect.add(info);
+                            detectedTriggers.add(info);
                             continue;
                         }
                     }
@@ -191,18 +190,18 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
 
                 if (rMaxExecutionInterval != null && lastExec != null) {
                     if (Duration.between(lastExec, now).compareTo(rMaxExecutionInterval) > 0) {
-                        triggersToDetect.add(info);
+                        detectedTriggers.add(info);
                         continue;
                     }
                 }
 
                 if (nextExec == null) {
-                    triggersToDetect.add(info);
+                    detectedTriggers.add(info);
                     continue;
                 }
 
                 if (now.isAfter(nextExec.plus(rAllowedDelay))) {
-                    triggersToDetect.add(info);
+                    detectedTriggers.add(info);
                 }
             }
 
@@ -210,7 +209,7 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
         }
 
         return Output.builder()
-            .data(triggersToDetect)
+            .data(detectedTriggers)
             .build();
     }
 
