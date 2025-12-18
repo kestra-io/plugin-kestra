@@ -108,9 +108,7 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
 
         Instant now = Instant.now();
 
-        List<TriggerInfo> stuck = new ArrayList<>();
-        List<TriggerInfo> misconfigured = new ArrayList<>();
-        List<TriggerInfo> disabled = new ArrayList<>();
+        List<TriggerInfo> triggersToDetect = new ArrayList<>();
 
         int page = 1;
         int size = 100;
@@ -169,7 +167,7 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
 
                 if (isDisabled) {
                     if (rIncludeDisabled) {
-                        disabled.add(info);
+                        triggersToDetect.add(info);
                     }
                     continue;
                 }
@@ -185,7 +183,7 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
 
                         Instant start = exec.getState().getStartDate().toInstant();
                         if (Duration.between(start, now).compareTo(rMaxExecutionDuration) > 0) {
-                            stuck.add(info);
+                            triggersToDetect.add(info);
                             continue;
                         }
                     }
@@ -193,33 +191,26 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
 
                 if (rMaxExecutionInterval != null && lastExec != null) {
                     if (Duration.between(lastExec, now).compareTo(rMaxExecutionInterval) > 0) {
-                        stuck.add(info);
+                        triggersToDetect.add(info);
                         continue;
                     }
                 }
 
                 if (nextExec == null) {
-                    misconfigured.add(info);
+                    triggersToDetect.add(info);
                     continue;
                 }
 
                 if (now.isAfter(nextExec.plus(rAllowedDelay))) {
-                    stuck.add(info);
+                    triggersToDetect.add(info);
                 }
             }
 
             page++;
         }
 
-        List<TriggerInfo> all = new ArrayList<>();
-        all.addAll(stuck);
-        all.addAll(misconfigured);
-        if (rIncludeDisabled) {
-            all.addAll(disabled);
-        }
-
         return Output.builder()
-            .data(all)
+            .data(triggersToDetect)
             .build();
     }
 
