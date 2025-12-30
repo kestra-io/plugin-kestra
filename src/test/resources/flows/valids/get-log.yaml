@@ -1,0 +1,20 @@
+id: get-log
+namespace: io.kestra.tests
+
+tasks:
+  - id: log-1
+    type: io.kestra.core.tasks.log.Log
+    message: "Log number 1"
+    level: INFO
+  - id: log-2
+    type: io.kestra.core.tasks.log.Log
+    message: "Log number 2"
+    level: INFO
+  - id: log-3
+    type: io.kestra.core.tasks.log.Log
+    message: "Log number 3"
+    level: INFO
+
+  - id: fetch-logs
+    type: io.kestra.plugin.kestra.logs.Fetch
+    level: INFO
