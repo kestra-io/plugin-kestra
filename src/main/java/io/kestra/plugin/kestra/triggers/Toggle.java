@@ -103,7 +103,7 @@ public class Toggle extends AbstractKestraTask implements RunnableTask<VoidOutpu
 
         var disabledTriggers = JacksonMapper.ofJson().convertValue(kestraClient.triggers().disabledTriggersByQuery(!runContext.render(enabled).as(Boolean.class).orElse(false), tId, filters), TriggerResponse.class);
 
-        runContext.logger().info("{} triggers found to Toggle", disabledTriggers.getCount());
+        runContext.logger().info("{} triggers found to toggle", disabledTriggers.getCount());
 
         return null;
     }
