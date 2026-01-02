@@ -84,7 +84,6 @@ public class Toggle extends AbstractKestraTask implements RunnableTask<VoidOutpu
     @Schema(title = "Whether to enable or disable the trigger")
     @NotNull
     @Builder.Default
-    @PluginProperty
     private Property<Boolean> enabled = Property.ofValue(false);
 
     @SuppressWarnings("unchecked")
