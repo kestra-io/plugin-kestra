@@ -4,12 +4,14 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.tasks.VoidOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @SuperBuilder
@@ -28,54 +30,61 @@ import java.util.Map;
             code = {
                 "executionId: \"{{ trigger.executionId }}\""
             }
+        ),
+        @Example(
+            title = "Resume an execution with inputs",
+            code = {
+                "executionId: \"{{ trigger.executionId }}\"",
+                "inputs:",
+                "  comment: \"Approved by automated process\"",
+                "  status: \"OK\""
+            }
         )
     }
 )
-public class Resume extends AbstractKestraTask implements RunnableTask<Resume.Output> {
+public class Resume extends AbstractKestraTask implements RunnableTask<VoidOutput> {
 
-    @Schema(title = "The Execution ID to resume")
+    @Schema(
+        title = "The Execution ID to resume",
+        description = "If not provided, defaults to the current execution ID."
+    )
     private Property<String> executionId;
 
     @Schema(title = "Map of inputs to send to the paused execution")
     private Property<Map<String, Object>> inputs;
 
     @Override
-    public Output run(RunContext runContext) throws Exception {
-        // 1. Render Execution ID
-        String rExecutionId = runContext.render(this.executionId).as(String.class).orElseThrow();
+    public VoidOutput run(RunContext runContext) throws Exception {
+        String rExecutionId = runContext.render(this.executionId).as(String.class).orElse(null);
 
-        // 2. Resolve Tenant
-        // Priority 1: Use the 'tenantId' property explicitly set on the task
-        String rTenant = runContext.render(this.tenantId).as(String.class).orElse(null);
+        if (rExecutionId == null) {
+            rExecutionId = runContext.render("{{ execution.id }}");
+        }
 
-        // Priority 2: If not set, fallback to the current context's tenant
-        if (rTenant == null) {
-            try {
-                // We use render() to avoid calling the deprecated runContext.tenantId() method.
-                // We wrap this in try/catch because in some test environments,
-                // the 'tenantId' variable might not exist, causing an exception.
-                rTenant = runContext.render("{{ tenantId }}");
-            } catch (Exception e) {
-                // If the variable is missing, we safely default to null
-                rTenant = null;
+        String rTenant = runContext.render(this.tenantId).as(String.class)
+            .orElse(runContext.flowInfo().tenantId());
+
+        Map<String, String> finalInputs = new HashMap<>();
+
+        if (this.inputs != null) {
+            Map<String, Object> rawInputs = runContext.render(this.inputs).asMap(String.class, Object.class);
+
+            if (rawInputs != null) {
+                for (Map.Entry<String, Object> entry : rawInputs.entrySet()) {
+                    if (entry.getValue() != null) {
+                        finalInputs.put(entry.getKey(), entry.getValue().toString());
+                    }
+                }
             }
         }
 
-        // 3. Get Client
-        var client = this.kestraClient(runContext);
+        runContext.logger().info("Resuming execution {}", rExecutionId);
 
-        // 4. Call the API
-        client.executions().resumeExecution(rExecutionId, rTenant);
+        this.kestraClient(runContext).executions()
+            .resumeExecution(rExecutionId, rTenant, finalInputs);
 
-        return Output.builder()
-            .executionId(rExecutionId)
-            .build();
-    }
+        runContext.logger().debug("Successfully resumed execution {}", rExecutionId);
 
-    @Builder
-    @Getter
-    public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "The execution ID that was resumed")
-        private String executionId;
+        return null;
     }
 }
