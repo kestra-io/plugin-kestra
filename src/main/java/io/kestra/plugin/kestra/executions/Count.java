@@ -1,51 +1,73 @@
 package io.kestra.plugin.kestra.executions;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.internal.ApiException;
-import io.kestra.sdk.model.*;
+import io.kestra.sdk.model.PagedResultsExecution;
+import io.kestra.sdk.model.QueryFilter;
+import io.kestra.sdk.model.QueryFilterField;
+import io.kestra.sdk.model.QueryFilterOp;
+import io.kestra.sdk.model.StateType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Stream;
 
 @SuperBuilder(toBuilder = true)
-@ToString
-@EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(title = "Count Kestra executions.")
+@ToString
+@EqualsAndHashCode
+@Schema(
+    title = "Count Kestra executions",
+    description = "Counts executions matching filters and evaluates an optional expression against the count."
+)
 @Plugin(
     examples = {
         @Example(
-            title = "Count successful executions for a flow",
+            title = "Count successful executions in a namespace",
             full = true,
             code = """
-                id: count_executions
-                namespace: company.team
-
-                tasks:
-                  - id: count
-                    type: io.kestra.plugin.kestra.executions.Count
-                    kestraUrl: http://localhost:8080
+                    id: count_success_executions
                     namespace: company.team
-                    flowId: my-flow
-                    states:
-                      - SUCCESS
-                    auth:
-                      username: admin@kestra.io
-                      password: Admin1234
+
+                    tasks:
+                      - id: count_success
+                        type: io.kestra.plugin.kestra.executions.Count
+                        kestraUrl: http://localhost:8080
+
+                        namespaces:
+                        - company.team
+
+                        states:
+                        - SUCCESS
+
+                        startDate: "{{ now() | dateAdd(-7, 'DAYS') }}"
+                        endDate: "{{ now() }}"
+                        expression: "{{ count >= 0 }}"
+
+                        auth:
+                            username: "{{ secrets.kestra_username }}"
+                            password: "{{ secrets.kestra_password }}"
+
+                      - id: log_result
+                        type: io.kestra.plugin.core.log.Log
+                        message: |
+                            Execution count check completed.
+                            Matching executions: {{ outputs.count_success.count }}
+
                 """
         )
     }
@@ -53,66 +75,121 @@ import java.util.stream.Stream;
 public class Count extends AbstractKestraTask implements RunnableTask<Count.Output> {
 
     @Nullable
-    @Schema(title = "Namespace to filter executions")
-    private Property<String> namespace;
+    private Property<List<String>> namespaces;
 
     @Nullable
-    @Schema(title = "Flow ID to filter executions")
     private Property<String> flowId;
 
     @Nullable
-    @Schema(title = "Execution states to filter")
     private Property<List<StateType>> states;
+
+    @Nullable
+    private Property<ZonedDateTime> startDate;
+
+    @Nullable
+    private Property<ZonedDateTime> endDate;
+
+    @PluginProperty(dynamic = true) // we cannot use `Property` as we render it multiple time with different variables, which is an issue for the property cache
+    protected String expression;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        KestraClient kestraClient = kestraClient(runContext);
+        KestraClient client = kestraClient(runContext);
+        List<QueryFilter> filters = new ArrayList<>();
 
-        String rTenantId = runContext.render(this.tenantId)
+        String tenantId = runContext.render(this.tenantId)
             .as(String.class)
             .orElse(runContext.flowInfo().tenantId());
 
-        String rNamespace = runContext.render(this.namespace).as(String.class).orElse(null);
-        String rFlowId = runContext.render(this.flowId).as(String.class).orElse(null);
-        List<StateType> rStates = runContext.render(this.states).asList(StateType.class);
-
-        List<QueryFilter> filters = new ArrayList<>(
-            Stream.of(
-                rNamespace != null ? new QueryFilter().field(QueryFilterField.NAMESPACE).operation(QueryFilterOp.EQUALS).value(rNamespace) : null,
-                rFlowId != null ? new QueryFilter().field(QueryFilterField.FLOW_ID).operation(QueryFilterOp.EQUALS).value(rFlowId) : null
-            ).filter(Objects::nonNull).toList()
-        );
-
-        if (rStates != null && !rStates.isEmpty()) {
-            rStates.forEach(state ->
+        List<String> rNamespaces = runContext.render(this.namespaces).asList(String.class);
+        if (rNamespaces != null) {
+            for (String namespace : rNamespaces) {
                 filters.add(
+                    new QueryFilter()
+                        .field(QueryFilterField.NAMESPACE)
+                        .operation(QueryFilterOp.EQUALS)
+                        .value(namespace)
+                );
+            }
+        }
+
+        String rFlowId = runContext.render(this.flowId).as(String.class).orElse(null);
+        if (rFlowId != null) {
+            filters.add(
+                new QueryFilter()
+                    .field(QueryFilterField.FLOW_ID)
+                    .operation(QueryFilterOp.EQUALS)
+                    .value(rFlowId)
+            );
+
+        }
+
+        List<StateType> rStates = runContext.render(this.states).asList(StateType.class);
+        if (rStates != null) {
+            for (StateType state : rStates) {
+               filters.add(
                     new QueryFilter()
                         .field(QueryFilterField.STATE)
                         .operation(QueryFilterOp.EQUALS)
                         .value(state)
-                )
+                );
+
+            }
+        }
+
+        ZonedDateTime rStartDate = runContext.render(this.startDate).as(ZonedDateTime.class).orElse(null);
+        if (rStartDate != null) {
+            filters.add(
+                new QueryFilter()
+                    .field(QueryFilterField.START_DATE)
+                    .operation(QueryFilterOp.GREATER_THAN_OR_EQUAL_TO)
+                    .value(rStartDate)
             );
         }
 
-        PagedResultsExecution results = kestraClient.executions().searchExecutions(
+        ZonedDateTime rEndDate = runContext.render(this.endDate).as(ZonedDateTime.class).orElse(null);
+        if (rEndDate != null) {
+            filters.add(
+                new QueryFilter()
+                    .field(QueryFilterField.START_DATE)
+                    .operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO)
+                    .value(rEndDate)
+            );
+
+        }
+
+        PagedResultsExecution results = client.executions().searchExecutions(
             1,
             1,
-            rTenantId,
+            tenantId,
             null,
             filters
         );
 
-        runContext.logger().info("Found {} matching executions", results.getTotal());
+        long count = results.getTotal();
+        runContext.logger().info("Found {} matching executions", count);
 
-        return new Output(results.getTotal());
+        if (expression != null) {
+            String evaluated = runContext.render(
+                expression,
+                Map.of("count", count)
+            );
+
+            if (!"true".equalsIgnoreCase(evaluated)) {
+                count = 0L;
+            }
+        }
+
+
+
+        return Output.builder()
+            .count(count)
+            .build();
     }
 
-
+    @Builder
     @Getter
-    @AllArgsConstructor
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "Number of matching executions")
-        private Long count;
+        private final Long count;
     }
-
 }
