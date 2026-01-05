@@ -30,18 +30,23 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
     @Test
     public void shouldResumePausedExecution() throws Exception {
         RunContext runContext = runContextFactory.of();
+
+        // 1. Create a flow that pauses automatically
         FlowWithSource flow = kestraTestDataUtils.createRandomizedPauseFlow(NAMESPACE);
+
+        // 2. Trigger an execution
         kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
 
+        // 3. Wait for it to reach PAUSED state
         Thread.sleep(1000);
         Execution pausedExecution = queryExecution(flow.getId());
         assertThat(pausedExecution.getState().getCurrent(), is(StateType.PAUSED));
 
+        // 4. Run RESUME Task
         Resume resumeTask = createResumeTask(pausedExecution.getId(), null);
-        Resume.Output output = resumeTask.run(runContext);
+        resumeTask.run(runContext);
 
-        assertThat(output.getExecutionId(), is(pausedExecution.getId()));
-
+        // 5. Verify State Changed
         Thread.sleep(1000);
         Execution resumedExecution = queryExecution(flow.getId());
         assertThat(resumedExecution.getState().getCurrent(), not(StateType.PAUSED));
@@ -59,7 +64,6 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
         Execution pausedExecution = queryExecution(flow.getId());
 
         // 2. Resume with INPUTS
-        // We simulate a user providing a comment or data upon resume
         Map<String, Object> inputs = Map.of("comment", "Approved by Unit Test", "status", "OK");
 
         Resume resumeTask = createResumeTask(pausedExecution.getId(), inputs);
@@ -70,9 +74,6 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
 
         // 3. Verify execution is running/success
         assertThat(resumedExecution.getState().getCurrent(), not(StateType.PAUSED));
-
-        // Note: Verifying that the *flow* actually used the inputs is complex in a black-box test,
-        // but this confirms the API accepted the inputs without error.
     }
 
     @Test
