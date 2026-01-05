@@ -78,7 +78,6 @@ public class Toggle extends AbstractKestraTask implements RunnableTask<VoidOutpu
     private Property<String> namespace;
 
     @Schema(title = "The identifier of the trigger to toggle")
-    @NotNull
     private Property<String> trigger;
 
     @Schema(title = "Whether to enable or disable the trigger")
@@ -93,12 +92,12 @@ public class Toggle extends AbstractKestraTask implements RunnableTask<VoidOutpu
         var tId = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         var rNamespace = runContext.render(namespace).as(String.class).orElseGet(() -> runContext.flowInfo().namespace());
         var rFlowId = runContext.render(flowId).as(String.class).orElse(null);
-        var rTriggerId = runContext.render(trigger).as(String.class).orElseThrow();
+        var rTriggerId = runContext.render(trigger).as(String.class).orElse(null);
 
         List<QueryFilter> filters = new java.util.ArrayList<>(Stream.of(
             rNamespace != null ? new QueryFilter().field(QueryFilterField.NAMESPACE).operation(QueryFilterOp.EQUALS).value(rNamespace) : null,
             rFlowId != null ? new QueryFilter().field(QueryFilterField.FLOW_ID).operation(QueryFilterOp.EQUALS).value(rFlowId) : null,
-            new QueryFilter().field(QueryFilterField.TRIGGER_ID).operation(QueryFilterOp.EQUALS).value(rTriggerId)
+            rTriggerId != null ? new QueryFilter().field(QueryFilterField.TRIGGER_ID).operation(QueryFilterOp.EQUALS).value(rTriggerId) : null
         ).filter(Objects::nonNull).toList());
 
         var disabledTriggers = JacksonMapper.ofJson().convertValue(kestraClient.triggers().disabledTriggersByQuery(!runContext.render(enabled).as(Boolean.class).orElse(false), tId, filters), TriggerResponse.class);
