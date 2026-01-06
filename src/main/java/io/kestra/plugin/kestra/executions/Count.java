@@ -84,11 +84,11 @@ public class Count extends AbstractKestraTask implements RunnableTask<Count.Outp
     private Property<List<StateType>> states;
 
     @Nullable
-    private Property<ZonedDateTime> startDate;
+    private Property<String> startDate;
 
     @Nullable
-    private Property<ZonedDateTime> endDate;
-
+    private Property<String> endDate;
+    
     @PluginProperty(dynamic = true) // we cannot use `Property` as we render it multiple time with different variables, which is an issue for the property cache
     protected String expression;
 
@@ -137,26 +137,33 @@ public class Count extends AbstractKestraTask implements RunnableTask<Count.Outp
             }
         }
 
-        ZonedDateTime rStartDate = runContext.render(this.startDate).as(ZonedDateTime.class).orElse(null);
+        ZonedDateTime rStartDate = runContext.render(this.startDate)
+        .as(String.class)
+        .map(ZonedDateTime::parse)
+        .orElse(null);
+
         if (rStartDate != null) {
             filters.add(
                 new QueryFilter()
                     .field(QueryFilterField.START_DATE)
                     .operation(QueryFilterOp.GREATER_THAN_OR_EQUAL_TO)
                     .value(rStartDate)
-            );
-        }
+        );}       
 
-        ZonedDateTime rEndDate = runContext.render(this.endDate).as(ZonedDateTime.class).orElse(null);
-        if (rEndDate != null) {
-            filters.add(
-                new QueryFilter()
-                    .field(QueryFilterField.START_DATE)
-                    .operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO)
-                    .value(rEndDate)
-            );
+            ZonedDateTime rEndDate = runContext.render(this.endDate)
+                .as(String.class)
+                .map(ZonedDateTime::parse)
+                .orElse(null);
 
-        }
+            if (rEndDate != null) {
+                filters.add(
+                    new QueryFilter()
+                        .field(QueryFilterField.END_DATE) 
+                        .operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO)
+                        .value(rEndDate)
+                );
+            }
+
 
         PagedResultsExecution results = client.executions().searchExecutions(
             1,
@@ -179,8 +186,6 @@ public class Count extends AbstractKestraTask implements RunnableTask<Count.Outp
                 count = 0L;
             }
         }
-
-
 
         return Output.builder()
             .count(count)
