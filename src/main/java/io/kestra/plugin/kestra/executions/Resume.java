@@ -66,21 +66,11 @@ public class Resume extends AbstractKestraTask implements RunnableTask<VoidOutpu
         String rTenant = runContext.render(this.tenantId).as(String.class)
             .orElse(runContext.flowInfo().tenantId());
 
-        Map<String, String> finalInputs = new HashMap<>();
-        if (this.inputs != null) {
-            Map<String, Object> rawInputs = runContext.render(this.inputs).asMap(String.class, Object.class);
-            if (rawInputs != null) {
-                for (Map.Entry<String, Object> entry : rawInputs.entrySet()) {
-                    if (entry.getValue() != null) {
-                        finalInputs.put(entry.getKey(), String.valueOf(entry.getValue()));
-                    }
-                }
-            }
-        }
+        Map<String, Object> rInputs = runContext.render(this.inputs).asMap(String.class, Object.class);
 
         runContext.logger().info("Resuming execution {}", rExecutionId);
         this.kestraClient(runContext).executions()
-            .resumeExecution(rExecutionId, rTenant, finalInputs);
+            .resumeExecution(rExecutionId, rTenant, new HashMap<>(rInputs));
 
         runContext.logger().debug("Successfully resumed execution {}", rExecutionId);
 
