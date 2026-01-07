@@ -1,6 +1,5 @@
 package io.kestra.plugin.kestra.executions;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -9,7 +8,6 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
-import io.kestra.sdk.internal.ApiException;
 import io.kestra.sdk.model.PagedResultsExecution;
 import io.kestra.sdk.model.QueryFilter;
 import io.kestra.sdk.model.QueryFilterField;
@@ -20,6 +18,7 @@ import jakarta.annotation.Nullable;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,55 +39,48 @@ import java.util.Map;
             title = "Count successful executions in a namespace",
             full = true,
             code = """
-                    id: count_success_executions
-                    namespace: company.team
+                id: count_success_executions
+                namespace: company.team
 
-                    tasks:
-                      - id: count_success
-                        type: io.kestra.plugin.kestra.executions.Count
-                        kestraUrl: http://localhost:8080
+                tasks:
+                  - id: count_success
+                    type: io.kestra.plugin.kestra.executions.Count
+                    kestraUrl: http://localhost:8080
 
-                        namespaces:
-                        - company.team
+                    namespaces:
+                    - company.team
 
-                        states:
-                        - SUCCESS
+                    states:
+                    - SUCCESS
 
-                        startDate: "{{ now() | dateAdd(-7, 'DAYS') }}"
-                        endDate: "{{ now() }}"
-                        expression: "{{ count >= 0 }}"
+                    startDate: "{{ now() | dateAdd(-7, 'DAYS') }}"
+                    endDate: "{{ now() }}"
+                    expression: "{{ count >= 0 }}"
 
-                        auth:
-                            username: "{{ secrets.kestra_username }}"
-                            password: "{{ secrets.kestra_password }}"
+                    auth:
+                        username: "{{ secrets.kestra_username }}"
+                        password: "{{ secrets.kestra_password }}"
 
-                      - id: log_result
-                        type: io.kestra.plugin.core.log.Log
-                        message: |
-                            Execution count check completed.
-                            Matching executions: {{ outputs.count_success.count }}
-
+                  - id: log_result
+                    type: io.kestra.plugin.core.log.Log
+                    message: |
+                        Execution count check completed.
+                        Matching executions: {{ outputs.count_success.count }}
                 """
         )
     }
 )
 public class Count extends AbstractKestraTask implements RunnableTask<Count.Output> {
-
-    @Nullable
     private Property<List<String>> namespaces;
 
-    @Nullable
     private Property<String> flowId;
 
-    @Nullable
     private Property<List<StateType>> states;
 
-    @Nullable
     private Property<String> startDate;
 
-    @Nullable
     private Property<String> endDate;
-    
+
     @PluginProperty(dynamic = true) // we cannot use `Property` as we render it multiple time with different variables, which is an issue for the property cache
     protected String expression;
 
@@ -97,9 +89,7 @@ public class Count extends AbstractKestraTask implements RunnableTask<Count.Outp
         KestraClient client = kestraClient(runContext);
         List<QueryFilter> filters = new ArrayList<>();
 
-        String tenantId = runContext.render(this.tenantId)
-            .as(String.class)
-            .orElse(runContext.flowInfo().tenantId());
+        String rTenantId = runContext.render(this.tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
 
         List<String> rNamespaces = runContext.render(this.namespaces).asList(String.class);
         if (rNamespaces != null) {
@@ -133,42 +123,33 @@ public class Count extends AbstractKestraTask implements RunnableTask<Count.Outp
                         .operation(QueryFilterOp.EQUALS)
                         .value(state)
                 );
-
             }
         }
 
-        ZonedDateTime rStartDate = runContext.render(this.startDate)
-        .as(String.class)
-        .map(ZonedDateTime::parse)
-        .orElse(null);
-
+        var rStartDate = runContext.render(this.startDate).as(String.class).map(ZonedDateTime::parse).map(ZonedDateTime::toInstant).orElse(null);
         if (rStartDate != null) {
             filters.add(
                 new QueryFilter()
                     .field(QueryFilterField.START_DATE)
                     .operation(QueryFilterOp.GREATER_THAN_OR_EQUAL_TO)
                     .value(rStartDate)
-        );}       
+            );
+        }
 
-            ZonedDateTime rEndDate = runContext.render(this.endDate)
-                .as(String.class)
-                .map(ZonedDateTime::parse)
-                .orElse(null);
-
-            if (rEndDate != null) {
-                filters.add(
-                    new QueryFilter()
-                        .field(QueryFilterField.END_DATE) 
-                        .operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO)
-                        .value(rEndDate)
-                );
-            }
-
+        var rEndDate = runContext.render(this.endDate).as(String.class).map(ZonedDateTime::parse).map(ZonedDateTime::toInstant).orElse(null);
+        if (rEndDate != null) {
+            filters.add(
+                new QueryFilter()
+                    .field(QueryFilterField.END_DATE)
+                    .operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO)
+                    .value(rEndDate)
+            );
+        }
 
         PagedResultsExecution results = client.executions().searchExecutions(
             1,
             1,
-            tenantId,
+            rTenantId,
             null,
             filters
         );
@@ -177,10 +158,7 @@ public class Count extends AbstractKestraTask implements RunnableTask<Count.Outp
         runContext.logger().info("Found {} matching executions", count);
 
         if (expression != null) {
-            String evaluated = runContext.render(
-                expression,
-                Map.of("count", count)
-            );
+            String evaluated = runContext.render(expression, Map.of("count", count));
 
             if (!"true".equalsIgnoreCase(evaluated)) {
                 count = 0L;
