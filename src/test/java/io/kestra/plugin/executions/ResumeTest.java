@@ -29,41 +29,35 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
 
     @Test
     public void shouldResumePausedExecution() throws Exception {
-        RunContext runContext = runContextFactory.of();
-
-        // 1. Create a flow that pauses automatically
         FlowWithSource flow = kestraTestDataUtils.createRandomizedPauseFlow(NAMESPACE);
-
-        // 2. Trigger an execution
         kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
 
-        // 3. Wait for it to reach PAUSED state
         Thread.sleep(1000);
         Execution pausedExecution = queryExecution(flow.getId());
-        assertThat(pausedExecution.getState().getCurrent(), is(StateType.PAUSED));
+        assertThat("Execution should start in PAUSED state",
+            pausedExecution.getState().getCurrent(), is(StateType.PAUSED));
 
-        // 4. Run RESUME Task
+        RunContext runContext = createRunContext(pausedExecution.getId());
+
         Resume resumeTask = createResumeTask(pausedExecution.getId(), null);
         resumeTask.run(runContext);
 
-        // 5. Verify State Changed
         Thread.sleep(1000);
         Execution resumedExecution = queryExecution(flow.getId());
-        assertThat(resumedExecution.getState().getCurrent(), not(StateType.PAUSED));
+        assertThat("Execution should no longer be PAUSED",
+            resumedExecution.getState().getCurrent(), not(StateType.PAUSED));
     }
 
     @Test
     public void shouldResumeWithInputs() throws Exception {
         RunContext runContext = runContextFactory.of();
 
-        // 1. Create a flow that pauses
         FlowWithSource flow = kestraTestDataUtils.createRandomizedPauseFlow(NAMESPACE);
         kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
 
         Thread.sleep(1000);
         Execution pausedExecution = queryExecution(flow.getId());
 
-        // 2. Resume with INPUTS
         Map<String, Object> inputs = Map.of("comment", "Approved by Unit Test", "status", "OK");
 
         Resume resumeTask = createResumeTask(pausedExecution.getId(), inputs);
@@ -72,7 +66,6 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
         Thread.sleep(1000);
         Execution resumedExecution = queryExecution(flow.getId());
 
-        // 3. Verify execution is running/success
         assertThat(resumedExecution.getState().getCurrent(), not(StateType.PAUSED));
     }
 
@@ -98,8 +91,6 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
 
         assertThrows(Exception.class, () -> resumeTask.run(runContext));
     }
-
-    // --- Helpers ---
 
     private Resume createResumeTask(String executionId, Map<String, Object> inputs) {
         var builder = Resume.builder()
@@ -147,5 +138,33 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
         }
 
         throw new RuntimeException("Unexpected execution row format");
+    }
+
+    @Test
+    public void shouldResumeDefaultingToCurrentExecution() throws Exception {
+        String currentExecId = "current-exec-id";
+        Map<String, Object> variables = Map.of(
+            "execution", Map.of("id", currentExecId),
+            "flow", Map.of("tenantId", "main") // Required for flowInfo().tenantId()
+        );
+        RunContext runContext = runContextFactory.of(variables);
+
+        Resume resumeTask = Resume.builder()
+            .kestraUrl(Property.of(KESTRA_URL))
+            .auth(AbstractKestraTask.Auth.builder()
+                .username(Property.of(USERNAME))
+                .password(Property.of(PASSWORD))
+                .build())
+            .build();
+
+        Exception exception = assertThrows(Exception.class, () -> resumeTask.run(runContext));
+        assertThat(exception.getMessage(), containsString(currentExecId));
+    }
+
+    private RunContext createRunContext(String executionId) {
+        return runContextFactory.of(Map.of(
+            "execution", Map.of("id", executionId),
+            "flow", Map.of("tenantId", TENANT_ID)
+        ));
     }
 }

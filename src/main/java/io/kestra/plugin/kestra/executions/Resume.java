@@ -55,7 +55,9 @@ public class Resume extends AbstractKestraTask implements RunnableTask<VoidOutpu
 
     @Override
     public VoidOutput run(RunContext runContext) throws Exception {
-        String rExecutionId = runContext.render(this.executionId).as(String.class).orElse(null);
+        String rExecutionId = this.executionId != null ?
+            runContext.render(this.executionId).as(String.class).orElse(null) :
+            null;
 
         if (rExecutionId == null) {
             rExecutionId = runContext.render("{{ execution.id }}");
@@ -65,21 +67,18 @@ public class Resume extends AbstractKestraTask implements RunnableTask<VoidOutpu
             .orElse(runContext.flowInfo().tenantId());
 
         Map<String, String> finalInputs = new HashMap<>();
-
         if (this.inputs != null) {
             Map<String, Object> rawInputs = runContext.render(this.inputs).asMap(String.class, Object.class);
-
             if (rawInputs != null) {
                 for (Map.Entry<String, Object> entry : rawInputs.entrySet()) {
                     if (entry.getValue() != null) {
-                        finalInputs.put(entry.getKey(), entry.getValue().toString());
+                        finalInputs.put(entry.getKey(), String.valueOf(entry.getValue()));
                     }
                 }
             }
         }
 
         runContext.logger().info("Resuming execution {}", rExecutionId);
-
         this.kestraClient(runContext).executions()
             .resumeExecution(rExecutionId, rTenant, finalInputs);
 
