@@ -57,7 +57,7 @@ import java.util.Optional;
                     includeDisabled: true
                     auth:
                       username: {{ secret( KESTRA_USERNAME ) }} # Pass your Kestra username as a secret
-                      password: Admin1234 # pass your Kestra password as secret or KV pair
+                      password: {{ secret('KESTRA_PASSWORD') }} # Pass your Kestra password as secret
                     interval: PT2M
                 """
         )
