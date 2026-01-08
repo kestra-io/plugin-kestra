@@ -40,11 +40,11 @@ import java.util.Optional;
 @Plugin(
     examples = {
         @Example(
-            title = "Detect stuck, unhealthy schedule or disabled triggers",
+            title = "Detect stuck, unhealthy or disabled schedule triggers",
             full = true,
             code = """
-                id: detect_stuck_schedules
-                namespace: system
+                id: detect_schedule_triggers
+                namespace: company.team
 
                 tasks:
                   - id: hello
