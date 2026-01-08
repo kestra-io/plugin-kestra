@@ -56,7 +56,7 @@ import java.util.Optional;
                     type: io.kestra.plugin.kestra.triggers.ScheduleMonitor
                     includeDisabled: true
                     auth:
-                      username: admin@kestra.io # pass your Kestra username as secret or KV pair
+                      username: {{ secret( KESTRA_USERNAME ) }} # Pass your Kestra username as a secret
                       password: Admin1234 # pass your Kestra password as secret or KV pair
                     interval: PT2M
                 """
