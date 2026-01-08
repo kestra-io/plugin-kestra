@@ -40,7 +40,7 @@ import java.util.Optional;
 @Plugin(
     examples = {
         @Example(
-            title = "Detect stuck, unhealthy or disabled schedule triggers",
+            title = "Detect stuck, unhealthy, or disabled schedule triggers",
             full = true,
             code = """
                 id: detect_schedule_triggers
