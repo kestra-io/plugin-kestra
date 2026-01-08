@@ -70,7 +70,14 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
     @Schema(title = "Kestra API URL. If null, uses 'kestra.url' from configuration. If that is also null, defaults to 'http://localhost:8080'.")
     private Property<String> kestraUrl;
 
-    @Schema(title = "Authentication information.")
+    @Schema(
+        title = "Authentication information.",
+        description = """
+        Authentication used to call the Kestra API.
+        Uses the same credentials as Kestra login:
+        either an API token or HTTP Basic (username/password).
+        """
+    )
     private AbstractKestraTask.Auth auth;
 
     @Schema(title = "The tenant ID to use for the request, defaults to current tenant.")
