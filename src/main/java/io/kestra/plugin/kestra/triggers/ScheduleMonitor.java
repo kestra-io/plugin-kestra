@@ -1,6 +1,7 @@
 package io.kestra.plugin.kestra.triggers;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
@@ -36,7 +37,32 @@ import java.util.Optional;
         or (optionally) disabled.
         """
 )
-@Plugin
+@Plugin(
+    examples = {
+        @Example(
+            title = "Detect stuck, unhealthy schedule or disabled triggers",
+            full = true,
+            code = """
+                id: detect_stuck_schedules
+                namespace: system
+
+                tasks:
+                  - id: hello
+                    type: io.kestra.plugin.core.log.Log
+                    message: "{{ trigger.data.size }} triggers detected"
+
+                triggers:
+                  - id: stuck_schedules
+                    type: io.kestra.plugin.kestra.triggers.ScheduleMonitor
+                    includeDisabled: true
+                    auth:
+                      username: username # pass your Kestra username as secret or KV pair
+                      password: password       # pass your Kestra password as secret or KV pair
+                    interval: PT2M
+                """
+        )
+    }
+)
 public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<ScheduleMonitor.Output>, PollingTriggerInterface {
     private static final String DEFAULT_KESTRA_URL = "http://localhost:8080";
     private static final String KESTRA_URL_TEMPLATE = "{{ kestra.url }}";
