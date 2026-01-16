@@ -46,20 +46,16 @@ import java.util.Map;
                   - id: count_success
                     type: io.kestra.plugin.kestra.executions.Count
                     kestraUrl: http://localhost:8080
-
+                    auth:
+                      username: "{{ secrets('KESTRA_USERNAME') }}"
+                      password: "{{ secrets('KESTRA_PASSWORD') }}"
                     namespaces:
                     - company.team
-
                     states:
                     - SUCCESS
-
                     startDate: "{{ now() | dateAdd(-7, 'DAYS') }}"
                     endDate: "{{ now() }}"
                     expression: "{{ count >= 0 }}"
-
-                    auth:
-                        username: "{{ secrets.kestra_username }}"
-                        password: "{{ secrets.kestra_password }}"
 
                   - id: log_result
                     type: io.kestra.plugin.core.log.Log
