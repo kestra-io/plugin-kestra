@@ -54,8 +54,8 @@ import java.util.stream.Stream;
                     labels:
                       key: value
                     auth:
-                      username: admin@kestra.io # pass your Kestra username as secret or KV pair
-                      password: Admin1234 # pass your Kestra password as secret or KV pair
+                      username: "{{ secrets('KESTRA_USERNAME') }}"
+                      password: "{{ secrets('KESTRA_PASSWORD') }}"
                     fetchType: STORE # Store the results in a file
                 """
         ),
@@ -70,12 +70,12 @@ import java.util.stream.Stream;
                   - id: search_executions
                     type: io.kestra.plugin.kestra.executions.Query
                     kestraUrl: http://localhost:8080
+                    auth:
+                      username: "{{ secrets('KESTRA_USERNAME') }}"
+                      password: "{{ secrets('KESTRA_PASSWORD') }}" 
                     timeRange: PT10H # In the last 10 hours
                     states:
                       - SUCCESS
-                    auth:
-                      username: admin@kestra.io # pass your Kestra username as secret or KV pair
-                      password: Admin1234 # pass your Kestra password as secret or KV pair
                     fetchType: FETCH # Fetch the results directly in the task output
                 """
         )

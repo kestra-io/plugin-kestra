@@ -27,18 +27,43 @@ import java.util.Map;
     examples = {
         @Example(
             title = "Resume an execution",
-            code = {
-                "executionId: \"{{ trigger.executionId }}\""
-            }
+            full = true,
+            code = 
+                """
+                id: resume_execution
+                namespace: company.team
+
+                tasks:
+                  - id: resume_execution
+                    type: io.kestra.plugin.kestra.executions.Resume
+                    executionId: "{{ trigger.executionId }}"
+                    kestraUrl: http://localhost:8080
+                    auth:
+                      username: "{{ secrets('KESTRA_USERNAME') }}"
+                      password: "{{ secrets('KESTRA_PASSWORD') }}"
+                      
+                """
         ),
         @Example(
             title = "Resume an execution with inputs",
-            code = {
-                "executionId: \"{{ trigger.executionId }}\"",
-                "inputs:",
-                "  comment: \"Approved by automated process\"",
-                "  status: \"OK\""
-            }
+            full = true,
+            code = 
+                """
+                id: resume_execution_with_inputs
+                namespace: company.team
+
+                tasks:
+                  - id: resume_execution
+                    type: io.kestra.plugin.kestra.executions.Resume
+                    executionId: "{{ trigger.executionId }}"
+                    kestraUrl: http://localhost:8080
+                    inputs:
+                      comment: "Approved by automated process"
+                      status: "OK"
+                    auth:
+                      username: "{{ secrets('KESTRA_USERNAME') }}"
+                      password: "{{ secrets('KESTRA_PASSWORD') }}"
+                """
         )
     }
 )

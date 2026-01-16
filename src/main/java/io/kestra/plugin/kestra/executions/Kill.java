@@ -44,7 +44,7 @@ import lombok.experimental.SuperBuilder;
                   - id: subflow
                     type: io.kestra.plugin.core.flow.Subflow
                     flowId: child
-                    namespace: demo
+                    namespace: company.team
                     wait: false
                   - id: kill
                     type: io.kestra.plugin.kestra.executions.Kill
@@ -52,7 +52,8 @@ import lombok.experimental.SuperBuilder;
                     executionId: "{{ execution.id }}"
                     propagateKill: true
                     auth:
-                      apiToken: "{{ secrets('KESTRA_API_TOKEN') }}"
+                      username: "{{ secrets('KESTRA_USERNAME') }}"
+                      password: "{{ secrets('KESTRA_PASSWORD') }}"
                 """),
       @Example(
           title =
@@ -68,8 +69,10 @@ import lombok.experimental.SuperBuilder;
                       type: io.kestra.plugin.kestra.executions.Kill
                       executionId: "{{ vars.targetExecutionId }}"
                       propagateKill: false
+                      kestraUrl: http://localhost:8080
                       auth:
-                        apiToken: "{{ secrets('KESTRA_API_TOKEN') }}"
+                        username: "{{ secrets('KESTRA_USERNAME') }}"
+                        password: "{{ secrets('KESTRA_PASSWORD') }}"
                   """)
     })
 public class Kill extends AbstractKestraTask implements RunnableTask<VoidOutput> {
