@@ -60,9 +60,9 @@ import java.util.Map;
                     inputs:
                       comment: "Approved by automated process"
                       status: "OK"
-                auth:
-                  username: "{{ secrets('KESTRA_USERNAME') }}"
-                  password: "{{ secrets('KESTRA_PASSWORD') }}"
+                    auth:
+                      username: "{{ secrets('KESTRA_USERNAME') }}"
+                      password: "{{ secrets('KESTRA_PASSWORD') }}"
                 """
         )
     }
