@@ -39,11 +39,13 @@ import lombok.experimental.SuperBuilder;
                   - id: delete_execution
                     type: io.kestra.plugin.kestra.executions.Delete
                     executionId: "{{ vars.targetExecutionId }}"
+                    kestraUrl: http://localhost:8080
                     deleteLogs: true
                     deleteMetrics: true
                     deleteStorage: true
                     auth:
-                      apiToken: "{{ secrets('KESTRA_API_TOKEN') }}"
+                      username: "{{ secrets('KESTRA_USERNAME') }}"
+                      password: "{{ secrets('KESTRA_PASSWORD') }}"
                 """)
     })
 public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutput> {
