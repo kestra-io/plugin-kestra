@@ -4,22 +4,21 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.models.tasks.Task;
-import io.kestra.core.repositories.LogRepositoryInterface;
-import io.kestra.core.runners.DefaultRunContext;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
-import io.kestra.core.models.tasks.runners.PluginUtilsService;
+import io.kestra.plugin.kestra.AbstractKestraTask;
+import io.kestra.sdk.KestraClient;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.event.Level;
-import java.util.Map;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static io.kestra.core.utils.Rethrow.throwConsumer;
@@ -52,15 +51,11 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
     },
     aliases = "io.kestra.core.tasks.log.Fetch"
 )
-public class Fetch extends Task implements RunnableTask<Fetch.Output> {
-    @Schema(
-        title = "Filter for a specific namespace in case `executionId` is set."
-    )
+public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Output> {
+    @Schema(title = "Filter for a specific namespace in case `executionId` is set.")
     private Property<String> namespace;
 
-    @Schema(
-        title = "Filter for a specific flow identifier in case `executionId` is set."
-    )
+    @Schema(title = "Filter for a specific flow identifier in case `executionId` is set.")
     private Property<String> flowId;
 
     @Schema(
@@ -71,80 +66,81 @@ public class Fetch extends Task implements RunnableTask<Fetch.Output> {
     )
     private Property<String> executionId;
 
-    @Schema(
-        title = "Filter for one or more task(s)."
-    )
+    @Schema(title = "Filter for one or more task(s).")
     private Property<List<String>> tasksId;
 
-    @Schema(
-        title = "The lowest log level that you want to fetch"
-    )
+    @Schema(title = "The lowest log level that you want to fetch")
     @Builder.Default
-    private Property<Level> level = Property.ofValue(Level.INFO);
+    private Property<Level> level = Property.of(Level.INFO);
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public Output run(RunContext runContext) throws Exception {
+        KestraClient kestraClient = kestraClient(runContext);
 
-@SuppressWarnings("unchecked")
-@Override
-public Output run(RunContext runContext) throws Exception {
-    Map<String, Object> flowVars = (Map<String, Object>) runContext.getVariables().get("flow");
+        String targetExecutionId = runContext.render(this.executionId).as(String.class).orElse(null);
+        if (targetExecutionId == null) {
+            Map<String, Object> executionVars = (Map<String, Object>) runContext.getVariables().get("execution");
+            if (executionVars != null) {
+                targetExecutionId = (String) executionVars.get("id");
+            }
+        }
 
-    String currentNamespace = (String) flowVars.get("namespace");
-    String currenttenantid = (String) flowVars.get("tenantId");
-    String currentFlowId = (String) flowVars.get("id");
+        String targetTenantId = runContext.render(this.tenantId).as(String.class)
+            .orElseGet(() -> runContext.flowInfo().tenantId());
 
-    String targetExecutionId = runContext.render(this.executionId).as(String.class).orElse(null);
-    if (targetExecutionId == null) {
-        Map<String, Object> executionVars = (Map<String, Object>) runContext.getVariables().get("execution");
-        targetExecutionId = (String) executionVars.get("id");
-    }
+        if (targetExecutionId == null) {
+            throw new IllegalArgumentException(
+                "Execution ID is required. Either set the 'executionId' property or run this task within a flow execution."
+            );
+        }
 
-    String targetFlowId = runContext.render(this.flowId).as(String.class).orElse(currentFlowId); // <--- ADD THIS logic
+        File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
+        AtomicLong count = new AtomicLong();
 
-    var executionInfo = PluginUtilsService.executionFromTaskParameters(
-        runContext,
-        currentNamespace,
-        targetFlowId,
-        targetExecutionId
-    );
-
-    LogRepositoryInterface logRepository = ((DefaultRunContext)runContext).getApplicationContext().getBean(LogRepositoryInterface.class);
-
-    File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-    AtomicLong count = new AtomicLong();
-
-    try (OutputStream output = new FileOutputStream(tempFile)) {
-        var renderedTaskId = runContext.render(this.tasksId).asList(String.class);
-        var logLevel = runContext.render(this.level).as(Level.class).orElseThrow();
-
-        if (!renderedTaskId.isEmpty()) {
-            for (String taskId : renderedTaskId) {
-                logRepository.findByExecutionIdAndTaskId(
-                        currenttenantid,
-                        executionInfo.namespace(),
-                        executionInfo.flowId(),
-                        executionInfo.id(),
+        try (OutputStream output = new FileOutputStream(tempFile)) {
+            io.kestra.sdk.model.Level sdkLogLevel = io.kestra.sdk.model.Level.fromValue(
+                runContext.render(this.level).as(Level.class).orElse(Level.INFO).name()
+            );
+            
+            List<String> taskIds = runContext.render(this.tasksId).asList(String.class);
+            
+            if (taskIds != null && !taskIds.isEmpty()) {
+                for (String taskId : taskIds) {
+                    var logs = kestraClient.logs().listLogsFromExecution(
+                        targetExecutionId,
+                        targetTenantId,
+                        sdkLogLevel,
+                        null,
                         taskId,
-                        logLevel
-                    )
-                    .forEach(throwConsumer(log -> {
+                        null
+                    );
+
+                    if (logs != null) {
+                        logs.forEach(throwConsumer(log -> {
+                            count.incrementAndGet();
+                            FileSerde.write(output, log);
+                        }));
+                    }
+                }
+            } else {
+                var logs = kestraClient.logs().listLogsFromExecution(
+                    targetExecutionId,
+                    targetTenantId,
+                    sdkLogLevel,
+                    null,
+                    null,
+                    null
+                );
+
+                if (logs != null) {
+                    logs.forEach(throwConsumer(log -> {
                         count.incrementAndGet();
                         FileSerde.write(output, log);
                     }));
+                }
             }
-        } else {
-            logRepository.findByExecutionId(
-                    currenttenantid,
-                    executionInfo.namespace(),
-                    executionInfo.flowId(),
-                    executionInfo.id(),
-                    logLevel
-                )
-                .forEach(throwConsumer(log -> {
-                    count.incrementAndGet();
-                    FileSerde.write(output, log);
-                }));
         }
-    }
 
         return Output.builder()
             .uri(runContext.storage().putFile(tempFile))
@@ -152,12 +148,10 @@ public Output run(RunContext runContext) throws Exception {
             .build();
     }
 
-    @Builder
     @Getter
+    @Builder
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(
-            title = "The number of rows fetched"
-        )
+        @Schema(title = "The number of rows fetched")
         private Long size;
 
         @Schema(
