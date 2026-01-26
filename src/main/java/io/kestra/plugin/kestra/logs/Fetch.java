@@ -95,7 +95,7 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
             
             List<String> taskIds = runContext.render(this.tasksId).asList(String.class);
             
-            if (taskIds != null && !taskIds.isEmpty()) {
+            if (!taskIds.isEmpty()) {
                 for (String taskId : taskIds) {
                     var logs = kestraClient.logs().listLogsFromExecution(
                         executionInfo.id(),
