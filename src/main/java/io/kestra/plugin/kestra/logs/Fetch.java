@@ -6,6 +6,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
+import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -77,23 +78,12 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
     @Override
     public Output run(RunContext runContext) throws Exception {
         KestraClient kestraClient = kestraClient(runContext);
-
-        String targetExecutionId = runContext.render(this.executionId).as(String.class).orElse(null);
-        if (targetExecutionId == null) {
-            Map<String, Object> executionVars = (Map<String, Object>) runContext.getVariables().get("execution");
-            if (executionVars != null) {
-                targetExecutionId = (String) executionVars.get("id");
-            }
-        }
-
-        String targetTenantId = runContext.render(this.tenantId).as(String.class)
-            .orElseGet(() -> runContext.flowInfo().tenantId());
-
-        if (targetExecutionId == null) {
-            throw new IllegalArgumentException(
-                "Execution ID is required. Either set the 'executionId' property or run this task within a flow execution."
-            );
-        }
+        var executionInfo = PluginUtilsService.executionFromTaskParameters(
+            runContext,
+            runContext.render(this.namespace).as(String.class).orElse(null),
+            runContext.render(this.flowId).as(String.class).orElse(null),
+            runContext.render(this.executionId).as(String.class).orElse(null)
+        );
 
         File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
         AtomicLong count = new AtomicLong();
@@ -108,8 +98,8 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
             if (taskIds != null && !taskIds.isEmpty()) {
                 for (String taskId : taskIds) {
                     var logs = kestraClient.logs().listLogsFromExecution(
-                        targetExecutionId,
-                        targetTenantId,
+                        executionInfo.id(),
+                        executionInfo.tenantId(),
                         sdkLogLevel,
                         null,
                         taskId,
@@ -125,8 +115,8 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
                 }
             } else {
                 var logs = kestraClient.logs().listLogsFromExecution(
-                    targetExecutionId,
-                    targetTenantId,
+                    executionInfo.id(),
+                    executionInfo.tenantId(),
                     sdkLogLevel,
                     null,
                     null,
