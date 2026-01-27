@@ -36,10 +36,27 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "level: INFO",
-                "executionId: \"{{ trigger.executionId }}\""
-            }
+            full = true,
+            code = """
+                id: fetch_logs_flow
+                namespace: company.team
+
+                tasks:
+                  - id: my_task
+                    type: io.kestra.plugin.scripts.shell.Commands
+                    commands:
+                      - echo "Processing data"
+                      - echo "Task completed"
+
+                  - id: fetch_logs
+                    type: io.kestra.plugin.kestra.logs.Fetch
+                    level: INFO
+                    executionId: "{{ execution.id }}"
+
+                  - id: log_count
+                    type: io.kestra.plugin.core.log.Log
+                    message: "Fetched {{ outputs.fetch_logs.size }} log entries"
+                """
         ),
         @Example(
             code = {
