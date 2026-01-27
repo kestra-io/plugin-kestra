@@ -66,8 +66,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
                 "  - \"previous_task_id\""
             }
         )
-    },
-    aliases = "io.kestra.core.tasks.log.Fetch"
+    }
 )
 public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Output> {
     @Schema(title = "Filter for a specific namespace in case `executionId` is set.")
@@ -109,9 +108,9 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
             io.kestra.sdk.model.Level sdkLogLevel = io.kestra.sdk.model.Level.fromValue(
                 runContext.render(this.level).as(Level.class).orElse(Level.INFO).name()
             );
-            
+
             List<String> taskIds = runContext.render(this.tasksId).asList(String.class);
-            
+
             if (!taskIds.isEmpty()) {
                 for (String taskId : taskIds) {
                     var logs = kestraClient.logs().listLogsFromExecution(
