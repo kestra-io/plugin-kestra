@@ -67,7 +67,9 @@ import java.util.Map;
     }
 )
 public class Count extends AbstractKestraTask implements RunnableTask<Count.Output> {
-    @Schema(title = "To count only executions from given namespaces")
+    @Schema(
+        title = "To count only executions from given namespaces"
+    )
     private Property<List<String>> namespaces;
 
     @Schema(
@@ -81,12 +83,14 @@ public class Count extends AbstractKestraTask implements RunnableTask<Count.Outp
     private Property<List<StateType>> states;
 
     @Schema(
-        title = "The start date"
+        title = "Start date",
+        description = "Counts executions starting from this date."
     )
     private Property<String> startDate;
 
     @Schema(
-        title = "The end date"
+        title = "End date",
+        description = "Counts executions up to this date."
     )
     private Property<String> endDate;
 
