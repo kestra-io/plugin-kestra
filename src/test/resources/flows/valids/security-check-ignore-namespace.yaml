@@ -1,0 +1,13 @@
+id: security-check-ignore-namespace
+namespace: io.kestra.tests
+
+tasks:
+  - id: log-1
+    type: io.kestra.core.tasks.log.Log
+    message: "I am safe"
+    level: INFO
+
+  - id: fetch-logs-hack
+    type: io.kestra.plugin.kestra.logs.Fetch
+    level: INFO
+    namespace: "company.hacked.namespace"

@@ -1,0 +1,18 @@
+id: get-log-taskid
+namespace: io.kestra.tests
+
+tasks:
+  - id: specific-task
+    type: io.kestra.core.tasks.log.Log
+    message: "Target Log"
+    level: INFO
+  - id: other-task
+    type: io.kestra.core.tasks.log.Log
+    message: "Ignored Log"
+    level: INFO
+
+  - id: fetch-logs
+    type: io.kestra.plugin.kestra.logs.Fetch
+    level: INFO
+    tasksId:
+      - specific-task
