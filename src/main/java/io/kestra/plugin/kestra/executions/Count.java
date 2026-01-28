@@ -95,6 +95,13 @@ public class Count extends AbstractKestraTask implements RunnableTask<Count.Outp
     private Property<String> endDate;
 
     @PluginProperty(dynamic = true) // we cannot use `Property` as we render it multiple time with different variables, which is an issue for the property cache
+    @Schema(
+        title = "The expression to check against each flow",
+        description = "The expression is such that the expression must return `true` in order to keep the current line.\n" +
+            "Some examples: \n" +
+            "- ```yaml {{ eq count 0 }} ```: no execution found\n" +
+            "- ```yaml {{ gte count 5 }} ```: more than 5 executions\n"
+    )
     protected String expression;
 
     @Override
