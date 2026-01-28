@@ -67,14 +67,27 @@ import java.util.Map;
     }
 )
 public class Count extends AbstractKestraTask implements RunnableTask<Count.Output> {
+    @Schema(title = "To count only executions from given namespaces")
     private Property<List<String>> namespaces;
 
+    @Schema(
+        title = "A list of flows to be filtered"
+    )
     private Property<String> flowId;
 
+    @Schema(
+        title = "A list of states to be filtered"
+    )
     private Property<List<StateType>> states;
 
+    @Schema(
+        title = "The start date"
+    )
     private Property<String> startDate;
 
+    @Schema(
+        title = "The end date"
+    )
     private Property<String> endDate;
 
     @PluginProperty(dynamic = true) // we cannot use `Property` as we render it multiple time with different variables, which is an issue for the property cache
@@ -169,6 +182,10 @@ public class Count extends AbstractKestraTask implements RunnableTask<Count.Outp
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
+        @Schema(
+            title = "Execution count",
+            description = "The total number of executions."
+        )
         private final Long count;
     }
 }
