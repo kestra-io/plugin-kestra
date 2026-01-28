@@ -101,6 +101,9 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
             runContext.render(this.executionId).as(String.class).orElse(null)
         );
 
+        String targetTenantId = runContext.render(this.tenantId).as(String.class)
+            .orElse(runContext.flowInfo().tenantId());
+
         File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
         AtomicLong count = new AtomicLong();
 
@@ -115,7 +118,7 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
                 for (String taskId : taskIds) {
                     var logs = kestraClient.logs().listLogsFromExecution(
                         executionInfo.id(),
-                        executionInfo.tenantId(),
+                        targetTenantId,
                         sdkLogLevel,
                         null,
                         taskId,
@@ -132,7 +135,7 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
             } else {
                 var logs = kestraClient.logs().listLogsFromExecution(
                     executionInfo.id(),
-                    executionInfo.tenantId(),
+                    targetTenantId,
                     sdkLogLevel,
                     null,
                     null,
