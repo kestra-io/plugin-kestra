@@ -4,6 +4,7 @@ import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.Await;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
@@ -11,6 +12,8 @@ import io.kestra.plugin.kestra.triggers.Toggle;
 import io.kestra.sdk.model.FlowWithSource;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
+
+import java.time.Duration;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -29,7 +32,7 @@ class ToggleTest extends AbstractKestraOssContainerTest {
     void shouldDisableAndEnableTrigger() throws Exception {
         RunContext runContext = runContextFactory.of();
 
-        FlowWithSource flow = kestraTestDataUtils.createFlowWithSchedule(
+        kestraTestDataUtils.createFlowWithSchedule(
             NAMESPACE,
             FLOW_ID,
             "* * * * *",
@@ -50,7 +53,19 @@ class ToggleTest extends AbstractKestraOssContainerTest {
 
         disable.run(runContext);
 
-        assertThat(kestraTestDataUtils.getKestraClient().triggers().searchTriggersForFlow(1, 1000, NAMESPACE, FLOW_ID, TENANT_ID, null, null).getResults().getFirst().getDisabled(), is(true));
+        var disabledTrigger = Await.until(
+            () -> kestraTestDataUtils.getKestraClient()
+                .triggers()
+                .searchTriggersForFlow(1, 1000, NAMESPACE, FLOW_ID, TENANT_ID, null, null)
+                .getResults()
+                .stream()
+                .findFirst()
+                .orElse(null),
+            Duration.ofMillis(100),
+            Duration.ofSeconds(10)
+        );
+
+        assertThat(disabledTrigger.getDisabled(), is(true));
 
         Toggle enable = Toggle.builder()
             .id("enable-" + IdUtils.create())
@@ -66,7 +81,19 @@ class ToggleTest extends AbstractKestraOssContainerTest {
 
         enable.run(runContext);
 
-        assertThat(kestraTestDataUtils.getKestraClient().triggers().searchTriggersForFlow(1, 1000, NAMESPACE, FLOW_ID, TENANT_ID, null, null).getResults().getFirst().getDisabled(), is(false));
+        var trigger = Await.until(
+            () -> kestraTestDataUtils.getKestraClient()
+                .triggers()
+                .searchTriggersForFlow(1, 1000, NAMESPACE, FLOW_ID, TENANT_ID, null, null)
+                .getResults()
+                .stream()
+                .findFirst()
+                .orElse(null),
+            Duration.ofMillis(100),
+            Duration.ofSeconds(10)
+        );
+
+        assertThat(trigger.getDisabled(), is(false));
     }
 
     private AbstractKestraTask.Auth basicAuth() {
