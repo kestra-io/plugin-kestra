@@ -4,6 +4,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.runners.SDK;
 import io.kestra.sdk.KestraClient;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -71,8 +72,34 @@ public abstract class AbstractKestraTask extends Task {
                 builder.basicAuth(maybeUsername.get(), maybePassword.get());
                 return builder.build();
             }
+            if (maybeUsername.isPresent() || maybePassword.isPresent()) {
+                throw new IllegalArgumentException("Both username and password are required for HTTP Basic authentication");
+            }
 
-            throw new IllegalArgumentException("Both username and password are required for HTTP Basic authentication");
+            if (runContext.render(auth.auto).as(Boolean.class).orElse(Boolean.TRUE)) {
+                Optional<SDK.Auth> autoAuth = runContext.sdk().defaultAuthentication();
+                if (autoAuth.isPresent()) {
+                    if (autoAuth.get().apiToken().isPresent()) {
+                        return builder.tokenAuth(autoAuth.get().apiToken().get()).build();
+                    }
+                    if (autoAuth.get().username().isPresent() && autoAuth.get().password().isPresent()) {
+                        return builder.basicAuth(autoAuth.get().username().get(), autoAuth.get().password().get()).build();
+                    }
+                }
+            }
+
+            throw new IllegalArgumentException("No authentication method provided");
+        } else {
+            // try automatic authentication
+            Optional<SDK.Auth> autoAuth = runContext.sdk().defaultAuthentication();
+            if (autoAuth.isPresent()) {
+                if (autoAuth.get().apiToken().isPresent()) {
+                    return builder.tokenAuth(autoAuth.get().apiToken().get()).build();
+                }
+                if (autoAuth.get().username().isPresent() && autoAuth.get().password().isPresent()) {
+                    return builder.basicAuth(autoAuth.get().username().get(), autoAuth.get().password().get()).build();
+                }
+            }
         }
         return builder.build();
     }
@@ -88,5 +115,16 @@ public abstract class AbstractKestraTask extends Task {
 
         @Schema(title = "Password for HTTP basic authentication")
         private Property<String> password;
+
+        @Schema(
+            title = "Automatically retrieve credentials from Kestra's configuration if available",
+            description = """
+                The default configuration can be configured globally inside the Kestra configuration file:
+                - Set `kestra.tasks.sdk.authentication.api-token` to use an API token
+                - Set `kestra.tasks.sdk.authentication.username` and `kestra.tasks.sdk.authentication.password` for HTTP basic authentication
+                The Enterprise edition also provides setting a default configuration at the Namespace of Tenant level by an administrator."""
+        )
+        @Builder.Default
+        private Property<Boolean> auto = Property.ofValue(Boolean.TRUE);
     }
 }
