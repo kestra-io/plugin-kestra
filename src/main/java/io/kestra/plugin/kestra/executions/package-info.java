@@ -1,5 +1,4 @@
-@PluginSubGroup(title = "Kestra Executions", categories = PluginSubGroup.PluginCategory.TOOL,
-    categories = { PluginSubGroup.PluginCategory.CORE }
+@PluginSubGroup(title = "Kestra Executions",categories = { PluginSubGroup.PluginCategory.CORE }
 )
 package io.kestra.plugin.kestra.executions;
 
