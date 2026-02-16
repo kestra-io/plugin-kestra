@@ -21,7 +21,7 @@ import java.util.Map;
 @NoArgsConstructor
 @Schema(
     title = "Resume a paused execution",
-    description = "This task uses the Kestra API to resume an execution that is in a PAUSED state."
+    description = "Resumes a PAUSED execution via the Kestra API. Defaults to the current execution id when executionId is empty; optional inputs are forwarded to the resumed run."
 )
 @Plugin(
     examples = {
@@ -39,8 +39,8 @@ import java.util.Map;
                     executionId: "{{ trigger.executionId }}"
                     kestraUrl: http://localhost:8080
                     auth:
-                      username: "{{ secrets('KESTRA_USERNAME') }}"
-                      password: "{{ secrets('KESTRA_PASSWORD') }}"
+                      username: "{{ secret('KESTRA_USERNAME') }}"
+                      password: "{{ secret('KESTRA_PASSWORD') }}"
                       
                 """
         ),
@@ -61,8 +61,8 @@ import java.util.Map;
                       comment: "Approved by automated process"
                       status: "OK"
                     auth:
-                      username: "{{ secrets('KESTRA_USERNAME') }}"
-                      password: "{{ secrets('KESTRA_PASSWORD') }}"
+                      username: "{{ secret('KESTRA_USERNAME') }}"
+                      password: "{{ secret('KESTRA_PASSWORD') }}"
                 """
         )
     }
@@ -70,12 +70,12 @@ import java.util.Map;
 public class Resume extends AbstractKestraTask implements RunnableTask<VoidOutput> {
 
     @Schema(
-        title = "The Execution ID to resume",
-        description = "If not provided, defaults to the current execution ID."
+        title = "Execution ID to resume",
+        description = "Defaults to the current execution when not provided."
     )
     private Property<String> executionId;
 
-    @Schema(title = "Map of inputs to send to the paused execution")
+    @Schema(title = "Inputs to send with resume")
     private Property<Map<String, Object>> inputs;
 
     @Override

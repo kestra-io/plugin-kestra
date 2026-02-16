@@ -22,9 +22,10 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Delete an execution.",
+    title = "Delete a terminated execution",
     description =
-        "This task will delete an execution and optionally propagate the delete to execution logs, metrics and files in the internal storage.")
+        "Deletes a completed execution (SUCCESS/FAILED/WARNING/KILLED/CANCELLED/RETRIED/SKIPPED). By default also removes logs, metrics, and files from internal storage. Current execution cannot be deleted."
+)
 @Plugin(
     examples = {
       @Example(
@@ -44,27 +45,27 @@ import lombok.experimental.SuperBuilder;
                     deleteMetrics: true
                     deleteStorage: true
                     auth:
-                      username: "{{ secrets('KESTRA_USERNAME') }}"
-                      password: "{{ secrets('KESTRA_PASSWORD') }}"
+                      username: "{{ secret('KESTRA_USERNAME') }}"
+                      password: "{{ secret('KESTRA_PASSWORD') }}"
                 """)
     })
 public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutput> {
   @Schema(
-      title = "The execution ID to delete",
+      title = "Execution ID to delete",
       description =
-          "The ID of the execution to delete. It's not allowed to delete the current execution.")
+          "ID of the target execution; deleting the current execution is not allowed.")
   @NotNull
   private Property<String> executionId;
 
-  @Schema(title = "Whether to delete execution logs")
+  @Schema(title = "Delete execution logs", description = "Defaults to true.")
   @Builder.Default
   private Property<Boolean> deleteLogs = Property.ofValue(true);
 
-  @Schema(title = "Whether to delete execution metrics")
+  @Schema(title = "Delete execution metrics", description = "Defaults to true.")
   @Builder.Default
   private Property<Boolean> deleteMetrics = Property.ofValue(true);
 
-  @Schema(title = "Whether to delete execution files in the internal storage")
+  @Schema(title = "Delete execution files", description = "Defaults to true; removes files stored in internal storage.")
   @Builder.Default
   private Property<Boolean> deleteStorage = Property.ofValue(true);
 

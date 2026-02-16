@@ -30,8 +30,8 @@ import java.util.Map;
 @ToString
 @EqualsAndHashCode
 @Schema(
-    title = "Count Kestra executions",
-    description = "Counts executions matching filters and evaluates an optional expression against the count."
+    title = "Count executions by filters",
+    description = "Counts executions matching namespace, flow, state, and date filters. Optional expression can zero-out the result when the rendered condition is not true."
 )
 @Plugin(
     examples = {
@@ -47,8 +47,8 @@ import java.util.Map;
                     type: io.kestra.plugin.kestra.executions.Count
                     kestraUrl: http://localhost:8080
                     auth:
-                      username: "{{ secrets('KESTRA_USERNAME') }}"
-                      password: "{{ secrets('KESTRA_PASSWORD') }}"
+                      username: "{{ secret('KESTRA_USERNAME') }}"
+                      password: "{{ secret('KESTRA_PASSWORD') }}"
                     namespaces:
                     - company.team
                     states:
@@ -67,19 +67,13 @@ import java.util.Map;
     }
 )
 public class Count extends AbstractKestraTask implements RunnableTask<Count.Output> {
-    @Schema(
-        title = "To count only executions from given namespaces"
-    )
+    @Schema(title = "Namespaces filter", description = "Limit the search to these namespaces; leave empty for all.")
     private Property<List<String>> namespaces;
 
-    @Schema(
-        title = "A list of flows to be filtered"
-    )
+    @Schema(title = "Flow id filter")
     private Property<String> flowId;
 
-    @Schema(
-        title = "A list of states to be filtered"
-    )
+    @Schema(title = "Execution states", description = "Only count executions currently in these states.")
     private Property<List<StateType>> states;
 
     @Schema(
@@ -96,11 +90,8 @@ public class Count extends AbstractKestraTask implements RunnableTask<Count.Outp
 
     @PluginProperty(dynamic = true) // we cannot use `Property` as we render it multiple time with different variables, which is an issue for the property cache
     @Schema(
-        title = "The expression to check against each flow",
-        description = "The expression is such that the expression must return `true` in order to keep the current line.\n" +
-            "Some examples: \n" +
-            "- ```yaml {{ eq count 0 }} ```: no execution found\n" +
-            "- ```yaml {{ gte count 5 }} ```: more than 5 executions\n"
+        title = "Expression evaluated on count",
+        description = "Rendered with variable `count`; if the expression does not return true, the exposed count is set to 0. Example: `{{ gte count 5 }}`."
     )
     protected String expression;
 
