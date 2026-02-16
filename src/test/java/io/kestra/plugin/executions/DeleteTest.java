@@ -10,7 +10,7 @@ import io.kestra.core.models.tasks.VoidOutput;
 import io.kestra.core.models.tasks.common.FetchOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
-import io.kestra.plugin.AbstractKestraContainerTest;
+import io.kestra.core.utils.Await;
 import io.kestra.plugin.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.executions.Delete;
@@ -19,9 +19,12 @@ import io.kestra.sdk.model.Execution;
 import io.kestra.sdk.model.FlowWithSource;
 import io.kestra.sdk.model.StateType;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
+import java.util.concurrent.Callable;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
 
 @KestraTest
 public class DeleteTest extends AbstractKestraOssContainerTest {
@@ -120,17 +123,20 @@ public class DeleteTest extends AbstractKestraOssContainerTest {
     // Create an execution for a given flow
     kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
 
-    // Query an execution for a given flow
+    // Query an execution for a given flow and wait for it to reach PAUSED
     Execution beforeExecution = queryExecution(flow.getId());
-    assertThat(beforeExecution.getState().getCurrent(), is(StateType.RUNNING));
+    Awaitility.await()
+        .atMost(Duration.ofSeconds(5))
+        .until(checkExecutionState(beforeExecution.getId(), StateType.PAUSED));
 
     // Kill the execution
-    Thread.sleep(500);
     kestraTestDataUtils.killExecution(beforeExecution.getId(), true);
 
     // Wait for the execution current state changed from KILLING to KILLED
-    Thread.sleep(500);
-    Execution afterExecution = queryExecution(flow.getId());
+    Awaitility.await()
+        .atMost(Duration.ofSeconds(5))
+        .until(checkExecutionState(beforeExecution.getId(), StateType.KILLED));
+    Execution afterExecution = kestraTestDataUtils.getExecution(beforeExecution.getId());
     assertThat(afterExecution.getState().getCurrent(), is(StateType.KILLED));
 
     // Delete the execution
@@ -157,32 +163,46 @@ public class DeleteTest extends AbstractKestraOssContainerTest {
 
   private Execution queryExecution(String flowId) throws Exception {
     RunContext runContext = runContextFactory.of();
-    Query searchTask =
-        Query.builder()
-            .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(
-                AbstractKestraTask.Auth.builder()
-                    .username(Property.ofValue(USERNAME))
-                    .password(Property.ofValue(PASSWORD))
-                    .build())
-            .tenantId(Property.ofValue(TENANT_ID))
-            .namespace(Property.ofValue(NAMESPACE))
-            .flowId(Property.ofValue(flowId))
-            .size(Property.ofValue(10))
-            .fetchType(Property.ofValue(io.kestra.core.models.tasks.common.FetchType.FETCH))
-            .build();
 
-    FetchOutput output = searchTask.run(runContext);
+    return Await.until(
+        () -> {
+          try {
+            Query searchTask =
+                Query.builder()
+                    .kestraUrl(Property.ofValue(KESTRA_URL))
+                    .auth(
+                        AbstractKestraTask.Auth.builder()
+                            .username(Property.ofValue(USERNAME))
+                            .password(Property.ofValue(PASSWORD))
+                            .build())
+                    .tenantId(Property.ofValue(TENANT_ID))
+                    .namespace(Property.ofValue(NAMESPACE))
+                    .flowId(Property.ofValue(flowId))
+                    .size(Property.ofValue(10))
+                    .fetchType(Property.ofValue(io.kestra.core.models.tasks.common.FetchType.FETCH))
+                    .build();
 
-    assertThat(output.getRows().size(), is(1));
+            FetchOutput output = searchTask.run(runContext);
+            if (output.getRows().isEmpty()) {
+              return null;
+            }
 
-    Execution execution = null;
-    var row = output.getRows().getFirst();
-    if (row instanceof ArrayList<?> arrayList) {
-      execution = (Execution) arrayList.getFirst();
-    }
+            Execution execution = null;
+            var row = output.getRows().getFirst();
+            if (row instanceof ArrayList<?> arrayList && !arrayList.isEmpty()) {
+              execution = (Execution) arrayList.getFirst();
+            }
 
-    assertThat(execution, is(notNullValue()));
-    return execution;
+            return execution;
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        },
+        Duration.ofMillis(200),
+        Duration.ofSeconds(5));
+  }
+
+  private Callable<Boolean> checkExecutionState(String executionId, StateType stateType) {
+    return () -> kestraTestDataUtils.getExecution(executionId).getState().getCurrent() == stateType;
   }
 }

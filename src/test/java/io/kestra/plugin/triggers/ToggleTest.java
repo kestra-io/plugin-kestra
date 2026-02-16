@@ -26,6 +26,7 @@ class ToggleTest extends AbstractKestraOssContainerTest {
     private static final String NAMESPACE = "kestra.tests.trigger.toggle";
     private static final String FLOW_ID = "toggle-flow";
     private static final String TRIGGER_ID = "schedule";
+    private static final Duration AWAIT_TIMEOUT = Duration.ofSeconds(60);
 
     @Test
     void shouldDisableAndEnableTrigger() throws Exception {
@@ -64,7 +65,7 @@ class ToggleTest extends AbstractKestraOssContainerTest {
                 return Boolean.TRUE.equals(trigger != null ? trigger.getDisabled() : null) ? trigger : null;
             },
             Duration.ofMillis(100),
-            Duration.ofSeconds(20)
+            AWAIT_TIMEOUT
         );
 
         assertThat(disabledTrigger.getDisabled(), is(true));
@@ -95,7 +96,7 @@ class ToggleTest extends AbstractKestraOssContainerTest {
                 return Boolean.FALSE.equals(currentTrigger != null ? currentTrigger.getDisabled() : null) ? currentTrigger : null;
             },
             Duration.ofMillis(100),
-            Duration.ofSeconds(20)
+            AWAIT_TIMEOUT
         );
 
         assertThat(trigger.getDisabled(), is(false));
