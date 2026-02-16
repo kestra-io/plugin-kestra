@@ -9,7 +9,6 @@ import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.triggers.Toggle;
-import io.kestra.sdk.model.FlowWithSource;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
@@ -54,13 +53,16 @@ class ToggleTest extends AbstractKestraOssContainerTest {
         disable.run(runContext);
 
         var disabledTrigger = Await.until(
-            () -> kestraTestDataUtils.getKestraClient()
-                .triggers()
-                .searchTriggersForFlow(1, 1000, NAMESPACE, FLOW_ID, TENANT_ID, null, null)
-                .getResults()
-                .stream()
-                .findFirst()
-                .orElse(null),
+            () -> {
+                var trigger = kestraTestDataUtils.getKestraClient()
+                    .triggers()
+                    .searchTriggersForFlow(1, 1000, NAMESPACE, FLOW_ID, TENANT_ID, null, null)
+                    .getResults()
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+                return Boolean.TRUE.equals(trigger != null ? trigger.getDisabled() : null) ? trigger : null;
+            },
             Duration.ofMillis(100),
             Duration.ofSeconds(20)
         );
@@ -82,13 +84,16 @@ class ToggleTest extends AbstractKestraOssContainerTest {
         enable.run(runContext);
 
         var trigger = Await.until(
-            () -> kestraTestDataUtils.getKestraClient()
-                .triggers()
-                .searchTriggersForFlow(1, 1000, NAMESPACE, FLOW_ID, TENANT_ID, null, null)
-                .getResults()
-                .stream()
-                .findFirst()
-                .orElse(null),
+            () -> {
+                var currentTrigger = kestraTestDataUtils.getKestraClient()
+                    .triggers()
+                    .searchTriggersForFlow(1, 1000, NAMESPACE, FLOW_ID, TENANT_ID, null, null)
+                    .getResults()
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+                return Boolean.FALSE.equals(currentTrigger != null ? currentTrigger.getDisabled() : null) ? currentTrigger : null;
+            },
             Duration.ofMillis(100),
             Duration.ofSeconds(20)
         );
