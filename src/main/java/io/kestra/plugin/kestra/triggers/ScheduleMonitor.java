@@ -1,6 +1,7 @@
 package io.kestra.plugin.kestra.triggers;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
@@ -36,7 +37,32 @@ import java.util.Optional;
         or (optionally) disabled.
         """
 )
-@Plugin
+@Plugin(
+    examples = {
+        @Example(
+            title = "Detect stuck, unhealthy, or disabled schedule triggers",
+            full = true,
+            code = """
+                id: detect_schedule_triggers
+                namespace: company.team
+
+                tasks:
+                  - id: hello
+                    type: io.kestra.plugin.core.log.Log
+                    message: "{{ trigger.data.size }} triggers detected"
+
+                triggers:
+                  - id: stuck_schedules
+                    type: io.kestra.plugin.kestra.triggers.ScheduleMonitor
+                    includeDisabled: true
+                    auth:
+                      username: "{{ secret('KESTRA_USERNAME') }}" # Pass your Kestra username as a secret
+                      password: "{{ secret('KESTRA_PASSWORD') }}" # Pass your Kestra password as secret
+                    interval: PT2M
+                """
+        )
+    }
+)
 public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<ScheduleMonitor.Output>, PollingTriggerInterface {
     private static final String DEFAULT_KESTRA_URL = "http://localhost:8080";
     private static final String KESTRA_URL_TEMPLATE = "{{ kestra.url }}";
@@ -44,7 +70,14 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
     @Schema(title = "Kestra API URL. If null, uses 'kestra.url' from configuration. If that is also null, defaults to 'http://localhost:8080'.")
     private Property<String> kestraUrl;
 
-    @Schema(title = "Authentication information.")
+    @Schema(
+        title = "Authentication information.",
+        description = """
+        Authentication used to call the Kestra API.
+        Uses the same credentials as Kestra login:
+        either an API token or HTTP Basic (username/password).
+        """
+    )
     private AbstractKestraTask.Auth auth;
 
     @Schema(title = "The tenant ID to use for the request, defaults to current tenant.")
