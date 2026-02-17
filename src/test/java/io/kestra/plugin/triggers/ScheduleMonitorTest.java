@@ -4,14 +4,13 @@ import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
-import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.Await;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.triggers.ScheduleMonitor;
-import io.kestra.sdk.model.FlowWithSource;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
@@ -28,12 +27,15 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
     @Inject RunContextFactory runContextFactory;
 
     protected static final String NAMESPACE = "kestra.tests.schedule.monitor";
+    private static final Duration AWAIT_TIMEOUT = Duration.ofSeconds(60);
 
     @Test
     public void shouldDetectDisabledScheduleOnlyWhenIncluded() throws Exception {
-        FlowWithSource flow = kestraTestDataUtils.createFlowWithSchedule(
-                    NAMESPACE,
-            "myflow",
+        var flowId = "myflow-" + IdUtils.create();
+
+        kestraTestDataUtils.createFlowWithSchedule(
+            NAMESPACE,
+            flowId,
             "*/5 * * * *",
             true
         );
@@ -71,9 +73,11 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
 
     @Test
     public void shouldDetectNoExecutionWithinInterval() throws Exception {
+        var flowId = "intervalflow-" + IdUtils.create();
+
         kestraTestDataUtils.createFlowWithSchedule(
             NAMESPACE,
-            "intervalflow",
+            flowId,
             "*/5 * * * *",
             false
         );
@@ -90,11 +94,13 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, monitor);
 
-        Thread.sleep(1200);
+        var execution = Await.until(
+            () -> evaluate(monitor, context.getKey(), context.getValue()).orElse(null),
+            Duration.ofMillis(100),
+            AWAIT_TIMEOUT
+        );
 
-        Optional<Execution> execution = monitor.evaluate(context.getKey(), context.getValue());
-
-        assertThat(execution.isPresent(), is(true));
+        assertThat(execution, is(notNullValue()));
     }
 
     private AbstractKestraTask.Auth basicAuth() {
@@ -103,5 +109,16 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
             .password(Property.ofValue(PASSWORD))
             .build();
     }
-}
 
+    private Optional<Execution> evaluate(
+        ScheduleMonitor monitor,
+        ConditionContext conditionContext,
+        io.kestra.core.models.triggers.Trigger triggerContext
+    ) {
+        try {
+            return monitor.evaluate(conditionContext, triggerContext);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
