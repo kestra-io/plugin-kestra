@@ -28,7 +28,7 @@ public class ListTest extends AbstractKestraEeContainerTest {
 
         String NAMESPACE_LOCAL = NAMESPACE + ".shouldlistnamespaces";
 
-        List listNamespaces = listTask(NAMESPACE_LOCAL, null);
+        List listNamespaces = listTask(NAMESPACE_LOCAL, null, 1);
 
         kestraTestDataUtils.createRandomizedNamespace(NAMESPACE_LOCAL);
         kestraTestDataUtils.createRandomizedNamespace(NAMESPACE_LOCAL + ".sub");
@@ -41,10 +41,11 @@ public class ListTest extends AbstractKestraEeContainerTest {
     @Test
     public void shouldListNamespacesWithPagination() throws Exception {
         RunContext runContext = runContextFactory.of();
-        Integer NAMESPACE_COUNT = 20;
+        // 20 generated namespace + queried namespace as it's a parent namespace of the generated ones
+        Integer NAMESPACE_COUNT = 21;
         String NAMESPACE_LOCAL = NAMESPACE + ".withpagination";
 
-        List listNamespaces = listTask(NAMESPACE_LOCAL, null);
+        List listNamespaces = listTask(NAMESPACE_LOCAL, null, null);
 
         for (int i = 0; i < 20; i++) {
             kestraTestDataUtils.createRandomizedFlow(NAMESPACE_LOCAL + ".namespace" + i);
@@ -53,7 +54,7 @@ public class ListTest extends AbstractKestraEeContainerTest {
 
         assertThat(listNamespacesOutput.getNamespaces().size(), is(NAMESPACE_COUNT));
 
-        listNamespaces = listTask(NAMESPACE_LOCAL, 1);
+        listNamespaces = listTask(NAMESPACE_LOCAL, 1, null);
         listNamespacesOutput = listNamespaces.run(runContext);
 
         assertThat(listNamespacesOutput.getNamespaces().size(), is(10));
@@ -62,7 +63,7 @@ public class ListTest extends AbstractKestraEeContainerTest {
     /**
      * Required because using `toBuilder()` with Property does not work as expected
      */
-    private List listTask(String prefix, @Nullable Integer page) {
+    private List listTask(String prefix, @Nullable Integer page, @Nullable Integer size) {
         List.ListBuilder<?, ?> listBuilder = List.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
             .auth(AbstractKestraTask.Auth.builder()
@@ -75,6 +76,10 @@ public class ListTest extends AbstractKestraEeContainerTest {
 
         if (page != null) {
             listBuilder.page(Property.ofValue(page));
+        }
+
+        if (size != null) {
+            listBuilder.size(Property.ofValue(size));
         }
 
         return listBuilder.build();

@@ -11,7 +11,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.util.Optional;
 
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @ToString
 @EqualsAndHashCode
