@@ -137,8 +137,7 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
                     );
                 results.getResults().forEach(namespace -> allNamespaces.add(namespace.getId()));
                 total = results.getTotal();
-                currentPage++;
-            } while ((long) currentPage * rSize < total);
+            } while ((long) currentPage++ * rSize < total);
         }
 
         return List.Output.builder()
