@@ -31,11 +31,8 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Detect stuck or misconfigured Schedule triggers.",
-    description = """
-        Detects SCHEDULE triggers that are overdue (stuck), misconfigured,
-        or (optionally) disabled.
-        """
+    title = "Detect unhealthy schedule triggers",
+    description = "Finds SCHEDULE triggers that are overdue, running too long, missing next execution, or optionally disabled. Defaults: poll every 60s, allowedDelay 1 minute, disabled ignored unless includeDisabled is true."
 )
 @Plugin(
     examples = {
@@ -67,52 +64,51 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
     private static final String DEFAULT_KESTRA_URL = "http://localhost:8080";
     private static final String KESTRA_URL_TEMPLATE = "{{ kestra.url }}";
 
-    @Schema(title = "Kestra API URL. If null, uses 'kestra.url' from configuration. If that is also null, defaults to 'http://localhost:8080'.")
+    @Schema(
+        title = "Override Kestra API endpoint",
+        description = "When null renders `{{ kestra.url }}`; falls back to http://localhost:8080. Trailing slashes are stripped."
+    )
     private Property<String> kestraUrl;
 
     @Schema(
-        title = "Authentication information.",
-        description = """
-        Authentication used to call the Kestra API.
-        Uses the same credentials as Kestra login:
-        either an API token or HTTP Basic (username/password).
-        """
+        title = "Select API authentication",
+        description = "Use either API token or HTTP Basic (username/password); not both."
     )
     private AbstractKestraTask.Auth auth;
 
-    @Schema(title = "The tenant ID to use for the request, defaults to current tenant.")
+    @Schema(title = "Override target tenant", description = "Defaults to current execution tenant.")
     @Setter
     protected Property<String> tenantId;
 
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
 
-    @Schema(title = "Limit the check to a given namespace.")
+    @Schema(title = "Namespace filter", description = "Prefix match; null scans all namespaces.")
     private Property<String> namespace;
 
-    @Schema(title = "Limit the check to a specific flow.")
+    @Schema(title = "Flow filter")
     private Property<String> flowId;
 
-    @Schema(title = "Whether to include disabled schedules in the check. Default: false.")
+    @Schema(title = "Include disabled schedules", description = "Defaults to false.")
     @Builder.Default
     private Property<Boolean> includeDisabled = Property.ofValue(false);
 
     @Schema(
-        title = "Maximum allowed delay for a schedule before being considered stuck.",
-        description = "If the next execution time is older than now minus this delay, the trigger is marked as stuck."
+        title = "Allowed delay past next run",
+        description = "Defaults to PT1M. If now is after next execution plus this delay, trigger is flagged."
     )
     @Builder.Default
     private Property<Duration> allowedDelay = Property.ofValue(Duration.ofMinutes(1));
 
     @Schema(
-        title = "Maximum allowed execution duration",
-        description = "If set, a schedule-triggered execution RUNNING longer than this duration is considered stuck."
+        title = "Max execution duration",
+        description = "When set, a RUNNING execution longer than this is flagged."
     )
     private Property<Duration> maxExecutionDuration;
 
     @Schema(
-        title = "Expected maximum interval between executions",
-        description = "If no execution happened within this interval, the schedule is considered unhealthy."
+        title = "Max idle interval between runs",
+        description = "Flags schedules with no execution within this period."
     )
     private Property<Duration> maxExecutionInterval;
 

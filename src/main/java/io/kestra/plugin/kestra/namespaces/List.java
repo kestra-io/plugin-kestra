@@ -21,8 +21,8 @@ import java.util.ArrayList;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "List Kestra namespaces.",
-    description = "Retrieves a list of Kestra namespaces, offering options for filtering by prefix, pagination, and excluding non-existent namespaces."
+    title = "List namespaces with paging",
+    description = "Retrieves namespaces filtered by prefix with optional pagination. When page is null, iterates all pages. Defaults: size 10, existingOnly false."
 )
 @Plugin(
     examples = {
@@ -83,22 +83,20 @@ import java.util.ArrayList;
     }
 )
 public class List extends AbstractKestraTask implements RunnableTask<List.Output> {
-    @Schema(title = "The namespace prefix, if null, all namespaces will be listed.")
+    @Schema(title = "Namespace prefix", description = "Defaults to empty string to return all namespaces.")
     private Property<String> prefix;
 
     @Nullable
-    @Schema(title = "If not provided, all pages are fetched",
-        description = "For example, set to 1, it can be used to only fetch the first 10 results used with `size`.")
+    @Schema(title = "Page number", description = "When null, fetches every page. Set with size to limit requests.")
     private Property<Integer> page;
 
     @Nullable
     @Builder.Default
-    @Schema(title = "The number of namespaces to return per page")
+    @Schema(title = "Page size", description = "Defaults to 10.")
     private Property<Integer> size = Property.ofValue(10);
 
     @Builder.Default
-    @Schema(title = "Return only the existing namespace",
-        description = "Set to true, namespaces that exist only because a flow is using it will be returned.")
+    @Schema(title = "Existing namespaces only", description = "Defaults to false. When true, returns namespaces backed by stored definition, excluding transient ones.")
     private Property<Boolean> existingOnly = Property.ofValue(false);
 
     @Override

@@ -20,20 +20,21 @@ public abstract class AbstractKestraTask extends Task {
     private static final String DEFAULT_KESTRA_URL = "http://localhost:8080";
     private static final String KESTRA_URL_TEMPLATE = "{{ kestra.url }}";
 
-    @Schema(title = "Kestra API URL. If null, uses 'kestra.url' from configuration. If that is also null, defaults to 'http://localhost:8080'.")
+    @Schema(
+        title = "Override Kestra API endpoint",
+        description = """
+        URL used for calls to the Kestra API. When null, renders `{{ kestra.url }}` from configuration; if still empty, defaults to http://localhost:8080. Trailing slashes are stripped before use.
+        """
+    )
     private Property<String> kestraUrl;
 
     @Schema(
-        title = "Authentication information.",
-        description = """
-        Authentication used to call the Kestra API.
-        Uses the same credentials as Kestra login:
-        either an API token or HTTP Basic (username/password).
-        """
+        title = "Select API authentication",
+        description = "Use either an API token or HTTP Basic (username/password); do not provide both."
     )
     private Auth auth;
 
-    @Schema(title = "The tenant ID to use for the request, defaults to current tenant.")
+    @Schema(title = "Override target tenant", description = "Tenant identifier applied to API calls; defaults to the current execution tenant.")
     @Setter
     protected Property<String> tenantId;
 
@@ -80,13 +81,13 @@ public abstract class AbstractKestraTask extends Task {
     @Builder
     @Getter
     public static class Auth {
-        @Schema(title = "API token")
+        @Schema(title = "API token for bearer auth")
         private Property<String> apiToken;
 
-        @Schema(title = "Username for HTTP basic authentication")
+        @Schema(title = "Username for HTTP Basic auth")
         private Property<String> username;
 
-        @Schema(title = "Password for HTTP basic authentication")
+        @Schema(title = "Password for HTTP Basic auth")
         private Property<String> password;
     }
 }

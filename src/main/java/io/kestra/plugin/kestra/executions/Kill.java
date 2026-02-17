@@ -19,12 +19,10 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Kill an execution.",
+    title = "Kill a running execution",
     description =
-        """
-            This task will kill an execution and optionally propagate the kill to child executions;
-            only the non-terminated executions can be killed.
-            """)
+        "Terminates a non-finished execution and, by default, propagates the kill to child executions. Use on active states; already terminated executions are not affected."
+)
 @Plugin(
     examples = {
       @Example(
@@ -52,8 +50,8 @@ import lombok.experimental.SuperBuilder;
                     executionId: "{{ execution.id }}"
                     propagateKill: true
                     auth:
-                      username: "{{ secrets('KESTRA_USERNAME') }}"
-                      password: "{{ secrets('KESTRA_PASSWORD') }}"
+                      username: "{{ secret('KESTRA_USERNAME') }}"
+                      password: "{{ secret('KESTRA_PASSWORD') }}"
                 """),
       @Example(
           title =
@@ -71,22 +69,22 @@ import lombok.experimental.SuperBuilder;
                       propagateKill: false
                       kestraUrl: http://localhost:8080
                       auth:
-                        username: "{{ secrets('KESTRA_USERNAME') }}"
-                        password: "{{ secrets('KESTRA_PASSWORD') }}"
+                        username: "{{ secret('KESTRA_USERNAME') }}"
+                        password: "{{ secret('KESTRA_PASSWORD') }}"
                   """)
     })
 public class Kill extends AbstractKestraTask implements RunnableTask<VoidOutput> {
   @Schema(
-      title = "The execution ID to kill",
-      description =
-          "The ID of the execution to kill. Use \"{{ execution.id }}\" to kill the current execution.")
+      title = "Execution ID to kill",
+      description = "ID of the execution to kill; use `{{ execution.id }}` for the current one."
+  )
   @NotNull
   private Property<String> executionId;
 
   @Schema(
       title = "Propagate kill to child executions",
-      description =
-          "Whether to also kill the child executions (subflows) when this execution is killed.")
+      description = "Defaults to true. When true, also kills subflow executions."
+  )
   @Builder.Default
   private Property<Boolean> propagateKill = Property.ofValue(true);
 

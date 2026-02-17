@@ -36,7 +36,8 @@ import java.util.stream.Stream;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Search for Kestra executions."
+    title = "Search executions with filters",
+    description = "Queries executions by namespace, flow, labels, states, date range, or scope. Defaults to fetch all pages with page size 10 and stores results to internal storage unless fetchType overrides."
 )
 @Plugin(
     examples = {
@@ -54,8 +55,8 @@ import java.util.stream.Stream;
                     labels:
                       key: value
                     auth:
-                      username: "{{ secrets('KESTRA_USERNAME') }}"
-                      password: "{{ secrets('KESTRA_PASSWORD') }}"
+                      username: "{{ secret('KESTRA_USERNAME') }}"
+                      password: "{{ secret('KESTRA_PASSWORD') }}"
                     fetchType: STORE # Store the results in a file
                 """
         ),
@@ -71,8 +72,8 @@ import java.util.stream.Stream;
                     type: io.kestra.plugin.kestra.executions.Query
                     kestraUrl: http://localhost:8080
                     auth:
-                      username: "{{ secrets('KESTRA_USERNAME') }}"
-                      password: "{{ secrets('KESTRA_PASSWORD') }}" 
+                      username: "{{ secret('KESTRA_USERNAME') }}"
+                      password: "{{ secret('KESTRA_PASSWORD') }}" 
                     timeRange: PT10H # In the last 10 hours
                     states:
                       - SUCCESS
@@ -83,58 +84,57 @@ import java.util.stream.Stream;
 )
 public class Query extends AbstractKestraTask implements RunnableTask<FetchOutput> {
     @Nullable
-    @Schema(title = "If not provided, all pages are fetched",
-        description = "To efficiently fetch only the first 10 API results, you can use `page: 1` along with `size: 10`.")
+    @Schema(title = "Page number", description = "When null, iterates through all pages. Combine with size to limit requests.")
     private Property<Integer> page;
 
     @Nullable
     @Builder.Default
-    @Schema(title = "The number of results to return per page")
+    @Schema(title = "Page size", description = "Defaults to 10.")
     private Property<Integer> size = Property.ofValue(10);
 
     @Nullable
     @Builder.Default
-    @Schema(title = "The way the fetched data will be stored")
+    @Schema(title = "Fetch strategy", description = "Defaults to STORE (writes to internal storage and returns URI). FETCH returns rows in output; FETCH_ONE returns the first execution.")
     private Property<FetchType> fetchType = Property.ofValue(FetchType.STORE);
 
     @Nullable
-    @Schema(title = "Can be set to USER to fetch only user-created executions, or to SYSTEM to fetch only system executions. By default, the task will handle both.")
+    @Schema(title = "Flow scope filter", description = "USER for user-created executions, SYSTEM for system executions; defaults to both.")
     private Property<List<FlowScope>> flowScopes;
 
     @Nullable
-    @Schema(title = "To list only executions from a given namespace")
+    @Schema(title = "Namespace filter")
     private Property<String> namespace;
 
     @Nullable
-    @Schema(title = "To list only executions of a given flow")
+    @Schema(title = "Flow id filter")
     private Property<String> flowId;
 
     @Nullable
-    @Schema(title = "To list only executions created after a given start date")
+    @Schema(title = "Start date (inclusive)")
     private Property<ZonedDateTime> startDate;
 
     @Nullable
-    @Schema(title = "To list only executions created before a given end date")
+    @Schema(title = "End date (inclusive)")
     private Property<ZonedDateTime> endDate;
 
     @Nullable
-    @Schema(title = "To list only executions created within a given time range duration")
+    @Schema(title = "Relative time range", description = "Duration back from now. Cannot be used with both startDate and endDate.")
     private Property<Duration> timeRange;
 
     @Nullable
-    @Schema(title = "To list only executions in given states")
+    @Schema(title = "Execution states")
     private Property<List<StateType>> states;
 
     @Nullable
-    @Schema(title = "To list only executions with given labels")
+    @Schema(title = "Labels filter", description = "Matches executions containing the provided key/value pairs.")
     private Property<Map<String, String>> labels;
 
     @Nullable
-    @Schema(title = "To list all downstream executions started from a given execution ID")
+    @Schema(title = "Downstream of execution ID")
     private Property<String> triggerExecutionId;
 
     @Nullable
-    @Schema(title = "To list only child executions of a given flow")
+    @Schema(title = "Child filter", description = "Limits results to child execution context when set.")
     private Property<ExecutionRepositoryInterfaceChildFilter> childFilter;
 
     @Override

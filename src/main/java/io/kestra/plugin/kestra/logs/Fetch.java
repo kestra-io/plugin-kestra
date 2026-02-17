@@ -30,8 +30,8 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Fetch execution logs and store them in a file.",
-    description = "This task is useful to automate moving logs between various systems and environments."
+    title = "Fetch execution logs to storage",
+    description = "Downloads logs for an execution using optional task filters and minimum level. Defaults to the current execution and level INFO. Stores results as an ION file in internal storage and returns its URI and row count."
 )
 @Plugin(
     examples = {
@@ -69,24 +69,23 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
     }
 )
 public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Output> {
-    @Schema(title = "Filter for a specific namespace in case `executionId` is set.")
+    @Schema(title = "Execution namespace", description = "Used when targeting another execution; defaults to the current flow namespace.")
     private Property<String> namespace;
 
-    @Schema(title = "Filter for a specific flow identifier in case `executionId` is set.")
+    @Schema(title = "Execution flow id", description = "Required when fetching a different flow's execution without a fully qualified ID.")
     private Property<String> flowId;
 
     @Schema(
-        title = "Filter for a specific execution.",
+        title = "Execution id to fetch",
         description = """
-            If not set, the task will use the ID of the current execution.
-            If set, it will try to locate the execution on the current flow unless the `namespace` and `flowId` properties are set."""
+            Defaults to the current execution ID. Provide namespace and flowId when referencing an execution from another flow."""
     )
     private Property<String> executionId;
 
-    @Schema(title = "Filter for one or more task(s).")
+    @Schema(title = "Task ids filter", description = "Limit logs to these task ids; empty list fetches all tasks.")
     private Property<List<String>> tasksId;
 
-    @Schema(title = "The lowest log level that you want to fetch")
+    @Schema(title = "Minimum log level", description = "Defaults to INFO; lower levels are excluded.")
     @Builder.Default
     private Property<Level> level = Property.of(Level.INFO);
 
@@ -165,7 +164,7 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
 
         @Schema(
             title = "Internal storage URI of stored results",
-            description = "Stored as Amazon ION file in a row per row format."
+            description = "Logs are stored as an Amazon ION file, one record per row."
         )
         private URI uri;
     }

@@ -27,8 +27,8 @@ import java.util.stream.Stream;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Export Kestra flows.",
-    description = "Exports one or more Kestra flows as a ZIP archive. You can specify from a namespace prefix and/or labels to filter the flows to export. "
+    title = "Export flows by namespace/labels",
+    description = "Exports flows matching namespace prefix and optional labels into a ZIP written to internal storage. Returns the stored URI."
 )
 @Plugin(
     examples = {
@@ -53,10 +53,10 @@ import java.util.stream.Stream;
 )
 public class Export extends AbstractKestraTask implements RunnableTask<Export.Output> {
 
-    @Schema(title = "A namespace prefix filter")
+    @Schema(title = "Namespace prefix", description = "Limit export to flows whose namespace matches this prefix.")
     public Property<String> namespace;
 
-    @Schema(title = "A list of label with the format `key:value`")
+    @Schema(title = "Label filters", description = "List of `key:value` labels all flows must contain.")
     public Property<List<String>> labels;
 
     @Override
