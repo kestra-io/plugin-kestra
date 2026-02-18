@@ -3,10 +3,12 @@ package io.kestra.plugin.kestra.executions;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.flows.FlowScope;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchOutput;
 import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.repositories.ExecutionRepositoryInterface;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.plugin.kestra.AbstractKestraTask;
@@ -73,7 +75,7 @@ import java.util.stream.Stream;
                     kestraUrl: http://localhost:8080
                     auth:
                       username: "{{ secret('KESTRA_USERNAME') }}"
-                      password: "{{ secret('KESTRA_PASSWORD') }}" 
+                      password: "{{ secret('KESTRA_PASSWORD') }}"
                     timeRange: PT10H # In the last 10 hours
                     states:
                       - SUCCESS
@@ -135,7 +137,7 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
 
     @Nullable
     @Schema(title = "Child filter", description = "Limits results to child execution context when set.")
-    private Property<ExecutionRepositoryInterfaceChildFilter> childFilter;
+    private Property<ExecutionRepositoryInterface.ChildFilter> childFilter;
 
     @Override
     public FetchOutput run(RunContext runContext) throws Exception {
@@ -213,24 +215,24 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
         List<StateType> rState = runContext.render(this.states).asList(StateType.class);
         Map<String, String> rLabels = runContext.render(this.labels).asMap(String.class, String.class);
         String rTriggerExecutionId = runContext.render(this.triggerExecutionId).as(String.class).orElse(null);
-        ExecutionRepositoryInterfaceChildFilter rChildFilter = runContext.render(this.childFilter).as(ExecutionRepositoryInterfaceChildFilter.class).orElse(null);
+        ExecutionRepositoryInterface.ChildFilter rChildFilter = runContext.render(this.childFilter).as(ExecutionRepositoryInterface.ChildFilter.class).orElse(null);
 
         List<QueryFilter> filters = new java.util.ArrayList<>(Stream.of(
-                rNamespace != null ? new QueryFilter().field(QueryFilterField.NAMESPACE).operation(QueryFilterOp.EQUALS).value(rNamespace) : null,
-                rFlowId != null ? new QueryFilter().field(QueryFilterField.FLOW_ID).operation(QueryFilterOp.EQUALS).value(rFlowId) : null,
-                rStartDate != null ? new QueryFilter().field(QueryFilterField.START_DATE).operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO).value(rStartDate) : null,
-                rEndDate != null ? new QueryFilter().field(QueryFilterField.START_DATE).operation(QueryFilterOp.GREATER_THAN_OR_EQUAL_TO).value(rEndDate) : null,
-                rTriggerExecutionId != null ? new QueryFilter().field(QueryFilterField.TRIGGER_EXECUTION_ID).operation(QueryFilterOp.EQUALS).value(rTriggerExecutionId) : null,
-                rChildFilter != null ? new QueryFilter().field(QueryFilterField.CHILD_FILTER).operation(QueryFilterOp.EQUALS).value(rChildFilter) : null
+            rNamespace != null ? new QueryFilter().field(QueryFilterField.NAMESPACE).operation(QueryFilterOp.EQUALS).value(rNamespace) : null,
+            rFlowId != null ? new QueryFilter().field(QueryFilterField.FLOW_ID).operation(QueryFilterOp.EQUALS).value(rFlowId) : null,
+            rStartDate != null ? new QueryFilter().field(QueryFilterField.START_DATE).operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO).value(rStartDate) : null,
+            rEndDate != null ? new QueryFilter().field(QueryFilterField.START_DATE).operation(QueryFilterOp.GREATER_THAN_OR_EQUAL_TO).value(rEndDate) : null,
+            rTriggerExecutionId != null ? new QueryFilter().field(QueryFilterField.TRIGGER_EXECUTION_ID).operation(QueryFilterOp.EQUALS).value(rTriggerExecutionId) : null,
+            rChildFilter != null ? new QueryFilter().field(QueryFilterField.CHILD_FILTER).operation(QueryFilterOp.EQUALS).value(rChildFilter) : null
         ).filter(Objects::nonNull).toList());
 
         if (rFlowScopes != null && !rFlowScopes.isEmpty()) {
             rFlowScopes.forEach(flowScope -> {
                 filters.add(
-                        new QueryFilter()
-                                .field(QueryFilterField.SCOPE)
-                                .operation(QueryFilterOp.EQUALS)
-                                .value(flowScope)
+                    new QueryFilter()
+                        .field(QueryFilterField.SCOPE)
+                        .operation(QueryFilterOp.EQUALS)
+                        .value(flowScope)
                 );
             });
         }
@@ -238,10 +240,10 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
         if (rState != null && !rState.isEmpty()) {
             rState.forEach(state -> {
                 filters.add(
-                        new QueryFilter()
-                                .field(QueryFilterField.STATE)
-                                .operation(QueryFilterOp.EQUALS)
-                                .value(state)
+                    new QueryFilter()
+                        .field(QueryFilterField.STATE)
+                        .operation(QueryFilterOp.EQUALS)
+                        .value(state)
                 );
             });
         }
@@ -249,10 +251,10 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
         if (rLabels != null && !rLabels.isEmpty()) {
             rLabels.forEach((key, value) -> {
                 filters.add(
-                        new QueryFilter()
-                                .field(QueryFilterField.STATE)
-                                .operation(QueryFilterOp.EQUALS)
-                                .value(key + ":" + value)
+                    new QueryFilter()
+                        .field(QueryFilterField.STATE)
+                        .operation(QueryFilterOp.EQUALS)
+                        .value(key + ":" + value)
                 );
             });
         }
