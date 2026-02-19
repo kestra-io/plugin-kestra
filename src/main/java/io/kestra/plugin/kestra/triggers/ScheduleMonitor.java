@@ -159,7 +159,7 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
             );
         }
 
-        while ((long) page * size < total) {
+        while ((long) (page - 1) * size < total) {
             PagedResultsTriggerControllerTriggers response = client.triggers().searchTriggers(page, size, tenantId, null, filters);
 
             total = response.getTotal();

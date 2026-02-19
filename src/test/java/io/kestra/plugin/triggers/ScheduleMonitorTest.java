@@ -11,10 +11,14 @@ import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.triggers.ScheduleMonitor;
+import io.kestra.sdk.model.QueryFilter;
+import io.kestra.sdk.model.QueryFilterField;
+import io.kestra.sdk.model.QueryFilterOp;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -26,18 +30,25 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
 
     @Inject RunContextFactory runContextFactory;
 
-    protected static final String NAMESPACE = "kestra.tests.schedule.monitor";
+    private static final String NAMESPACE_PREFIX = "kestra.tests.schedule.monitor";
     private static final Duration AWAIT_TIMEOUT = Duration.ofSeconds(60);
 
     @Test
     public void shouldDetectDisabledScheduleOnlyWhenIncluded() throws Exception {
+        var namespace = randomNamespace();
         var flowId = "myflow-" + IdUtils.create();
 
         kestraTestDataUtils.createFlowWithSchedule(
-            NAMESPACE,
+            namespace,
             flowId,
             "*/5 * * * *",
             true
+        );
+
+        Await.until(
+            () -> findTrigger(namespace, flowId),
+            Duration.ofMillis(100),
+            AWAIT_TIMEOUT
         );
 
         ScheduleMonitor monitor1 = ScheduleMonitor.builder()
@@ -46,7 +57,7 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
             .kestraUrl(Property.ofValue(KESTRA_URL))
             .auth(basicAuth())
             .tenantId(Property.ofValue(TENANT_ID))
-            .namespace(Property.ofValue(NAMESPACE))
+            .namespace(Property.ofValue(namespace))
             .includeDisabled(Property.ofValue(false))
             .build();
 
@@ -61,25 +72,39 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
             .kestraUrl(Property.ofValue(KESTRA_URL))
             .auth(basicAuth())
             .tenantId(Property.ofValue(TENANT_ID))
-            .namespace(Property.ofValue(NAMESPACE))
+            .namespace(Property.ofValue(namespace))
             .includeDisabled(Property.ofValue(true))
             .build();
 
-        context = TestsUtils.mockTrigger(runContextFactory, monitor2);
-        execution = monitor2.evaluate(context.getKey(), context.getValue());
+        var context2 = TestsUtils.mockTrigger(runContextFactory, monitor2);
+        execution = Optional.ofNullable(Await.until(
+            () -> evaluate(monitor2, context2.getKey(), context2.getValue()).orElse(null),
+            Duration.ofMillis(100),
+            AWAIT_TIMEOUT
+        ));
 
         assertThat(execution.isPresent(), is(true));
     }
 
     @Test
     public void shouldDetectNoExecutionWithinInterval() throws Exception {
+        var namespace = randomNamespace();
         var flowId = "intervalflow-" + IdUtils.create();
 
         kestraTestDataUtils.createFlowWithSchedule(
-            NAMESPACE,
+            namespace,
             flowId,
             "*/5 * * * *",
             false
+        );
+
+        Await.until(
+            () -> {
+                var trigger = findTrigger(namespace, flowId);
+                return trigger != null && trigger.getDate() != null ? trigger : null;
+            },
+            Duration.ofMillis(100),
+            AWAIT_TIMEOUT
         );
 
         ScheduleMonitor monitor = ScheduleMonitor.builder()
@@ -88,7 +113,7 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
             .kestraUrl(Property.ofValue(KESTRA_URL))
             .auth(basicAuth())
             .tenantId(Property.ofValue(TENANT_ID))
-            .namespace(Property.ofValue(NAMESPACE))
+            .namespace(Property.ofValue(namespace))
             .maxExecutionInterval(Property.ofValue(Duration.ofSeconds(1)))
             .build();
 
@@ -101,6 +126,58 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
         );
 
         assertThat(execution, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldDetectDisabledSchedulesAcrossPages() throws Exception {
+        var namespace = randomNamespace();
+        var flowCount = 101;
+
+        for (var i = 0; i < flowCount; i++) {
+            kestraTestDataUtils.createFlowWithSchedule(
+                namespace,
+                "pageflow-" + i + "-" + IdUtils.create(),
+                "*/5 * * * *",
+                true
+            );
+        }
+
+        Await.until(
+            () -> {
+                var response = kestraTestDataUtils.getKestraClient()
+                    .triggers()
+                    .searchTriggers(
+                        1,
+                        1,
+                        TENANT_ID,
+                        null,
+                        List.of(
+                            new QueryFilter()
+                                .field(QueryFilterField.NAMESPACE)
+                                .operation(QueryFilterOp.STARTS_WITH)
+                                .value(namespace)
+                        )
+                    );
+                return response.getTotal() >= flowCount ? response : null;
+            },
+            Duration.ofMillis(100),
+            AWAIT_TIMEOUT
+        );
+
+        var monitor = ScheduleMonitor.builder()
+            .id(ScheduleMonitorTest.class.getSimpleName() + IdUtils.create())
+            .type(ScheduleMonitorTest.class.getName())
+            .kestraUrl(Property.ofValue(KESTRA_URL))
+            .auth(basicAuth())
+            .tenantId(Property.ofValue(TENANT_ID))
+            .namespace(Property.ofValue(namespace))
+            .includeDisabled(Property.ofValue(true))
+            .build();
+
+        var context = TestsUtils.mockTrigger(runContextFactory, monitor);
+        var output = runChecks(monitor, context.getKey());
+
+        assertThat(output.getData(), hasSize(flowCount));
     }
 
     private AbstractKestraTask.Auth basicAuth() {
@@ -120,5 +197,31 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private ScheduleMonitor.Output runChecks(
+        ScheduleMonitor monitor,
+        ConditionContext conditionContext
+    ) {
+        try {
+            return monitor.runChecks(conditionContext.getRunContext());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private io.kestra.sdk.model.Trigger findTrigger(String namespace, String flowId) {
+        return kestraTestDataUtils.getKestraClient()
+            .triggers()
+            .searchTriggersForFlow(1, 1000, namespace, flowId, TENANT_ID, null, null)
+            .getResults()
+            .stream()
+            .filter(trigger -> "schedule".equals(trigger.getTriggerId()))
+            .findFirst()
+            .orElse(null);
+    }
+
+    private String randomNamespace() {
+        return NAMESPACE_PREFIX + "." + IdUtils.create().toLowerCase();
     }
 }
