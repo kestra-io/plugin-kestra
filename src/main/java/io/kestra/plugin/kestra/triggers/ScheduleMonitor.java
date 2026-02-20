@@ -1,17 +1,15 @@
 package io.kestra.plugin.kestra.triggers;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.*;
-import io.kestra.core.models.triggers.AbstractTrigger;
 import io.kestra.core.models.triggers.TriggerContext;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.core.trigger.Schedule;
-import io.kestra.plugin.kestra.AbstractKestraTask;
+import io.kestra.plugin.kestra.AbstractKestraTrigger;
 import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.model.*;
 import io.kestra.sdk.model.Trigger;
@@ -60,25 +58,9 @@ import java.util.Optional;
         )
     }
 )
-public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<ScheduleMonitor.Output>, PollingTriggerInterface {
+public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOutput<ScheduleMonitor.Output>, PollingTriggerInterface {
     private static final String DEFAULT_KESTRA_URL = "http://localhost:8080";
     private static final String KESTRA_URL_TEMPLATE = "{{ kestra.url }}";
-
-    @Schema(
-        title = "Override Kestra API endpoint",
-        description = "When null renders `{{ kestra.url }}`; falls back to http://localhost:8080. Trailing slashes are stripped."
-    )
-    private Property<String> kestraUrl;
-
-    @Schema(
-        title = "Select API authentication",
-        description = "Use either API token or HTTP Basic (username/password); not both."
-    )
-    private AbstractKestraTask.Auth auth;
-
-    @Schema(title = "Override target tenant", description = "Defaults to current execution tenant.")
-    @Setter
-    protected Property<String> tenantId;
 
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
@@ -242,45 +224,6 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
             .build();
     }
 
-    protected KestraClient kestraClient(RunContext runContext) throws IllegalVariableEvaluationException {
-        String rKestraUrl = runContext.render(kestraUrl).as(String.class)
-            .orElseGet(() -> {
-                try {
-                    return runContext.render(KESTRA_URL_TEMPLATE);
-                } catch (IllegalVariableEvaluationException e) {
-                    return DEFAULT_KESTRA_URL;
-                }
-            });
-
-        runContext.logger().info("Kestra URL: {}", rKestraUrl);
-
-        String normalizedUrl = rKestraUrl.trim().replaceAll("/+$", "");
-
-        var builder = KestraClient.builder();
-        builder.url(normalizedUrl);
-        if (auth != null) {
-            if (auth.getApiToken() != null && (auth.getUsername() != null || auth.getPassword() != null)) {
-                throw new IllegalArgumentException("Cannot use both API Token authentication and HTTP Basic authentication");
-            }
-
-            String rApiToken = runContext.render(auth.getApiToken()).as(String.class).orElse(null);
-            if (rApiToken != null) {
-                builder.tokenAuth(rApiToken);
-                return builder.build();
-            }
-
-            Optional<String> maybeUsername = runContext.render(auth.getUsername()).as(String.class);
-            Optional<String> maybePassword = runContext.render(auth.getPassword()).as(String.class);
-            if (maybeUsername.isPresent() && maybePassword.isPresent()) {
-                builder.basicAuth(maybeUsername.get(), maybePassword.get());
-                return builder.build();
-            }
-
-            throw new IllegalArgumentException("Both username and password are required for HTTP Basic authentication");
-        }
-        return builder.build();
-    }
-
     @Getter
     @Builder
     public static class TriggerInfo {
@@ -289,19 +232,6 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
         String triggerId;
         Instant lastExecution;
         Instant expectedNext;
-    }
-
-    @Builder
-    @Getter
-    public static class Auth {
-        @Schema(title = "API token")
-        private Property<String> apiToken;
-
-        @Schema(title = "Username for HTTP basic authentication")
-        private Property<String> username;
-
-        @Schema(title = "Password for HTTP basic authentication")
-        private Property<String> password;
     }
 
     @Builder
