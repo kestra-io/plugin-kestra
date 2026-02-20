@@ -96,7 +96,7 @@ public class Set extends AbstractKestraTask implements RunnableTask<VoidOutput> 
             .metadata(runContext.render(metadata).asMap(String.class, Object.class));
 
         kestraClient.assets().createAsset(
-            runContext.flowInfo().tenantId(),
+            runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId()),
             JacksonMapper.ofYaml().writeValueAsString(asset)
         );
 
