@@ -184,8 +184,8 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         if (!typesFilter.isEmpty()) {
             queryFilters.add(new QueryFilter()
                 .field(QueryFilterField.TYPE)
-                .operation(QueryFilterOp.REGEX)
-                .value(URLEncoder.encode(String.join("|", typesFilter), StandardCharsets.UTF_8)));
+                .operation(QueryFilterOp.IN)
+                .value(typesFilter));
         }
 
         if (!metadataQuery.isEmpty()) {
