@@ -50,7 +50,7 @@ public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutpu
 
         kestraClient.assets().deleteAsset(
             runContext.render(assetId).as(String.class).orElseThrow(),
-            runContext.flowInfo().tenantId()
+            runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId())
         );
 
         return null;
