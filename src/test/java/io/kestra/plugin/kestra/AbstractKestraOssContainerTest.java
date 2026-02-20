@@ -1,4 +1,4 @@
-package io.kestra.plugin;
+package io.kestra.plugin.kestra;
 
 import lombok.extern.slf4j.Slf4j;
 import org.testcontainers.containers.GenericContainer;

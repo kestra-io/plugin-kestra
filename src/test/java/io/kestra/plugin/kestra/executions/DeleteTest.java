@@ -1,4 +1,4 @@
-package io.kestra.plugin.executions;
+package io.kestra.plugin.kestra.executions;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -11,10 +11,8 @@ import io.kestra.core.models.tasks.common.FetchOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.Await;
-import io.kestra.plugin.AbstractKestraOssContainerTest;
+import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.plugin.kestra.executions.Delete;
-import io.kestra.plugin.kestra.executions.Query;
 import io.kestra.sdk.model.Execution;
 import io.kestra.sdk.model.FlowWithSource;
 import io.kestra.sdk.model.StateType;

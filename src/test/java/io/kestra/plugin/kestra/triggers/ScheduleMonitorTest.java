@@ -8,8 +8,8 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.Await;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
-import io.kestra.plugin.AbstractKestraOssContainerTest;
-import io.kestra.plugin.kestra.AbstractKestraTask;
+import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
+import io.kestra.plugin.kestra.AbstractKestraTrigger;
 import io.kestra.plugin.kestra.triggers.ScheduleMonitor;
 import io.kestra.sdk.model.QueryFilter;
 import io.kestra.sdk.model.QueryFilterField;
@@ -180,8 +180,8 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
         assertThat(output.getData(), hasSize(flowCount));
     }
 
-    private AbstractKestraTask.Auth basicAuth() {
-        return AbstractKestraTask.Auth.builder()
+    private AbstractKestraTrigger.Auth basicAuth() {
+        return AbstractKestraTrigger.Auth.builder()
             .username(Property.ofValue(USERNAME))
             .password(Property.ofValue(PASSWORD))
             .build();
