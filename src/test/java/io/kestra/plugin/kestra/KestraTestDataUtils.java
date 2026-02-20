@@ -1,4 +1,4 @@
-package io.kestra.plugin;
+package io.kestra.plugin.kestra;
 
 import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.internal.ApiException;

@@ -1,14 +1,12 @@
-package io.kestra.plugin.executions;
+package io.kestra.plugin.kestra.executions;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
-import io.kestra.plugin.AbstractKestraContainerTest;
-import io.kestra.plugin.AbstractKestraOssContainerTest;
+import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.plugin.kestra.executions.Query;
 import io.kestra.sdk.model.FlowWithSource;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;

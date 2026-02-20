@@ -1,12 +1,11 @@
-package io.kestra.plugin.namespaces;
+package io.kestra.plugin.kestra.namespaces;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
-import io.kestra.plugin.AbstractKestraEeContainerTest;
+import io.kestra.plugin.kestra.AbstractKestraEeContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.plugin.kestra.namespaces.List;
 import jakarta.annotation.Nullable;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;

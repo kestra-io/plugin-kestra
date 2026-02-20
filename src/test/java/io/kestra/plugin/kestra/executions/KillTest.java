@@ -1,4 +1,4 @@
-package io.kestra.plugin.executions;
+package io.kestra.plugin.kestra.executions;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
@@ -7,11 +7,8 @@ import io.kestra.core.models.tasks.common.FetchOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.Await;
-import io.kestra.plugin.AbstractKestraContainerTest;
-import io.kestra.plugin.AbstractKestraOssContainerTest;
+import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.plugin.kestra.executions.Kill;
-import io.kestra.plugin.kestra.executions.Query;
 import io.kestra.sdk.model.Execution;
 import io.kestra.sdk.model.FlowWithSource;
 import io.kestra.sdk.model.StateType;
@@ -21,12 +18,8 @@ import org.testcontainers.shaded.org.awaitility.Awaitility;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeoutException;
 
-import static io.kestra.core.models.Label.USERNAME;
-import static io.kestra.core.utils.Rethrow.throwFunction;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 

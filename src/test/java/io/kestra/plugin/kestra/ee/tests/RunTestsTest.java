@@ -1,12 +1,11 @@
 
-package io.kestra.plugin.tests;
+package io.kestra.plugin.kestra.ee.tests;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.flows.State;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
-import io.kestra.plugin.AbstractKestraContainerTest;
-import io.kestra.plugin.AbstractKestraEeContainerTest;
+import io.kestra.plugin.kestra.AbstractKestraEeContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.ee.tests.RunTests;
 import io.kestra.sdk.model.TestState;

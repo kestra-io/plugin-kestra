@@ -1,4 +1,4 @@
-package io.kestra.plugin.ee.assets;
+package io.kestra.plugin.kestra.ee.assets;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
@@ -8,7 +8,7 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
-import io.kestra.plugin.AbstractKestraEeContainerTest;
+import io.kestra.plugin.kestra.AbstractKestraEeContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.ee.assets.FieldQuery;
 import io.kestra.plugin.kestra.ee.assets.List;

@@ -1,13 +1,12 @@
-package io.kestra.plugin.triggers;
+package io.kestra.plugin.kestra.triggers;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.Await;
 import io.kestra.core.utils.IdUtils;
-import io.kestra.plugin.AbstractKestraOssContainerTest;
+import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.plugin.kestra.triggers.Toggle;
 import io.kestra.sdk.model.Trigger;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;

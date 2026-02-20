@@ -1,4 +1,4 @@
-package io.kestra.plugin.logs;
+package io.kestra.plugin.kestra.logs;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -8,10 +8,9 @@ import io.kestra.core.models.tasks.common.FetchOutput;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
-import io.kestra.plugin.AbstractKestraOssContainerTest;
+import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.executions.Query;
-import io.kestra.plugin.kestra.logs.Fetch;
 import io.kestra.sdk.model.Execution;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
