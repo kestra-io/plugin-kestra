@@ -8,6 +8,7 @@ import jakarta.annotation.Nullable;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
@@ -172,8 +173,39 @@ public class KestraTestDataUtils {
         return kestraClient.executions().execution(executionId, tenantId);
     }
 
+    public AssetsControllerApiAsset getAsset(String assetId, boolean allowDeleted) throws ApiException {
+        return kestraClient.assets().asset(assetId, allowDeleted, tenantId);
+    }
+
+    public boolean assetExists(String assetId) {
+        try {
+            return this.getAsset(assetId) != null;
+        } catch (Exception e) {
+            // API typically throws 404
+            return false;
+        }
+    }
+
+    public PagedResultsAssetsControllerApiAssetUsage getAssetUsagesForNamespace(String namespace) throws ApiException {
+        return kestraClient.assets().searchAssetUsages(1, Integer.MAX_VALUE, List.of(
+            new QueryFilter()
+                .field(QueryFilterField.NAMESPACE)
+                .operation(QueryFilterOp.EQUALS)
+                .value(namespace)
+        ), tenantId, null);
+    }
+
+    public PagedResultsAssetsControllerApiAssetLineageEvent getAssetLineagesForNamespace(String namespace) throws ApiException {
+        return kestraClient.assets().searchAssetLineageEvents(1, Integer.MAX_VALUE, List.of(
+            new QueryFilter()
+                .field(QueryFilterField.NAMESPACE)
+                .operation(QueryFilterOp.EQUALS)
+                .value(namespace)
+        ), tenantId, null);
+    }
+
     public AssetsControllerApiAsset getAsset(String assetId) throws ApiException {
-        return kestraClient.assets().asset(assetId, tenantId);
+        return this.getAsset(assetId, false);
     }
 
     public AssetsControllerApiAsset createAsset(String namespace, String assetId, String type, Map<String, String> metadata) throws ApiException {
