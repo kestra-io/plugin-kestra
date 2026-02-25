@@ -21,8 +21,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -123,7 +121,7 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
                 rPage,
                 rSize,
                 toQueryFilters(runContext.render(namespace).as(String.class).orElse(null), runContext.render(types).asList(String.class), runContext.render(metadataQuery).asList(FieldQuery.class)),
-                runContext.flowInfo().tenantId(),
+                runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId()),
                 null
             ).getResults();
         } else {
@@ -136,7 +134,7 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
                     currentPage,
                     rSize,
                     toQueryFilters(runContext.render(namespace).as(String.class).orElse(null), runContext.render(types).asList(String.class), runContext.render(metadataQuery).asList(FieldQuery.class)),
-                    runContext.flowInfo().tenantId(),
+                    runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId()),
                     null
                 );
                 fetchedAssets.addAll(results.getResults());
@@ -184,8 +182,8 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         if (!typesFilter.isEmpty()) {
             queryFilters.add(new QueryFilter()
                 .field(QueryFilterField.TYPE)
-                .operation(QueryFilterOp.REGEX)
-                .value(URLEncoder.encode(String.join("|", typesFilter), StandardCharsets.UTF_8)));
+                .operation(QueryFilterOp.IN)
+                .value(typesFilter));
         }
 
         if (!metadataQuery.isEmpty()) {
