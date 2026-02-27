@@ -9,7 +9,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Slf4j
 public abstract class AbstractKestraEeContainerTest extends AbstractKestraContainerTest {
     @Container
-    protected static final GenericContainer<?> KESTRA_EE_CONTAINER = new AbstractKestraEeContainerTest(){}.buildContainer("ghcr.io/kestra-io/kestra-ee:develop", true);
+    protected static final GenericContainer<?> KESTRA_EE_CONTAINER = new AbstractKestraEeContainerTest(){}.buildContainer("ghcr.io/kestra-io/kestra-ee:latest", true);
 
     @Override
     protected GenericContainer<?> getContainer() {
