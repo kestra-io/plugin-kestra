@@ -3,6 +3,7 @@ package io.kestra.plugin.kestra.ee.assets;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.assets.Asset;
 import io.kestra.core.models.conditions.ConditionContext;
@@ -38,7 +39,100 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Plugin
+@Plugin(
+    examples = {
+        @Example(
+            title = "Data Quality Monitoring: Ensure your daily ETL pipelines run successfully by monitoring when critical tables were last updated.",
+            full = true,
+            code = """
+                id: stale_data_alert
+                namespace: company.monitoring
+
+                triggers:
+                  - id: check_trips_freshness
+                    type: io.kestra.plugin.kestra.ee.assets.FreshnessTrigger
+                    assetId: trips
+                    namespace: company.team
+                    maxStaleness: PT26H  # Allow 2 extra hours buffer
+                    checkInterval: PT1H
+
+                tasks:
+                  - id: send_alert
+                    type: io.kestra.plugin.notifications.slack.SlackIncoming
+                    url: "{{ secret('SLACK_WEBHOOK') }}"
+                    payload: |
+                      {
+                        "text": "⚠️ Asset `{{ trigger.assets[0].id }}` is stale. Last updated: {{ trigger.assets[0].lastUpdated }}"
+                      }
+                """
+        ),
+        @Example(
+            title = "SLA Enforcement: Contractual SLAs require mart tables to be updated every 4 hours during business hours.",
+            full = true,
+            code = """
+                id: sla_enforcement
+                namespace: company.data
+
+                triggers:
+                  - id: mart_freshness_check
+                    type: io.kestra.plugin.kestra.ee.assets.FreshnessTrigger
+                    assetType: io.kestra.plugin.ee.assets.Table
+                    namespace: company.data
+                    metadataQuery:
+                      - field: model_layer
+                        type: EQUAL_TO
+                        value: mart
+                    maxStaleness: PT4H
+                    checkInterval: PT30M
+
+                tasks:
+                  - id: trigger_refresh
+                    type: io.kestra.plugin.core.flow.Subflow
+                    namespace: company.data
+                    flowId: refresh_mart_tables
+                    inputs:
+                      table_id: "{{ trigger.assets[0].id }}"
+                """
+        ),
+        @Example(
+            title = "Multi-Region Freshness Monitoring: Monitor production assets across multiple regions, excluding archived or test assets, focusing on critical items.",
+            full = true,
+            code = """
+                id: multi_region_freshness
+                namespace: company.monitoring
+
+                triggers:
+                 - id: regional_freshness_check
+                   type: io.kestra.plugin.kestra.ee.assets.FreshnessTrigger
+                   assetType: io.kestra.plugin.ee.assets.Table
+                   maxStaleness: PT12H
+                   checkInterval: PT1H
+                   metadataQuery:
+                     - field: environment
+                       type: EQUAL_TO
+                       value: prod
+                     - field: config.region
+                       type: IS_ONE_OF
+                       value: [us-east-1, us-west-2, eu-west-1]
+                     - field: status
+                       type: IS_NOT_ONE_OF
+                       value: [archived, test]
+                     - field: description
+                       type: CONTAINS
+                       value: critical
+
+                tasks:
+                 - id: alert_stale_regional_assets
+                   type: io.kestra.plugin.notifications.slack.SlackIncoming
+                   url: "{{ secret('OPS_WEBHOOK') }}"
+                   payload: |
+                     {
+                       "text": "⚠️ Regional asset `{{ trigger.assets[0].id }}` in {{ trigger.assets[0].metadata['config.region'] }} is stale"
+                     }
+                """
+        )
+    }
+)
 public class FreshnessTrigger extends AbstractKestraTrigger implements PollingTriggerInterface, TriggerOutput<FreshnessTrigger.Output> {
     private Property<String> assetId;
 
