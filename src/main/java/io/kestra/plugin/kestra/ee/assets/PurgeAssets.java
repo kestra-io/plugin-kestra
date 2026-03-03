@@ -45,7 +45,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 
                 tasks:
                   - id: cleanup_staging
-                    type: io.kestra.plugin.ee.assets.PurgeAssets
+                    type: io.kestra.plugin.kestra.ee.assets.PurgeAssets
                     namespace: company.data
                     assetType:
                       - io.kestra.plugin.ee.assets.Table
@@ -68,7 +68,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 
                 tasks:
                 - id: purge_old_vms
-                 type: io.kestra.plugin.ee.assets.PurgeAssets
+                 type: io.kestra.plugin.kestra.ee.assets.PurgeAssets
                  assetType:
                    - io.kestra.plugin.ee.assets.VM
                  endDate: "{{ now() | dateAdd(-180, 'DAYS') }}"
