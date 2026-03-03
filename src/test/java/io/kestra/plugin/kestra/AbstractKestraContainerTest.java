@@ -11,6 +11,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
+import java.util.Base64;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -70,11 +71,18 @@ public abstract class AbstractKestraContainerTest {
 
         if (ee) {
             container
-                .withEnv("KESTRA_EE_LICENSE_PUBLICKEY", System.getenv("KESTRA_EE_LICENSE_PUBLICKEY"))
-                .withEnv("KESTRA_EE_LICENSE_KEY", System.getenv("KESTRA_EE_LICENSE_KEY"))
-                .withEnv("KESTRA_EE_LICENSE_ID", System.getenv("KESTRA_EE_LICENSE_ID"));
+                .withEnv("KESTRA_EE_LICENSE_ID", decodeBase64(System.getenv("KESTRA_EE_LICENSE_ID")))
+                .withEnv("KESTRA_EE_LICENSE_KEY", decodeBase64(System.getenv("KESTRA_EE_LICENSE_KEY")))
+                .withEnv("KESTRA_EE_LICENSE_FINGERPRINT", decodeBase64(System.getenv("KESTRA_EE_LICENSE_FINGERPRINT")));
         }
 
         return container;
+    }
+
+    private String decodeBase64(String value) {
+        if (value == null) {
+            return null;
+        }
+        return new String(Base64.getDecoder().decode(value));
     }
 }
