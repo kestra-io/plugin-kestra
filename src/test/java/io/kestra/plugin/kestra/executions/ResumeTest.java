@@ -92,16 +92,16 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
 
     private Resume createResumeTask(String executionId, Map<String, Object> inputs) {
         var builder = Resume.builder()
-            .kestraUrl(Property.of(KESTRA_URL))
+            .kestraUrl(Property.ofValue(KESTRA_URL))
             .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.of(USERNAME))
-                .password(Property.of(PASSWORD))
+                .username(Property.ofValue(USERNAME))
+                .password(Property.ofValue(PASSWORD))
                 .build())
-            .tenantId(Property.of(TENANT_ID))
-            .executionId(Property.of(executionId));
+            .tenantId(Property.ofValue(TENANT_ID))
+            .executionId(Property.ofValue(executionId));
 
         if (inputs != null) {
-            builder.inputs(Property.of(inputs));
+            builder.inputs(Property.ofValue(inputs));
         }
 
         return builder.build();
@@ -110,16 +110,16 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
     private Execution queryExecution(String flowId) throws Exception {
         RunContext runContext = runContextFactory.of();
         Query searchTask = Query.builder()
-            .kestraUrl(Property.of(KESTRA_URL))
+            .kestraUrl(Property.ofValue(KESTRA_URL))
             .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.of(USERNAME))
-                .password(Property.of(PASSWORD))
+                .username(Property.ofValue(USERNAME))
+                .password(Property.ofValue(PASSWORD))
                 .build())
-            .tenantId(Property.of(TENANT_ID))
-            .namespace(Property.of(NAMESPACE))
-            .flowId(Property.of(flowId))
-            .size(Property.of(1))
-            .fetchType(Property.of(io.kestra.core.models.tasks.common.FetchType.FETCH))
+            .tenantId(Property.ofValue(TENANT_ID))
+            .namespace(Property.ofValue(NAMESPACE))
+            .flowId(Property.ofValue(flowId))
+            .size(Property.ofValue(1))
+            .fetchType(Property.ofValue(io.kestra.core.models.tasks.common.FetchType.FETCH))
             .build();
 
         FetchOutput output = searchTask.run(runContext);
@@ -148,10 +148,10 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
         RunContext runContext = runContextFactory.of(variables);
 
         Resume resumeTask = Resume.builder()
-            .kestraUrl(Property.of(KESTRA_URL))
+            .kestraUrl(Property.ofValue(KESTRA_URL))
             .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.of(USERNAME))
-                .password(Property.of(PASSWORD))
+                .username(Property.ofValue(USERNAME))
+                .password(Property.ofValue(PASSWORD))
                 .build())
             .build();
 
