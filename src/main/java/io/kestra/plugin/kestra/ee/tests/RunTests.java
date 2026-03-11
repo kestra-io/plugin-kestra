@@ -28,8 +28,8 @@ import static io.kestra.plugin.kestra.ee.tests.RunTest.logTestCase;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple unit tests",
-    description = "Run unit tests at multiple levels: all tests for a tenant or namespace, all tests for a specific flow, or a test suite by ID."
+    title = "Run tests by query",
+    description = "Executes unit tests matching a tenant/namespace/flow query. Defaults to the current tenant, includes child namespaces, and marks failures as WARNING unless failOnTestFailure is true."
 )
 @Plugin(
     examples = {
@@ -50,19 +50,19 @@ import static io.kestra.plugin.kestra.ee.tests.RunTest.logTestCase;
     }
 )
 public class RunTests extends AbstractKestraTask implements RunnableTask<RunTests.Output> {
-    @Schema(title = "The namespace")
+    @Schema(title = "Namespace filter", description = "If null, runs against the current tenant. Set to limit to a namespace; includeChildNamespaces controls recursion.")
     @Nullable
     private Property<String> namespace;
 
-    @Schema(title = "To include child namespaces or not")
+    @Schema(title = "Include child namespaces", description = "Defaults to true. Applies when namespace is set.")
     @Builder.Default
     private Property<Boolean> includeChildNamespaces = Property.ofValue(true);
 
-    @Schema(title = "The Flow id")
+    @Schema(title = "Flow id filter", description = "Optional flow identifier to scope test suites.")
     @Nullable
     private Property<String> flowId;
 
-    @Schema(title = "Should the task be marked as FAILED when a test fails")
+    @Schema(title = "Fail task on test failures", description = "Defaults to false. When true, FAILED test suites set the task state to FAILED instead of WARNING.")
     @Builder.Default
     private Property<Boolean> failOnTestFailure = Property.ofValue(false);
 

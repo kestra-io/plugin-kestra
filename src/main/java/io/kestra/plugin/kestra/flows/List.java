@@ -18,8 +18,8 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "List Kestra flows.",
-    description = "Lists all flows within a specified namespace or the current flow's namespace if none is provided."
+    title = "List flows in a namespace",
+    description = "Retrieves flows for the given namespace; defaults to the current flow namespace when unset."
 )
 @Plugin(
     examples = {
@@ -61,7 +61,7 @@ import lombok.experimental.SuperBuilder;
 )
 public class List extends AbstractKestraTask implements RunnableTask<List.Output> {
 
-    @Schema(title = "The namespace to list flows from, if null, defaults to the namespace of the current flow.")
+    @Schema(title = "Namespace to list", description = "Defaults to the current flow namespace when null.")
     private Property<String> namespace;
 
     @Override

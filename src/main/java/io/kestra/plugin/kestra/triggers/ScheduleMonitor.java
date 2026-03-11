@@ -1,17 +1,15 @@
 package io.kestra.plugin.kestra.triggers;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.*;
-import io.kestra.core.models.triggers.AbstractTrigger;
 import io.kestra.core.models.triggers.TriggerContext;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.core.trigger.Schedule;
-import io.kestra.plugin.kestra.AbstractKestraTask;
+import io.kestra.plugin.kestra.AbstractKestraTrigger;
 import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.model.*;
 import io.kestra.sdk.model.Trigger;
@@ -31,11 +29,8 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Detect stuck or misconfigured Schedule triggers.",
-    description = """
-        Detects SCHEDULE triggers that are overdue (stuck), misconfigured,
-        or (optionally) disabled.
-        """
+    title = "Detect unhealthy schedule triggers",
+    description = "Finds SCHEDULE triggers that are overdue, running too long, missing next execution, or optionally disabled. Defaults: poll every 60s, allowedDelay 1 minute, disabled ignored unless includeDisabled is true."
 )
 @Plugin(
     examples = {
@@ -63,56 +58,39 @@ import java.util.Optional;
         )
     }
 )
-public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<ScheduleMonitor.Output>, PollingTriggerInterface {
+public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOutput<ScheduleMonitor.Output>, PollingTriggerInterface {
     private static final String DEFAULT_KESTRA_URL = "http://localhost:8080";
     private static final String KESTRA_URL_TEMPLATE = "{{ kestra.url }}";
-
-    @Schema(title = "Kestra API URL. If null, uses 'kestra.url' from configuration. If that is also null, defaults to 'http://localhost:8080'.")
-    private Property<String> kestraUrl;
-
-    @Schema(
-        title = "Authentication information.",
-        description = """
-        Authentication used to call the Kestra API.
-        Uses the same credentials as Kestra login:
-        either an API token or HTTP Basic (username/password).
-        """
-    )
-    private AbstractKestraTask.Auth auth;
-
-    @Schema(title = "The tenant ID to use for the request, defaults to current tenant.")
-    @Setter
-    protected Property<String> tenantId;
 
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
 
-    @Schema(title = "Limit the check to a given namespace.")
+    @Schema(title = "Namespace filter", description = "Prefix match; null scans all namespaces.")
     private Property<String> namespace;
 
-    @Schema(title = "Limit the check to a specific flow.")
+    @Schema(title = "Flow filter")
     private Property<String> flowId;
 
-    @Schema(title = "Whether to include disabled schedules in the check. Default: false.")
+    @Schema(title = "Include disabled schedules", description = "Defaults to false.")
     @Builder.Default
     private Property<Boolean> includeDisabled = Property.ofValue(false);
 
     @Schema(
-        title = "Maximum allowed delay for a schedule before being considered stuck.",
-        description = "If the next execution time is older than now minus this delay, the trigger is marked as stuck."
+        title = "Allowed delay past next run",
+        description = "Defaults to PT1M. If now is after next execution plus this delay, trigger is flagged."
     )
     @Builder.Default
     private Property<Duration> allowedDelay = Property.ofValue(Duration.ofMinutes(1));
 
     @Schema(
-        title = "Maximum allowed execution duration",
-        description = "If set, a schedule-triggered execution RUNNING longer than this duration is considered stuck."
+        title = "Max execution duration",
+        description = "When set, a RUNNING execution longer than this is flagged."
     )
     private Property<Duration> maxExecutionDuration;
 
     @Schema(
-        title = "Expected maximum interval between executions",
-        description = "If no execution happened within this interval, the schedule is considered unhealthy."
+        title = "Max idle interval between runs",
+        description = "Flags schedules with no execution within this period."
     )
     private Property<Duration> maxExecutionInterval;
 
@@ -163,7 +141,7 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
             );
         }
 
-        while ((long) page * size < total) {
+        while ((long) (page - 1) * size < total) {
             PagedResultsTriggerControllerTriggers response = client.triggers().searchTriggers(page, size, tenantId, null, filters);
 
             total = response.getTotal();
@@ -246,45 +224,6 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
             .build();
     }
 
-    protected KestraClient kestraClient(RunContext runContext) throws IllegalVariableEvaluationException {
-        String rKestraUrl = runContext.render(kestraUrl).as(String.class)
-            .orElseGet(() -> {
-                try {
-                    return runContext.render(KESTRA_URL_TEMPLATE);
-                } catch (IllegalVariableEvaluationException e) {
-                    return DEFAULT_KESTRA_URL;
-                }
-            });
-
-        runContext.logger().info("Kestra URL: {}", rKestraUrl);
-
-        String normalizedUrl = rKestraUrl.trim().replaceAll("/+$", "");
-
-        var builder = KestraClient.builder();
-        builder.url(normalizedUrl);
-        if (auth != null) {
-            if (auth.getApiToken() != null && (auth.getUsername() != null || auth.getPassword() != null)) {
-                throw new IllegalArgumentException("Cannot use both API Token authentication and HTTP Basic authentication");
-            }
-
-            String rApiToken = runContext.render(auth.getApiToken()).as(String.class).orElse(null);
-            if (rApiToken != null) {
-                builder.tokenAuth(rApiToken);
-                return builder.build();
-            }
-
-            Optional<String> maybeUsername = runContext.render(auth.getUsername()).as(String.class);
-            Optional<String> maybePassword = runContext.render(auth.getPassword()).as(String.class);
-            if (maybeUsername.isPresent() && maybePassword.isPresent()) {
-                builder.basicAuth(maybeUsername.get(), maybePassword.get());
-                return builder.build();
-            }
-
-            throw new IllegalArgumentException("Both username and password are required for HTTP Basic authentication");
-        }
-        return builder.build();
-    }
-
     @Getter
     @Builder
     public static class TriggerInfo {
@@ -293,19 +232,6 @@ public class ScheduleMonitor extends AbstractTrigger implements TriggerOutput<Sc
         String triggerId;
         Instant lastExecution;
         Instant expectedNext;
-    }
-
-    @Builder
-    @Getter
-    public static class Auth {
-        @Schema(title = "API token")
-        private Property<String> apiToken;
-
-        @Schema(title = "Username for HTTP basic authentication")
-        private Property<String> username;
-
-        @Schema(title = "Password for HTTP basic authentication")
-        private Property<String> password;
     }
 
     @Builder

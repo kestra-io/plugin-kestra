@@ -18,8 +18,8 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "List distinct Kestra namespaces.",
-    description = "Retrieves a list of all distinct namespaces within a Kestra instance, optionally filtered by a prefix."
+    title = "List distinct namespaces",
+    description = "Returns distinct namespaces that contain flows, optionally filtered by prefix."
 )
 @Plugin(
     examples = {
@@ -61,7 +61,7 @@ import lombok.experimental.SuperBuilder;
 )
 public class NamespacesWithFlows extends AbstractKestraTask implements RunnableTask<NamespacesWithFlows.Output> {
 
-    @Schema(title = "The namespace prefix, if null, all namespaces will be listed.")
+    @Schema(title = "Namespace prefix", description = "Defaults to empty string to include all namespaces.")
     @Nullable
     private Property<String> prefix;
 
@@ -87,4 +87,3 @@ public class NamespacesWithFlows extends AbstractKestraTask implements RunnableT
         private java.util.List<String> namespaces;
     }
 }
-
