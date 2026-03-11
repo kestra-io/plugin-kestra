@@ -87,7 +87,7 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
 
     @Schema(title = "Minimum log level", description = "Defaults to INFO; lower levels are excluded.")
     @Builder.Default
-    private Property<Level> level = Property.of(Level.INFO);
+    private Property<Level> level = Property.ofValue(Level.INFO);
 
     @SuppressWarnings("unchecked")
     @Override
