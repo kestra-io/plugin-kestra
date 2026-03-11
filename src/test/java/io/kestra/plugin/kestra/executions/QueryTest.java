@@ -1,5 +1,7 @@
 package io.kestra.plugin.kestra.executions;
 
+import org.junit.jupiter.api.Test;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchOutput;
@@ -8,8 +10,8 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.model.FlowWithSource;
+
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -31,10 +33,11 @@ public class QueryTest extends AbstractKestraOssContainerTest {
 
         Query searchTask = Query.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build()
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
             )
             .tenantId(Property.ofValue(TENANT_ID))
             .namespace(Property.ofValue(NAMESPACE))

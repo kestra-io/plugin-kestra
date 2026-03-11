@@ -1,5 +1,13 @@
 package io.kestra.plugin.kestra.ee.assets;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
@@ -10,20 +18,13 @@ import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.model.*;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 import static io.kestra.core.utils.Rethrow.throwConsumer;
@@ -70,14 +71,18 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 )
 public class List extends AbstractKestraTask implements RunnableTask<List.Output> {
     @Nullable
-    @Schema(title = "Page number",
-        description = "If omitted, all pages are iterated. Set to 1+ to fetch a single page with `size` items.")
+    @Schema(
+        title = "Page number",
+        description = "If omitted, all pages are iterated. Set to 1+ to fetch a single page with `size` items."
+    )
     private Property<Integer> page;
 
     @Nullable
     @Builder.Default
-    @Schema(title = "Page size",
-        description = "Number of assets per page; defaults to 100.")
+    @Schema(
+        title = "Page size",
+        description = "Number of assets per page; defaults to 100."
+    )
     private Property<Integer> size = Property.ofValue(100);
 
     @Nullable
@@ -109,7 +114,6 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
     public Output run(RunContext runContext) throws Exception {
         FetchType renderedFetchType = runContext.render(this.fetchType).as(FetchType.class).orElseThrow();
 
-
         Integer rPage = runContext.render(this.page).as(Integer.class).orElse(null);
         Integer rSize = runContext.render(this.size).as(Integer.class).orElse(100);
 
@@ -120,7 +124,9 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
             fetchedAssets = kestraClient.assets().searchAssets(
                 rPage,
                 rSize,
-                toQueryFilters(runContext.render(namespace).as(String.class).orElse(null), runContext.render(types).asList(String.class), runContext.render(metadataQuery).asList(FieldQuery.class)),
+                toQueryFilters(
+                    runContext.render(namespace).as(String.class).orElse(null), runContext.render(types).asList(String.class), runContext.render(metadataQuery).asList(FieldQuery.class)
+                ),
                 runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId()),
                 null
             ).getResults();
@@ -133,7 +139,9 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
                 PagedResultsAssetsControllerApiAsset results = kestraClient.assets().searchAssets(
                     currentPage,
                     rSize,
-                    toQueryFilters(runContext.render(namespace).as(String.class).orElse(null), runContext.render(types).asList(String.class), runContext.render(metadataQuery).asList(FieldQuery.class)),
+                    toQueryFilters(
+                        runContext.render(namespace).as(String.class).orElse(null), runContext.render(types).asList(String.class), runContext.render(metadataQuery).asList(FieldQuery.class)
+                    ),
                     runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId()),
                     null
                 );
@@ -143,14 +151,15 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         }
 
         Output.OutputBuilder outputBuilder = Output.builder();
-        switch(renderedFetchType) {
+        switch (renderedFetchType) {
             case FETCH_ONE -> outputBuilder
                 .asset(fetchedAssets.getFirst())
                 .size(1L);
             case STORE -> {
                 File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
                 try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
-                    fetchedAssets.forEach(throwConsumer(asset -> {
+                    fetchedAssets.forEach(throwConsumer(asset ->
+                    {
                         final String s = JacksonMapper.ofIon().writeValueAsString(asset);
                         fileWriter.write(s);
                         fileWriter.write("\n");
@@ -173,31 +182,40 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         java.util.List<QueryFilter> queryFilters = new ArrayList<>();
 
         if (namespace != null) {
-            queryFilters.add(new QueryFilter()
-                .field(QueryFilterField.NAMESPACE)
-                .operation(QueryFilterOp.EQUALS)
-                .value(namespace));
+            queryFilters.add(
+                new QueryFilter()
+                    .field(QueryFilterField.NAMESPACE)
+                    .operation(QueryFilterOp.EQUALS)
+                    .value(namespace)
+            );
         }
 
         if (!typesFilter.isEmpty()) {
-            queryFilters.add(new QueryFilter()
-                .field(QueryFilterField.TYPE)
-                .operation(QueryFilterOp.IN)
-                .value(typesFilter));
+            queryFilters.add(
+                new QueryFilter()
+                    .field(QueryFilterField.TYPE)
+                    .operation(QueryFilterOp.IN)
+                    .value(typesFilter)
+            );
         }
 
         if (!metadataQuery.isEmpty()) {
             Map<QueryType, java.util.List<FieldQuery>> byOpType = metadataQuery.stream().collect(Collectors.groupingBy(FieldQuery::type));
-            byOpType.forEach(throwBiConsumer((key, value) -> {
-                Map<String, String> metadataMap = value.stream().collect(Collectors.toMap(
-                    FieldQuery::field,
-                    FieldQuery::value
-                ));
+            byOpType.forEach(throwBiConsumer((key, value) ->
+            {
+                Map<String, String> metadataMap = value.stream().collect(
+                    Collectors.toMap(
+                        FieldQuery::field,
+                        FieldQuery::value
+                    )
+                );
 
-                queryFilters.add(new QueryFilter()
-                    .field(QueryFilterField.METADATA)
-                    .operation(key.toQueryFilterOp())
-                    .value(metadataMap));
+                queryFilters.add(
+                    new QueryFilter()
+                        .field(QueryFilterField.METADATA)
+                        .operation(key.toQueryFilterOp())
+                        .value(metadataMap)
+                );
             }));
         }
 

@@ -1,5 +1,10 @@
 package io.kestra.plugin.kestra.executions;
 
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -13,16 +18,10 @@ import io.kestra.sdk.model.QueryFilter;
 import io.kestra.sdk.model.QueryFilterField;
 import io.kestra.sdk.model.QueryFilterOp;
 import io.kestra.sdk.model.StateType;
+
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.annotation.Nullable;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @SuperBuilder(toBuilder = true)
 @Getter
@@ -128,7 +127,7 @@ public class Count extends AbstractKestraTask implements RunnableTask<Count.Outp
         List<StateType> rStates = runContext.render(this.states).asList(StateType.class);
         if (rStates != null) {
             for (StateType state : rStates) {
-               filters.add(
+                filters.add(
                     new QueryFilter()
                         .field(QueryFilterField.STATE)
                         .operation(QueryFilterOp.EQUALS)

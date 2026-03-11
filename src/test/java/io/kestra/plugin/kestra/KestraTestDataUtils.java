@@ -1,18 +1,19 @@
 package io.kestra.plugin.kestra;
 
-import io.kestra.sdk.KestraClient;
-import io.kestra.sdk.internal.ApiException;
-import io.kestra.sdk.model.*;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import io.kestra.sdk.KestraClient;
+import io.kestra.sdk.internal.ApiException;
+import io.kestra.sdk.model.*;
+
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A helper class for Kestra SDK operations for test setup and data generation. This class manages
@@ -38,17 +39,16 @@ public class KestraTestDataUtils {
 
     public FlowWithSource createRandomizedFlow(@Nullable String namespace) throws ApiException {
         String np = namespace != null ? namespace : "default";
-        String flow =
-            """
-                id: random_flow_%s
-                namespace: %s
+        String flow = """
+            id: random_flow_%s
+            namespace: %s
 
-                tasks:
-                  - id: hello
-                    type: io.kestra.plugin.core.log.Log
-                    message: Hello from KestraSDKHelper! 🚀
-                """
-                .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np);
+            tasks:
+              - id: hello
+                type: io.kestra.plugin.core.log.Log
+                message: Hello from KestraSDKHelper! 🚀
+            """
+            .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np);
 
         return kestraClient.flows().createFlow(tenantId, flow);
     }
@@ -56,44 +56,43 @@ public class KestraTestDataUtils {
     public FlowWithSource createRandomizedSubFlow(
         @Nullable String namespace, @Nonnull String subFlowId) throws ApiException {
         String np = namespace != null ? namespace : "default";
-        String flow =
-            """
-                id: random_flow_%s
-                namespace: %s
+        String flow = """
+            id: random_flow_%s
+            namespace: %s
 
-                tasks:
-                  - id: hello
-                    type: io.kestra.plugin.core.log.Log
-                    message: Hello from KestraSDKHelper! 🚀
-                  - id: call_subflow_task
-                    type: io.kestra.plugin.core.flow.Subflow
-                    namespace: %s
-                    flowId: %s
-                  - id: hello2
-                    type: io.kestra.plugin.core.log.Log
-                    message: Hello from KestraSDKHelper 2! 🚀
-                """
-                .formatted(
-                    UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np, np, subFlowId);
+            tasks:
+              - id: hello
+                type: io.kestra.plugin.core.log.Log
+                message: Hello from KestraSDKHelper! 🚀
+              - id: call_subflow_task
+                type: io.kestra.plugin.core.flow.Subflow
+                namespace: %s
+                flowId: %s
+              - id: hello2
+                type: io.kestra.plugin.core.log.Log
+                message: Hello from KestraSDKHelper 2! 🚀
+            """
+            .formatted(
+                UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np, np, subFlowId
+            );
 
         return kestraClient.flows().createFlow(tenantId, flow);
     }
 
     public FlowWithSource createRandomizedPauseFlow(@Nullable String namespace) throws ApiException {
         String np = namespace != null ? namespace : "default";
-        String flow =
-            """
-                id: random_flow_%s
-                namespace: %s
+        String flow = """
+            id: random_flow_%s
+            namespace: %s
 
-                tasks:
-                  - id: hello
-                    type: io.kestra.plugin.core.log.Log
-                    message: Hello from KestraSDKHelper! 🚀
-                  - id: pause
-                    type: io.kestra.plugin.core.flow.Pause
-                """
-                .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np);
+            tasks:
+              - id: hello
+                type: io.kestra.plugin.core.log.Log
+                message: Hello from KestraSDKHelper! 🚀
+              - id: pause
+                type: io.kestra.plugin.core.flow.Pause
+            """
+            .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np);
 
         return kestraClient.flows().createFlow(tenantId, flow);
     }
@@ -101,18 +100,17 @@ public class KestraTestDataUtils {
     public FlowWithSource createRandomizedFlowWithLabel(@Nullable String namespace)
         throws ApiException {
         String np = namespace != null ? namespace : "default";
-        String flow =
+        String flow = """
+            id: random_flow_%s
+            namespace: %s
+            labels:
+              - key: value
+            tasks:
+              - id: hello
+                type: io.kestra.plugin.core.log.Log
+                message: Hello from KestraSDKHelper! 🚀
             """
-                id: random_flow_%s
-                namespace: %s
-                labels:
-                  - key: value
-                tasks:
-                  - id: hello
-                    type: io.kestra.plugin.core.log.Log
-                    message: Hello from KestraSDKHelper! 🚀
-                """
-                .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np);
+            .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np);
 
         return kestraClient.flows().createFlow(tenantId, flow);
     }
@@ -135,7 +133,8 @@ public class KestraTestDataUtils {
                     ? key
                     : "key-" + UUID.randomUUID().toString().substring(0, 8).replace("-", "_"),
                 tenantId,
-                value != null ? value : "value-" + random.nextInt(10000));
+                value != null ? value : "value-" + random.nextInt(10000)
+            );
     }
 
     /**
@@ -143,7 +142,7 @@ public class KestraTestDataUtils {
      * defaults to "default". This method always throws an ApiException because the result can not be
      * parsed, so its only used for testing the Query executions task.
      *
-     * @param flowId    The ID of the flow to trigger.
+     * @param flowId The ID of the flow to trigger.
      * @param namespace The namespace in which to trigger the execution, or null for default.
      * @throws ApiException If there is an error triggering the execution.
      */
@@ -155,7 +154,8 @@ public class KestraTestDataUtils {
         } catch (ApiException e) {
             log.error(
                 "ApiException thrown, probably false positive as we are in `createRandomizedExecution` :"
-                    + e.getMessage());
+                    + e.getMessage()
+            );
         }
     }
 
@@ -165,7 +165,8 @@ public class KestraTestDataUtils {
         } catch (ApiException e) {
             log.error(
                 "ApiException thrown, probably false positive as we are in `killExecution` :"
-                    + e.getMessage());
+                    + e.getMessage()
+            );
         }
     }
 
@@ -187,21 +188,25 @@ public class KestraTestDataUtils {
     }
 
     public PagedResultsAssetsControllerApiAssetUsage getAssetUsagesForNamespace(String namespace) throws ApiException {
-        return kestraClient.assets().searchAssetUsages(1, Integer.MAX_VALUE, List.of(
-            new QueryFilter()
-                .field(QueryFilterField.NAMESPACE)
-                .operation(QueryFilterOp.EQUALS)
-                .value(namespace)
-        ), tenantId, null);
+        return kestraClient.assets().searchAssetUsages(
+            1, Integer.MAX_VALUE, List.of(
+                new QueryFilter()
+                    .field(QueryFilterField.NAMESPACE)
+                    .operation(QueryFilterOp.EQUALS)
+                    .value(namespace)
+            ), tenantId, null
+        );
     }
 
     public PagedResultsAssetsControllerApiAssetLineageEvent getAssetLineagesForNamespace(String namespace) throws ApiException {
-        return kestraClient.assets().searchAssetLineageEvents(1, Integer.MAX_VALUE, List.of(
-            new QueryFilter()
-                .field(QueryFilterField.NAMESPACE)
-                .operation(QueryFilterOp.EQUALS)
-                .value(namespace)
-        ), tenantId, null);
+        return kestraClient.assets().searchAssetLineageEvents(
+            1, Integer.MAX_VALUE, List.of(
+                new QueryFilter()
+                    .field(QueryFilterField.NAMESPACE)
+                    .operation(QueryFilterOp.EQUALS)
+                    .value(namespace)
+            ), tenantId, null
+        );
     }
 
     public AssetsControllerApiAsset getAsset(String assetId) throws ApiException {
@@ -210,23 +215,26 @@ public class KestraTestDataUtils {
 
     public AssetsControllerApiAsset createAsset(String namespace, String assetId, String type, Map<String, String> metadata) throws ApiException {
         try {
-            return kestraClient.assets().createAsset(tenantId, """
-                %sid: %s
-                type: %s%s""".formatted(
-                namespace == null ? "" : ("namespace: " + namespace + "\n"),
-                assetId,
-                type,
-                metadata == null || metadata.isEmpty()
-                    ? ""
-                    : "\nmetadata:\n" +
-                    metadata.entrySet().stream()
-                        .map(e -> "  %s: %s".formatted(e.getKey(), e.getValue()))
-                        .collect(Collectors.joining("\n"))
-            ));
+            return kestraClient.assets().createAsset(
+                tenantId, """
+                    %sid: %s
+                    type: %s%s""".formatted(
+                    namespace == null ? "" : ("namespace: " + namespace + "\n"),
+                    assetId,
+                    type,
+                    metadata == null || metadata.isEmpty()
+                        ? ""
+                        : "\nmetadata:\n" +
+                            metadata.entrySet().stream()
+                                .map(e -> "  %s: %s".formatted(e.getKey(), e.getValue()))
+                                .collect(Collectors.joining("\n"))
+                )
+            );
         } catch (ApiException e) {
             log.error(
                 "ApiException thrown, probably false positive as we are in `createAsset` :"
-                    + e.getMessage());
+                    + e.getMessage()
+            );
         }
         return null;
     }
@@ -241,79 +249,76 @@ public class KestraTestDataUtils {
         } catch (ApiException e) {
             log.error(
                 "ApiException thrown, probably false positive as we are in `resumeExecution` :"
-                    + e.getMessage());
+                    + e.getMessage()
+            );
         }
     }
 
-
     public TestSuite createRandomizedTestSuite(String namespace, String flowId) throws ApiException {
         String np = namespace != null ? namespace : "default";
-        String testSuite =
+        String testSuite = """
+            id: random_testsuite_%s
+            namespace: %s
+            flowId: %s
+            testCases:
+              - id: test_case_1
+                type: io.kestra.core.tests.flow.UnitTest
+                assertions:
+                  - value: 200
+                    equalTo: 200
+              - id: test_case_2
+                type: io.kestra.core.tests.flow.UnitTest
+                assertions:
+                  - value: 300
+                    equalTo: 300
             """
-                id: random_testsuite_%s
-                namespace: %s
-                flowId: %s
-                testCases:
-                  - id: test_case_1
-                    type: io.kestra.core.tests.flow.UnitTest
-                    assertions:
-                      - value: 200
-                        equalTo: 200
-                  - id: test_case_2
-                    type: io.kestra.core.tests.flow.UnitTest
-                    assertions:
-                      - value: 300
-                        equalTo: 300
-                """
-                .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np, flowId);
+            .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np, flowId);
         return kestraClient.testSuites().createTestSuite(tenantId, testSuite);
     }
 
     public TestSuite createRandomizedCrashingTestSuite(String namespace, String flowId)
         throws ApiException {
         String np = namespace != null ? namespace : "default";
-        String testSuite =
+        String testSuite = """
+            id: random_crashing_testsuite_%s
+            namespace: %s
+            flowId: %s
+            testCases:
+              - id: test_case_1
+                type: io.kestra.core.tests.flow.UnitTest
+                assertions:
+                  - value: 200
+                    equalTo: 200
+              - id: test_case_2_crashing
+                type: io.kestra.core.tests.flow.UnitTest
+                assertions:
+                  - value: "{{ unknown_pebble_expression_causing_error }}"
+                    equalTo: 111
             """
-                id: random_crashing_testsuite_%s
-                namespace: %s
-                flowId: %s
-                testCases:
-                  - id: test_case_1
-                    type: io.kestra.core.tests.flow.UnitTest
-                    assertions:
-                      - value: 200
-                        equalTo: 200
-                  - id: test_case_2_crashing
-                    type: io.kestra.core.tests.flow.UnitTest
-                    assertions:
-                      - value: "{{ unknown_pebble_expression_causing_error }}"
-                        equalTo: 111
-                """
-                .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np, flowId);
+            .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np, flowId);
         return kestraClient.testSuites().createTestSuite(tenantId, testSuite);
     }
 
     public TestSuite createRandomizedFailingTestSuite(String namespace, String flowId)
         throws ApiException {
         String np = namespace != null ? namespace : "default";
-        String testSuite =
+        String testSuite = """
+            id: random_failing_testsuite_%s
+            namespace: %s
+            flowId: %s
+            testCases:
+              - id: test_case_1
+                type: io.kestra.core.tests.flow.UnitTest
+                assertions:
+                  - value: 200
+                    equalTo: 200
+              - id: test_case_2_failing
+                type: io.kestra.core.tests.flow.UnitTest
+                assertions:
+                  - value: 333
+                    equalTo: 111
             """
-                id: random_failing_testsuite_%s
-                namespace: %s
-                flowId: %s
-                testCases:
-                  - id: test_case_1
-                    type: io.kestra.core.tests.flow.UnitTest
-                    assertions:
-                      - value: 200
-                        equalTo: 200
-                  - id: test_case_2_failing
-                    type: io.kestra.core.tests.flow.UnitTest
-                    assertions:
-                      - value: 333
-                        equalTo: 111
-                """
-                .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np, flowId);
+            .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np, flowId);
         return kestraClient.testSuites().createTestSuite(tenantId, testSuite);
     }
 
@@ -322,23 +327,22 @@ public class KestraTestDataUtils {
 
         String np = namespace != null ? namespace : "default";
 
-        String flow =
+        String flow = """
+            id: %s
+            namespace: %s
+
+            tasks:
+              - id: log
+                type: io.kestra.plugin.core.log.Log
+                message: test
+
+            triggers:
+              - id: schedule
+                type: io.kestra.plugin.core.trigger.Schedule
+                cron: "%s"
+                disabled: %s
             """
-                id: %s
-                namespace: %s
-
-                tasks:
-                  - id: log
-                    type: io.kestra.plugin.core.log.Log
-                    message: test
-
-                triggers:
-                  - id: schedule
-                    type: io.kestra.plugin.core.trigger.Schedule
-                    cron: "%s"
-                    disabled: %s
-                """
-                .formatted(flowId, np, cron, disabled);
+            .formatted(flowId, np, cron, disabled);
 
         return kestraClient.flows().createFlow(tenantId, flow);
     }

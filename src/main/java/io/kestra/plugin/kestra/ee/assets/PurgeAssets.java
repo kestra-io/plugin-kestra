@@ -1,5 +1,13 @@
 package io.kestra.plugin.kestra.ee.assets;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.NotImplementedException;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
@@ -10,6 +18,7 @@ import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.model.QueryFilter;
 import io.kestra.sdk.model.QueryFilterField;
 import io.kestra.sdk.model.QueryFilterOp;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
@@ -17,13 +26,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.apache.commons.lang3.NotImplementedException;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 
@@ -170,49 +172,55 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
         String rNamespace = runContext.render(namespace).as(String.class).orElse(null);
         Instant rEndDate = runContext.render(endDate).as(Instant.class).orElse(null);
         if (runContext.render(purgeAssets).as(Boolean.class).orElse(true)) {
-            outputBuilder.purgedAssetsCount(kestraClient.assets().deleteAssetsByQuery(
-                this.toQueryFilters(
-                    rAssetId,
-                    rNamespace,
-                    rAssetType,
-                    rMetadataQuery,
-                    rEndDate,
-                    QueryFilterField.ID,
-                    QueryFilterField.UPDATED
-                ),
-                true,
-                runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId())
-            ).getCount());
+            outputBuilder.purgedAssetsCount(
+                kestraClient.assets().deleteAssetsByQuery(
+                    this.toQueryFilters(
+                        rAssetId,
+                        rNamespace,
+                        rAssetType,
+                        rMetadataQuery,
+                        rEndDate,
+                        QueryFilterField.ID,
+                        QueryFilterField.UPDATED
+                    ),
+                    true,
+                    runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId())
+                ).getCount()
+            );
         }
 
         if (rPurgeAssetUsages) {
-            outputBuilder.purgedAssetUsagesCount(kestraClient.assets().deleteAssetUsagesByQuery(
-                this.toQueryFilters(
-                    rAssetId,
-                    rNamespace,
-                    rAssetType,
-                    rMetadataQuery,
-                    rEndDate,
-                    QueryFilterField.ASSET_ID,
-                    QueryFilterField.CREATED
-                ),
-                runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId())
-            ).getCount());
+            outputBuilder.purgedAssetUsagesCount(
+                kestraClient.assets().deleteAssetUsagesByQuery(
+                    this.toQueryFilters(
+                        rAssetId,
+                        rNamespace,
+                        rAssetType,
+                        rMetadataQuery,
+                        rEndDate,
+                        QueryFilterField.ASSET_ID,
+                        QueryFilterField.CREATED
+                    ),
+                    runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId())
+                ).getCount()
+            );
         }
 
         if (rPurgeAssetLineages) {
-            outputBuilder.purgedAssetLineagesCount(kestraClient.assets().deleteAssetLineageEventsByQuery(
-                this.toQueryFilters(
-                    rAssetId,
-                    rNamespace,
-                    rAssetType,
-                    rMetadataQuery,
-                    rEndDate,
-                    QueryFilterField.ASSET_ID,
-                    QueryFilterField.CREATED
-                ),
-                runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId())
-            ).getCount());
+            outputBuilder.purgedAssetLineagesCount(
+                kestraClient.assets().deleteAssetLineageEventsByQuery(
+                    this.toQueryFilters(
+                        rAssetId,
+                        rNamespace,
+                        rAssetType,
+                        rMetadataQuery,
+                        rEndDate,
+                        QueryFilterField.ASSET_ID,
+                        QueryFilterField.CREATED
+                    ),
+                    runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId())
+                ).getCount()
+            );
         }
 
         return outputBuilder.build();
@@ -225,51 +233,62 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
         java.util.List<FieldQuery> metadataQuery,
         Instant endDate,
         QueryFilterField idField,
-        QueryFilterField dateField
-    ) {
+        QueryFilterField dateField) {
         java.util.List<QueryFilter> queryFilters = new ArrayList<>();
 
         if (assetId != null) {
-            queryFilters.add(new QueryFilter()
-                .field(idField)
-                .operation(QueryFilterOp.EQUALS)
-                .value(assetId));
+            queryFilters.add(
+                new QueryFilter()
+                    .field(idField)
+                    .operation(QueryFilterOp.EQUALS)
+                    .value(assetId)
+            );
         }
 
         if (namespace != null) {
-            queryFilters.add(new QueryFilter()
-                .field(QueryFilterField.NAMESPACE)
-                .operation(QueryFilterOp.PREFIX)
-                .value(namespace));
+            queryFilters.add(
+                new QueryFilter()
+                    .field(QueryFilterField.NAMESPACE)
+                    .operation(QueryFilterOp.PREFIX)
+                    .value(namespace)
+            );
         }
 
         if (!typesFilter.isEmpty()) {
-            queryFilters.add(new QueryFilter()
-                .field(QueryFilterField.TYPE)
-                .operation(QueryFilterOp.IN)
-                .value(typesFilter));
+            queryFilters.add(
+                new QueryFilter()
+                    .field(QueryFilterField.TYPE)
+                    .operation(QueryFilterOp.IN)
+                    .value(typesFilter)
+            );
         }
 
         if (!metadataQuery.isEmpty()) {
             Map<QueryType, java.util.List<FieldQuery>> byOpType = metadataQuery.stream().collect(Collectors.groupingBy(FieldQuery::type));
-            byOpType.forEach(throwBiConsumer((key, value) -> {
-                Map<String, String> metadataMap = value.stream().collect(Collectors.toMap(
-                    FieldQuery::field,
-                    FieldQuery::value
-                ));
+            byOpType.forEach(throwBiConsumer((key, value) ->
+            {
+                Map<String, String> metadataMap = value.stream().collect(
+                    Collectors.toMap(
+                        FieldQuery::field,
+                        FieldQuery::value
+                    )
+                );
 
-                queryFilters.add(new QueryFilter()
-                    .field(QueryFilterField.METADATA)
-                    .operation(key.toQueryFilterOp())
-                    .value(metadataMap));
+                queryFilters.add(
+                    new QueryFilter()
+                        .field(QueryFilterField.METADATA)
+                        .operation(key.toQueryFilterOp())
+                        .value(metadataMap)
+                );
             }));
         }
 
         if (endDate != null) {
-            queryFilters.add(new QueryFilter()
-                .field(dateField)
-                .operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO)
-                .value(endDate)
+            queryFilters.add(
+                new QueryFilter()
+                    .field(dateField)
+                    .operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO)
+                    .value(endDate)
             );
         }
 

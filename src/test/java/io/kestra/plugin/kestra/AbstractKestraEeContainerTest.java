@@ -1,15 +1,17 @@
 package io.kestra.plugin.kestra;
 
-import lombok.extern.slf4j.Slf4j;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Testcontainers
 @Slf4j
 public abstract class AbstractKestraEeContainerTest extends AbstractKestraContainerTest {
     @Container
-    protected static final GenericContainer<?> KESTRA_EE_CONTAINER = new AbstractKestraEeContainerTest(){}.buildContainer("ghcr.io/kestra-io/kestra-ee:latest", true);
+    protected static final GenericContainer<?> KESTRA_EE_CONTAINER = new AbstractKestraEeContainerTest() {
+    }.buildContainer("ghcr.io/kestra-io/kestra-ee:latest", true);
 
     @Override
     protected GenericContainer<?> getContainer() {

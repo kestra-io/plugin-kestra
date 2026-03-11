@@ -1,26 +1,27 @@
 package io.kestra.plugin.kestra.logs;
 
-import io.kestra.core.models.annotations.Example;
-import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
-import io.kestra.core.models.tasks.runners.PluginUtilsService;
-import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.sdk.KestraClient;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import org.slf4j.event.Level;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.slf4j.event.Level;
+
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.tasks.runners.PluginUtilsService;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
+import io.kestra.plugin.kestra.AbstractKestraTask;
+import io.kestra.sdk.KestraClient;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwConsumer;
 
@@ -125,7 +126,8 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
                     );
 
                     if (logs != null) {
-                        logs.forEach(throwConsumer(log -> {
+                        logs.forEach(throwConsumer(log ->
+                        {
                             count.incrementAndGet();
                             FileSerde.write(output, log);
                         }));
@@ -142,7 +144,8 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
                 );
 
                 if (logs != null) {
-                    logs.forEach(throwConsumer(log -> {
+                    logs.forEach(throwConsumer(log ->
+                    {
                         count.incrementAndGet();
                         FileSerde.write(output, log);
                     }));

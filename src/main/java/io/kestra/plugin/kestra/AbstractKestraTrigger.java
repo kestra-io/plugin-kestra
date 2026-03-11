@@ -1,16 +1,17 @@
 package io.kestra.plugin.kestra;
 
+import java.util.Optional;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.AbstractTrigger;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.SDK;
 import io.kestra.sdk.KestraClient;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.util.Optional;
 
 @SuperBuilder
 @NoArgsConstructor
@@ -24,8 +25,8 @@ public abstract class AbstractKestraTrigger extends AbstractTrigger {
     @Schema(
         title = "Override Kestra API endpoint",
         description = """
-        URL used for calls to the Kestra API. When null, renders `{{ kestra.url }}` from configuration; if still empty, defaults to http://localhost:8080. Trailing slashes are stripped before use.
-        """
+            URL used for calls to the Kestra API. When null, renders `{{ kestra.url }}` from configuration; if still empty, defaults to http://localhost:8080. Trailing slashes are stripped before use.
+            """
     )
     private Property<String> kestraUrl;
 
@@ -42,7 +43,8 @@ public abstract class AbstractKestraTrigger extends AbstractTrigger {
     protected KestraClient kestraClient(RunContext runContext) throws IllegalVariableEvaluationException {
         // use the kestraUrl property if set, otherwise the config value, or else the default
         String rKestraUrl = runContext.render(kestraUrl).as(String.class)
-            .orElseGet(() -> {
+            .orElseGet(() ->
+            {
                 try {
                     return runContext.render(KESTRA_URL_TEMPLATE);
                 } catch (IllegalVariableEvaluationException e) {

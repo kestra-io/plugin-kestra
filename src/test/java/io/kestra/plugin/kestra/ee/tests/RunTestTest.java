@@ -1,19 +1,20 @@
 
 package io.kestra.plugin.kestra.ee.tests;
 
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.flows.State;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.kestra.AbstractKestraEeContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.plugin.kestra.ee.tests.RunTest;
 import io.kestra.sdk.model.TestState;
 import io.kestra.sdk.model.TestSuiteRunResult;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
 
-import java.util.Optional;
+import jakarta.inject.Inject;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,10 +35,11 @@ public class RunTestTest extends AbstractKestraEeContainerTest {
         // when
         var runTestTask = RunTest.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build()
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
             )
             .tenantId(Property.ofValue(TENANT_ID))
             .namespace(Property.ofValue(NAMESPACE))
@@ -61,10 +63,11 @@ public class RunTestTest extends AbstractKestraEeContainerTest {
         // when
         var runTestTask = RunTest.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build()
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
             )
             .tenantId(Property.ofValue(TENANT_ID))
             .namespace(Property.ofValue(NAMESPACE))
@@ -88,10 +91,11 @@ public class RunTestTest extends AbstractKestraEeContainerTest {
         // when
         var runTestTask = RunTest.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build()
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
             )
             .tenantId(Property.ofValue(TENANT_ID))
             .namespace(Property.ofValue(NAMESPACE))
@@ -115,10 +119,11 @@ public class RunTestTest extends AbstractKestraEeContainerTest {
         // when
         var runTestTask = RunTest.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build()
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
             )
             .tenantId(Property.ofValue(TENANT_ID))
             .namespace(Property.ofValue(NAMESPACE))

@@ -1,5 +1,10 @@
 package io.kestra.plugin.kestra.ee.assets;
 
+import java.util.Map;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import io.kestra.core.context.TestRunContextFactory;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
@@ -8,14 +13,10 @@ import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.kestra.AbstractKestraEeContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.plugin.kestra.ee.assets.Delete;
 import io.kestra.sdk.internal.ApiException;
+
 import io.micronaut.http.HttpStatus;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,18 +40,21 @@ class DeleteTest extends AbstractKestraEeContainerTest {
             .id(io.kestra.plugin.core.kv.Set.class.getSimpleName())
             .type(io.kestra.plugin.core.kv.Set.class.getName())
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build()
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
             )
             .tenantId(Property.ofValue(TENANT_ID))
             .assetId(Property.ofExpression("{{ inputs.assetId }}"))
             .build();
 
-        final RunContext runContext = TestsUtils.mockRunContext(this.runContextFactory, delete, Map.of(
-            "assetId", assetId
-        ));
+        final RunContext runContext = TestsUtils.mockRunContext(
+            this.runContextFactory, delete, Map.of(
+                "assetId", assetId
+            )
+        );
 
         // When
         delete.run(runContext);

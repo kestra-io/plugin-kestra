@@ -1,5 +1,16 @@
 package io.kestra.plugin.kestra.executions;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -15,22 +26,12 @@ import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.internal.ApiException;
 import io.kestra.sdk.model.*;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import reactor.core.publisher.Flux;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Stream;
 
 @SuperBuilder(toBuilder = true)
 @ToString
@@ -187,13 +188,11 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
 
     }
 
-
     private PagedResultsExecution executeSearch(
         RunContext runContext,
         KestraClient kestraClient,
         Integer page,
-        Integer size
-    ) throws IllegalVariableEvaluationException, ApiException {
+        Integer size) throws IllegalVariableEvaluationException, ApiException {
         List<FlowScope> rFlowScopes = runContext.render(this.flowScopes).asList(FlowScope.class);
         String tId = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         String rNamespace = runContext.render(this.namespace).as(String.class).orElse(null);
@@ -217,17 +216,20 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
         String rTriggerExecutionId = runContext.render(this.triggerExecutionId).as(String.class).orElse(null);
         ExecutionRepositoryInterface.ChildFilter rChildFilter = runContext.render(this.childFilter).as(ExecutionRepositoryInterface.ChildFilter.class).orElse(null);
 
-        List<QueryFilter> filters = new java.util.ArrayList<>(Stream.of(
-            rNamespace != null ? new QueryFilter().field(QueryFilterField.NAMESPACE).operation(QueryFilterOp.EQUALS).value(rNamespace) : null,
-            rFlowId != null ? new QueryFilter().field(QueryFilterField.FLOW_ID).operation(QueryFilterOp.EQUALS).value(rFlowId) : null,
-            rStartDate != null ? new QueryFilter().field(QueryFilterField.START_DATE).operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO).value(rStartDate) : null,
-            rEndDate != null ? new QueryFilter().field(QueryFilterField.START_DATE).operation(QueryFilterOp.GREATER_THAN_OR_EQUAL_TO).value(rEndDate) : null,
-            rTriggerExecutionId != null ? new QueryFilter().field(QueryFilterField.TRIGGER_EXECUTION_ID).operation(QueryFilterOp.EQUALS).value(rTriggerExecutionId) : null,
-            rChildFilter != null ? new QueryFilter().field(QueryFilterField.CHILD_FILTER).operation(QueryFilterOp.EQUALS).value(rChildFilter) : null
-        ).filter(Objects::nonNull).toList());
+        List<QueryFilter> filters = new java.util.ArrayList<>(
+            Stream.of(
+                rNamespace != null ? new QueryFilter().field(QueryFilterField.NAMESPACE).operation(QueryFilterOp.EQUALS).value(rNamespace) : null,
+                rFlowId != null ? new QueryFilter().field(QueryFilterField.FLOW_ID).operation(QueryFilterOp.EQUALS).value(rFlowId) : null,
+                rStartDate != null ? new QueryFilter().field(QueryFilterField.START_DATE).operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO).value(rStartDate) : null,
+                rEndDate != null ? new QueryFilter().field(QueryFilterField.START_DATE).operation(QueryFilterOp.GREATER_THAN_OR_EQUAL_TO).value(rEndDate) : null,
+                rTriggerExecutionId != null ? new QueryFilter().field(QueryFilterField.TRIGGER_EXECUTION_ID).operation(QueryFilterOp.EQUALS).value(rTriggerExecutionId) : null,
+                rChildFilter != null ? new QueryFilter().field(QueryFilterField.CHILD_FILTER).operation(QueryFilterOp.EQUALS).value(rChildFilter) : null
+            ).filter(Objects::nonNull).toList()
+        );
 
         if (rFlowScopes != null && !rFlowScopes.isEmpty()) {
-            rFlowScopes.forEach(flowScope -> {
+            rFlowScopes.forEach(flowScope ->
+            {
                 filters.add(
                     new QueryFilter()
                         .field(QueryFilterField.SCOPE)
@@ -238,7 +240,8 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
         }
 
         if (rState != null && !rState.isEmpty()) {
-            rState.forEach(state -> {
+            rState.forEach(state ->
+            {
                 filters.add(
                     new QueryFilter()
                         .field(QueryFilterField.STATE)
@@ -249,7 +252,8 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
         }
 
         if (rLabels != null && !rLabels.isEmpty()) {
-            rLabels.forEach((key, value) -> {
+            rLabels.forEach((key, value) ->
+            {
                 filters.add(
                     new QueryFilter()
                         .field(QueryFilterField.STATE)

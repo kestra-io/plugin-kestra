@@ -1,7 +1,18 @@
 package io.kestra.plugin.kestra.ee.assets;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -16,21 +27,12 @@ import io.kestra.core.models.triggers.TriggerService;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTrigger;
 import io.kestra.sdk.model.*;
+
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.time.Clock;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 
@@ -193,68 +195,87 @@ public class FreshnessTrigger extends AbstractKestraTrigger implements PollingTr
             return Optional.empty();
         }
 
-        return Optional.of(TriggerService.generateExecution(this, conditionContext, context, Output.builder()
-            .assets(fetchedAssets.stream()
-                .map(fetchedAsset -> new AssetWithStaleInfo(
-                    tenantId,
-                    fetchedAsset.getNamespace(),
-                    fetchedAsset.getId(),
-                    fetchedAsset.getType(),
-                    fetchedAsset.getDisplayName(),
-                    fetchedAsset.getDescription(),
-                    fetchedAsset.getMetadata(),
-                    Optional.ofNullable(fetchedAsset.getCreated()).map(OffsetDateTime::toInstant).orElse(null),
-                    Optional.ofNullable(fetchedAsset.getUpdated()).map(OffsetDateTime::toInstant).orElse(null),
-                    false,
-                    Duration.between(fetchedAsset.getUpdated().toInstant(), now),
-                    now
-                )).toList()
-            ).build()));
+        return Optional.of(
+            TriggerService.generateExecution(
+                this, conditionContext, context, Output.builder()
+                    .assets(
+                        fetchedAssets.stream()
+                            .map(
+                                fetchedAsset -> new AssetWithStaleInfo(
+                                    tenantId,
+                                    fetchedAsset.getNamespace(),
+                                    fetchedAsset.getId(),
+                                    fetchedAsset.getType(),
+                                    fetchedAsset.getDisplayName(),
+                                    fetchedAsset.getDescription(),
+                                    fetchedAsset.getMetadata(),
+                                    Optional.ofNullable(fetchedAsset.getCreated()).map(OffsetDateTime::toInstant).orElse(null),
+                                    Optional.ofNullable(fetchedAsset.getUpdated()).map(OffsetDateTime::toInstant).orElse(null),
+                                    false,
+                                    Duration.between(fetchedAsset.getUpdated().toInstant(), now),
+                                    now
+                                )
+                            ).toList()
+                    ).build()
+            )
+        );
     }
 
     private List<QueryFilter> toQueryFilters(String assetId, String namespace, String typeFilter, List<FieldQuery> metadataQuery, Instant updatedBefore) {
         List<QueryFilter> queryFilters = new ArrayList<>();
 
         if (assetId != null) {
-            queryFilters.add(new QueryFilter()
-                .field(QueryFilterField.ID)
-                .operation(QueryFilterOp.EQUALS)
-                .value(assetId));
+            queryFilters.add(
+                new QueryFilter()
+                    .field(QueryFilterField.ID)
+                    .operation(QueryFilterOp.EQUALS)
+                    .value(assetId)
+            );
         }
 
         if (namespace != null) {
-            queryFilters.add(new QueryFilter()
-                .field(QueryFilterField.NAMESPACE)
-                .operation(QueryFilterOp.EQUALS)
-                .value(namespace));
+            queryFilters.add(
+                new QueryFilter()
+                    .field(QueryFilterField.NAMESPACE)
+                    .operation(QueryFilterOp.EQUALS)
+                    .value(namespace)
+            );
         }
 
         if (typeFilter != null) {
-            queryFilters.add(new QueryFilter()
-                .field(QueryFilterField.TYPE)
-                .operation(QueryFilterOp.EQUALS)
-                .value(typeFilter));
+            queryFilters.add(
+                new QueryFilter()
+                    .field(QueryFilterField.TYPE)
+                    .operation(QueryFilterOp.EQUALS)
+                    .value(typeFilter)
+            );
         }
 
         if (!metadataQuery.isEmpty()) {
             Map<QueryType, List<FieldQuery>> byOpType = metadataQuery.stream().collect(Collectors.groupingBy(FieldQuery::type));
-            byOpType.forEach(throwBiConsumer((key, value) -> {
-                Map<String, String> metadataMap = value.stream().collect(Collectors.toMap(
-                    FieldQuery::field,
-                    FieldQuery::value
-                ));
+            byOpType.forEach(throwBiConsumer((key, value) ->
+            {
+                Map<String, String> metadataMap = value.stream().collect(
+                    Collectors.toMap(
+                        FieldQuery::field,
+                        FieldQuery::value
+                    )
+                );
 
-                queryFilters.add(new QueryFilter()
-                    .field(QueryFilterField.METADATA)
-                    .operation(key.toQueryFilterOp())
-                    .value(metadataMap));
+                queryFilters.add(
+                    new QueryFilter()
+                        .field(QueryFilterField.METADATA)
+                        .operation(key.toQueryFilterOp())
+                        .value(metadataMap)
+                );
             }));
         }
 
-        queryFilters.add(new QueryFilter()
-            .field(QueryFilterField.UPDATED)
-            .operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO)
-            .value(updatedBefore)
+        queryFilters.add(
+            new QueryFilter()
+                .field(QueryFilterField.UPDATED)
+                .operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO)
+                .value(updatedBefore)
         );
 
         return queryFilters;
@@ -265,7 +286,8 @@ public class FreshnessTrigger extends AbstractKestraTrigger implements PollingTr
         private Duration staleDuration;
         private Instant checkTime;
 
-        public AssetWithStaleInfo(String tenantId, String namespace, String id, String type, String displayName, String description, Map<String, Object> metadata, Instant created, Instant updated, boolean deleted, Duration staleDuration, Instant checkTime) {
+        public AssetWithStaleInfo(String tenantId, String namespace, String id, String type, String displayName, String description, Map<String, Object> metadata, Instant created,
+            Instant updated, boolean deleted, Duration staleDuration, Instant checkTime) {
             super(tenantId, namespace, id, type, displayName, description, metadata, created, updated, deleted);
             this.staleDuration = staleDuration;
             this.checkTime = checkTime;

@@ -1,8 +1,11 @@
 package io.kestra.plugin.kestra.triggers;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.VoidOutput;
@@ -10,14 +13,10 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.model.*;
+
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Stream;
 
 @SuperBuilder
 @ToString
@@ -94,13 +93,16 @@ public class Toggle extends AbstractKestraTask implements RunnableTask<VoidOutpu
         var rFlowId = runContext.render(flowId).as(String.class).orElse(null);
         var rTriggerId = runContext.render(trigger).as(String.class).orElse(null);
 
-        List<QueryFilter> filters = new java.util.ArrayList<>(Stream.of(
-            rNamespace != null ? new QueryFilter().field(QueryFilterField.NAMESPACE).operation(QueryFilterOp.EQUALS).value(rNamespace) : null,
-            rFlowId != null ? new QueryFilter().field(QueryFilterField.FLOW_ID).operation(QueryFilterOp.EQUALS).value(rFlowId) : null,
-            rTriggerId != null ? new QueryFilter().field(QueryFilterField.TRIGGER_ID).operation(QueryFilterOp.EQUALS).value(rTriggerId) : null
-        ).filter(Objects::nonNull).toList());
+        List<QueryFilter> filters = new java.util.ArrayList<>(
+            Stream.of(
+                rNamespace != null ? new QueryFilter().field(QueryFilterField.NAMESPACE).operation(QueryFilterOp.EQUALS).value(rNamespace) : null,
+                rFlowId != null ? new QueryFilter().field(QueryFilterField.FLOW_ID).operation(QueryFilterOp.EQUALS).value(rFlowId) : null,
+                rTriggerId != null ? new QueryFilter().field(QueryFilterField.TRIGGER_ID).operation(QueryFilterOp.EQUALS).value(rTriggerId) : null
+            ).filter(Objects::nonNull).toList()
+        );
 
-        var disabledTriggers = JacksonMapper.ofJson().convertValue(kestraClient.triggers().disabledTriggersByQuery(!runContext.render(enabled).as(Boolean.class).orElse(false), rTenantId, filters), TriggerResponse.class);
+        var disabledTriggers = JacksonMapper.ofJson()
+            .convertValue(kestraClient.triggers().disabledTriggersByQuery(!runContext.render(enabled).as(Boolean.class).orElse(false), rTenantId, filters), TriggerResponse.class);
 
         runContext.logger().info("{} triggers found to toggle", disabledTriggers.getCount());
 

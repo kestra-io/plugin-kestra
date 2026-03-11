@@ -1,5 +1,12 @@
 package io.kestra.plugin.kestra.executions;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.concurrent.Callable;
+
+import org.junit.jupiter.api.Test;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.VoidOutput;
@@ -12,13 +19,8 @@ import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.model.Execution;
 import io.kestra.sdk.model.FlowWithSource;
 import io.kestra.sdk.model.StateType;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.org.awaitility.Awaitility;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.concurrent.Callable;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -44,18 +46,18 @@ class KillTest extends AbstractKestraOssContainerTest {
         Execution beforeExecution = queryExecution(flow.getId());
         Awaitility.await().until(checkExecutionState(beforeExecution.getId(), StateType.PAUSED));
 
-        Kill killTask =
-            Kill.builder()
-                .kestraUrl(Property.ofValue(KESTRA_URL))
-                .auth(
-                    AbstractKestraTask.Auth.builder()
-                        .username(Property.ofValue(USERNAME))
-                        .password(Property.ofValue(PASSWORD))
-                        .build())
-                .tenantId(Property.ofValue(TENANT_ID))
-                .executionId(Property.ofValue(beforeExecution.getId()))
-                .propagateKill(Property.ofValue(false))
-                .build();
+        Kill killTask = Kill.builder()
+            .kestraUrl(Property.ofValue(KESTRA_URL))
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
+            .tenantId(Property.ofValue(TENANT_ID))
+            .executionId(Property.ofValue(beforeExecution.getId()))
+            .propagateKill(Property.ofValue(false))
+            .build();
 
         VoidOutput output = killTask.run(runContext);
 
@@ -70,7 +72,8 @@ class KillTest extends AbstractKestraOssContainerTest {
 
         assertThat(
             afterExecution.getState().getCurrent(),
-            in(new StateType[]{StateType.RESTARTED, StateType.RUNNING, StateType.KILLED}));
+            in(new StateType[] { StateType.RESTARTED, StateType.RUNNING, StateType.KILLED })
+        );
     }
 
     @Test
@@ -80,8 +83,7 @@ class KillTest extends AbstractKestraOssContainerTest {
         // Create sub flow for testing
         FlowWithSource subFlow = kestraTestDataUtils.createRandomizedPauseFlow(NAMESPACE);
 
-        FlowWithSource parentFlow =
-            kestraTestDataUtils.createRandomizedSubFlow(NAMESPACE, subFlow.getId());
+        FlowWithSource parentFlow = kestraTestDataUtils.createRandomizedSubFlow(NAMESPACE, subFlow.getId());
 
         // Create an execution for a given flow
         kestraTestDataUtils.createRandomizedExecution(parentFlow.getId(), parentFlow.getNamespace());
@@ -97,18 +99,18 @@ class KillTest extends AbstractKestraOssContainerTest {
             .until(checkExecutionState(subExecution.getId(), StateType.PAUSED));
 
         // Kill the parent execution without propagate the kill to sub execution
-        Kill killTask =
-            Kill.builder()
-                .kestraUrl(Property.ofValue(KESTRA_URL))
-                .auth(
-                    AbstractKestraTask.Auth.builder()
-                        .username(Property.ofValue(USERNAME))
-                        .password(Property.ofValue(PASSWORD))
-                        .build())
-                .tenantId(Property.ofValue(TENANT_ID))
-                .executionId(Property.ofValue(parentExecution.getId()))
-                .propagateKill(Property.ofValue(true))
-                .build();
+        Kill killTask = Kill.builder()
+            .kestraUrl(Property.ofValue(KESTRA_URL))
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
+            .tenantId(Property.ofValue(TENANT_ID))
+            .executionId(Property.ofValue(parentExecution.getId()))
+            .propagateKill(Property.ofValue(true))
+            .build();
 
         VoidOutput output = killTask.run(runContext);
 
@@ -129,8 +131,7 @@ class KillTest extends AbstractKestraOssContainerTest {
         // Create sub flow for testing
         FlowWithSource subFlow = kestraTestDataUtils.createRandomizedPauseFlow(NAMESPACE);
 
-        FlowWithSource parentFlow =
-            kestraTestDataUtils.createRandomizedSubFlow(NAMESPACE, subFlow.getId());
+        FlowWithSource parentFlow = kestraTestDataUtils.createRandomizedSubFlow(NAMESPACE, subFlow.getId());
 
         // Create an execution for a given flow
         kestraTestDataUtils.createRandomizedExecution(parentFlow.getId(), parentFlow.getNamespace());
@@ -146,18 +147,18 @@ class KillTest extends AbstractKestraOssContainerTest {
             .until(checkExecutionState(subExecution.getId(), StateType.PAUSED));
 
         // Kill the parent execution without propagate the kill to sub execution
-        Kill killTask =
-            Kill.builder()
-                .kestraUrl(Property.ofValue(KESTRA_URL))
-                .auth(
-                    AbstractKestraTask.Auth.builder()
-                        .username(Property.ofValue(USERNAME))
-                        .password(Property.ofValue(PASSWORD))
-                        .build())
-                .tenantId(Property.ofValue(TENANT_ID))
-                .executionId(Property.ofValue(parentExecution.getId()))
-                .propagateKill(Property.ofValue(false))
-                .build();
+        Kill killTask = Kill.builder()
+            .kestraUrl(Property.ofValue(KESTRA_URL))
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
+            .tenantId(Property.ofValue(TENANT_ID))
+            .executionId(Property.ofValue(parentExecution.getId()))
+            .propagateKill(Property.ofValue(false))
+            .build();
 
         VoidOutput output = killTask.run(runContext);
 
@@ -173,7 +174,8 @@ class KillTest extends AbstractKestraOssContainerTest {
         Execution resumeExecution = kestraTestDataUtils.getExecution(subExecution.getId());
         assertThat(
             resumeExecution.getState().getCurrent(),
-            in(new StateType[]{StateType.RESTARTED, StateType.RUNNING, StateType.SUCCESS}));
+            in(new StateType[] { StateType.RESTARTED, StateType.RUNNING, StateType.SUCCESS })
+        );
     }
 
     @Test
@@ -183,8 +185,7 @@ class KillTest extends AbstractKestraOssContainerTest {
         // Create sub flow for testing
         FlowWithSource subFlow = kestraTestDataUtils.createRandomizedPauseFlow(NAMESPACE);
 
-        FlowWithSource parentFlow =
-            kestraTestDataUtils.createRandomizedSubFlow(NAMESPACE, subFlow.getId());
+        FlowWithSource parentFlow = kestraTestDataUtils.createRandomizedSubFlow(NAMESPACE, subFlow.getId());
 
         // Create an execution for a given flow
         kestraTestDataUtils.createRandomizedExecution(parentFlow.getId(), parentFlow.getNamespace());
@@ -200,18 +201,18 @@ class KillTest extends AbstractKestraOssContainerTest {
             .until(checkExecutionState(subExecution.getId(), StateType.PAUSED));
 
         // Kill the sub execution
-        Kill killTask =
-            Kill.builder()
-                .kestraUrl(Property.ofValue(KESTRA_URL))
-                .auth(
-                    AbstractKestraTask.Auth.builder()
-                        .username(Property.ofValue(USERNAME))
-                        .password(Property.ofValue(PASSWORD))
-                        .build())
-                .tenantId(Property.ofValue(TENANT_ID))
-                .executionId(Property.ofValue(subExecution.getId()))
-                .propagateKill(Property.ofValue(true))
-                .build();
+        Kill killTask = Kill.builder()
+            .kestraUrl(Property.ofValue(KESTRA_URL))
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
+            .tenantId(Property.ofValue(TENANT_ID))
+            .executionId(Property.ofValue(subExecution.getId()))
+            .propagateKill(Property.ofValue(true))
+            .build();
 
         VoidOutput output = killTask.run(runContext);
 
@@ -229,14 +230,17 @@ class KillTest extends AbstractKestraOssContainerTest {
     private Execution queryExecution(String flowId) throws Exception {
         RunContext runContext = runContextFactory.of();
 
-        return Await.until(() -> {
+        return Await.until(() ->
+        {
             try {
                 Query searchTask = Query.builder()
                     .kestraUrl(Property.ofValue(KESTRA_URL))
-                    .auth(AbstractKestraTask.Auth.builder()
-                        .username(Property.ofValue(USERNAME))
-                        .password(Property.ofValue(PASSWORD))
-                        .build())
+                    .auth(
+                        AbstractKestraTask.Auth.builder()
+                            .username(Property.ofValue(USERNAME))
+                            .password(Property.ofValue(PASSWORD))
+                            .build()
+                    )
                     .tenantId(Property.ofValue(TENANT_ID))
                     .namespace(Property.ofValue(NAMESPACE))
                     .flowId(Property.ofValue(flowId))
@@ -245,7 +249,8 @@ class KillTest extends AbstractKestraOssContainerTest {
                     .build();
 
                 FetchOutput output = searchTask.run(runContext);
-                if (output.getRows().isEmpty()) return null;
+                if (output.getRows().isEmpty())
+                    return null;
 
                 var row = output.getRows().getFirst();
                 if (row instanceof ArrayList<?> arrayList && !arrayList.isEmpty()) {

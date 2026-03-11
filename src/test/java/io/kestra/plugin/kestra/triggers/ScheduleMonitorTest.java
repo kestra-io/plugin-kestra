@@ -1,5 +1,12 @@
 package io.kestra.plugin.triggers;
 
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
@@ -14,13 +21,8 @@ import io.kestra.plugin.kestra.triggers.ScheduleMonitor;
 import io.kestra.sdk.model.QueryFilter;
 import io.kestra.sdk.model.QueryFilterField;
 import io.kestra.sdk.model.QueryFilterOp;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -28,7 +30,8 @@ import static org.hamcrest.Matchers.*;
 @KestraTest
 public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
 
-    @Inject RunContextFactory runContextFactory;
+    @Inject
+    RunContextFactory runContextFactory;
 
     private static final String NAMESPACE_PREFIX = "kestra.tests.schedule.monitor";
     private static final Duration AWAIT_TIMEOUT = Duration.ofSeconds(60);
@@ -77,11 +80,13 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
             .build();
 
         var context2 = TestsUtils.mockTrigger(runContextFactory, monitor2);
-        execution = Optional.ofNullable(Await.until(
-            () -> evaluate(monitor2, context2.getKey(), context2.getValue()).orElse(null),
-            Duration.ofMillis(100),
-            AWAIT_TIMEOUT
-        ));
+        execution = Optional.ofNullable(
+            Await.until(
+                () -> evaluate(monitor2, context2.getKey(), context2.getValue()).orElse(null),
+                Duration.ofMillis(100),
+                AWAIT_TIMEOUT
+            )
+        );
 
         assertThat(execution.isPresent(), is(true));
     }
@@ -99,7 +104,8 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
         );
 
         Await.until(
-            () -> {
+            () ->
+            {
                 var trigger = findTrigger(namespace, flowId);
                 return trigger != null && trigger.getDate() != null ? trigger : null;
             },
@@ -143,7 +149,8 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
         }
 
         Await.until(
-            () -> {
+            () ->
+            {
                 var response = kestraTestDataUtils.getKestraClient()
                     .triggers()
                     .searchTriggers(
@@ -190,8 +197,7 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
     private Optional<Execution> evaluate(
         ScheduleMonitor monitor,
         ConditionContext conditionContext,
-        io.kestra.core.models.triggers.Trigger triggerContext
-    ) {
+        io.kestra.core.models.triggers.Trigger triggerContext) {
         try {
             return monitor.evaluate(conditionContext, triggerContext);
         } catch (Exception e) {
@@ -201,8 +207,7 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
 
     private ScheduleMonitor.Output runChecks(
         ScheduleMonitor monitor,
-        ConditionContext conditionContext
-    ) {
+        ConditionContext conditionContext) {
         try {
             return monitor.runChecks(conditionContext.getRunContext());
         } catch (Exception e) {

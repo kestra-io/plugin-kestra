@@ -1,5 +1,7 @@
 package io.kestra.plugin.kestra.ee.assets;
 
+import java.util.Map;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
@@ -9,13 +11,12 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.model.Asset;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-
-import java.util.Map;
 
 @SuperBuilder
 @Getter

@@ -1,6 +1,9 @@
 package io.kestra.plugin.kestra.logs;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.ArrayList;
+
+import org.junit.jupiter.api.Test;
+import org.slf4j.event.Level;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
@@ -12,11 +15,10 @@ import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.executions.Query;
 import io.kestra.sdk.model.Execution;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
-import org.slf4j.event.Level;
 
-import java.util.ArrayList;
+import jakarta.inject.Inject;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @KestraTest
 public class FetchTest extends AbstractKestraOssContainerTest {
@@ -58,10 +60,12 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
         Fetch fetchTask = Fetch.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build())
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
             .tenantId(Property.ofValue(TENANT_ID))
             .level(Property.ofValue(Level.INFO))
             .executionId(Property.ofValue(execution.getId()))
@@ -101,10 +105,12 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
         Fetch fetchTask = Fetch.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build())
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
             .tenantId(Property.ofValue(TENANT_ID))
             .level(Property.ofValue(Level.INFO))
             .executionId(Property.ofValue(execution.getId()))
@@ -149,10 +155,12 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
         Fetch fetchTask = Fetch.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build())
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
             .tenantId(Property.ofValue(TENANT_ID))
             .level(Property.ofValue(Level.INFO))
             .executionId(Property.ofValue(execution.getId()))
@@ -168,10 +176,12 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
         Query searchTask = Query.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build())
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
             .tenantId(Property.ofValue(TENANT_ID))
             .namespace(Property.ofValue(NAMESPACE))
             .flowId(Property.ofValue(flowId))

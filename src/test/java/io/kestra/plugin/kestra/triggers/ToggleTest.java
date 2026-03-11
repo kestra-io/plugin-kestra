@@ -1,5 +1,9 @@
 package io.kestra.plugin.kestra.triggers;
 
+import java.time.Duration;
+
+import org.junit.jupiter.api.Test;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
@@ -8,10 +12,8 @@ import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.model.Trigger;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -60,7 +62,8 @@ class ToggleTest extends AbstractKestraOssContainerTest {
         disable.run(runContext);
 
         var disabledTrigger = Await.until(
-            () -> {
+            () ->
+            {
                 var trigger = findTrigger(flowId);
                 return Boolean.TRUE.equals(trigger != null ? trigger.getDisabled() : null) ? trigger : null;
             },
@@ -85,7 +88,8 @@ class ToggleTest extends AbstractKestraOssContainerTest {
         enable.run(runContext);
 
         var trigger = Await.until(
-            () -> {
+            () ->
+            {
                 var currentTrigger = findTrigger(flowId);
                 return Boolean.FALSE.equals(currentTrigger != null ? currentTrigger.getDisabled() : null) ? currentTrigger : null;
             },

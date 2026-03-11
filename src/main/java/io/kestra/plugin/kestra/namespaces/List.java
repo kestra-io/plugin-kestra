@@ -1,5 +1,7 @@
 package io.kestra.plugin.kestra.namespaces;
 
+import java.util.ArrayList;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
@@ -8,12 +10,11 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.model.PagedResultsNamespace;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.util.ArrayList;
 
 @SuperBuilder(toBuilder = true)
 @ToString

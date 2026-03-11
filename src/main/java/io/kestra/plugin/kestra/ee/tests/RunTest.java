@@ -1,5 +1,12 @@
 package io.kestra.plugin.kestra.ee.tests;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.flows.State;
@@ -8,17 +15,12 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.model.*;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.slf4j.Logger;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @SuperBuilder
 @ToString
@@ -35,17 +37,17 @@ import java.util.stream.Collectors;
             title = "Run a test",
             full = true,
             code = """
-               id: run_test
-               namespace: company.team
+                id: run_test
+                namespace: company.team
 
-               tasks:
-                 - id: do_run_one_test
-                   type: io.kestra.plugin.kestra.ee.tests.RunTest
-                   auth:
-                     apiToken: "{{ secret('KESTRA_API_TOKEN') }}"
-                   namespace: company.team
-                   testId: simple-testsuite
-               """
+                tasks:
+                  - id: do_run_one_test
+                    type: io.kestra.plugin.kestra.ee.tests.RunTest
+                    auth:
+                      apiToken: "{{ secret('KESTRA_API_TOKEN') }}"
+                    namespace: company.team
+                    testId: simple-testsuite
+                """
         ),
         @Example(
             title = "Run a specific test testcase",
@@ -80,7 +82,7 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
     @Nullable
     private Property<List<String>> testCases;
 
-    @Schema(title= "Fail task on test failures", description = "Defaults to false. When true, FAILED test cases set the task state to FAILED instead of WARNING.")
+    @Schema(title = "Fail task on test failures", description = "Defaults to false. When true, FAILED test cases set the task state to FAILED instead of WARNING.")
     @Builder.Default
     private Property<Boolean> failOnTestFailure = Property.ofValue(false);
 
@@ -103,7 +105,8 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
         var result = testSuitesApi.runTestSuite(rNamespace, rId, rTenantId, runRequest);
         Objects.requireNonNull(result.getResults());
 
-        result.getResults().forEach(testCaseResult -> {
+        result.getResults().forEach(testCaseResult ->
+        {
             logTestCase(logger, testFullId, testCaseResult);
         });
 
@@ -115,7 +118,7 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
             }
             case FAILED -> {
                 logger.warn("Test '{}' ended with {}", testFullId, result.getState());
-                if(rFailOnTestFailure){
+                if (rFailOnTestFailure) {
                     outputBuilder.taskStateOverride(Optional.of(State.Type.FAILED));
                 } else {
                     outputBuilder.taskStateOverride(Optional.of(State.Type.WARNING));
@@ -137,7 +140,8 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
         var url = testCaseResult.getUrl();
         var state = testCaseResult.getState();
         if (state == TestState.ERROR) {
-            logger.error("{} > Test case '{}' ended with status: {}.\nexecutionId: {}\nexecution url: {}\nerrors: {}",
+            logger.error(
+                "{} > Test case '{}' ended with status: {}.\nexecutionId: {}\nexecution url: {}\nerrors: {}",
                 testSuiteId,
                 testCaseResult.getTestId(), state, executionId, url,
                 formatErrors(testCaseResult)
@@ -147,7 +151,8 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
         }
 
         if (logger.isDebugEnabled()) {
-            testCaseResult.getAssertionResults().forEach(assertionResult -> {
+            testCaseResult.getAssertionResults().forEach(assertionResult ->
+            {
                 logger.debug("{} > {} > Assertion result: {}", testSuiteId, testCaseResult.getTestId(), formatAssertionResult(assertionResult));
             });
         }
@@ -166,7 +171,8 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
     }
 
     private static String formatErrors(UnitTestResult testCaseResult) {
-        return testCaseResult.getErrors().stream().map(err -> {
+        return testCaseResult.getErrors().stream().map(err ->
+        {
             var str = err.getMessage();
             if (err.getDetails() != null) {
                 str += ", details: " + err.getDetails();

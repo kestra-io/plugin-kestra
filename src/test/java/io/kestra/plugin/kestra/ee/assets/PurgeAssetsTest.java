@@ -1,5 +1,14 @@
 package io.kestra.plugin.kestra.ee.assets;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.NotImplementedException;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
@@ -14,15 +23,8 @@ import io.kestra.sdk.internal.ApiException;
 import io.kestra.sdk.model.Execution;
 import io.kestra.sdk.model.FlowWithSource;
 import io.kestra.sdk.model.StateType;
-import jakarta.inject.Inject;
-import org.apache.commons.lang3.NotImplementedException;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -194,9 +196,13 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
 
         PurgeAssets task = baseTaskBuilder()
             .namespace(Property.ofValue(namespace))
-            .metadataQuery(Property.ofValue(java.util.List.of(
-                new FieldQuery("team", QueryType.EQUAL_TO, "a")
-            )))
+            .metadataQuery(
+                Property.ofValue(
+                    java.util.List.of(
+                        new FieldQuery("team", QueryType.EQUAL_TO, "a")
+                    )
+                )
+            )
             .endDate(Property.ofValue(Instant.now().plus(Duration.ofDays(1))))
             .purgeAssets(Property.ofValue(true))
             .purgeAssetUsages(Property.ofValue(false))
@@ -251,20 +257,26 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
             .purgeAssetLineages(Property.ofValue(true))
             .build();
 
-        assertThrows(NotImplementedException.class, () -> base.toBuilder()
-            .assetId(Property.ofValue("asset"))
-            .build()
-            .run(runContext));
+        assertThrows(
+            NotImplementedException.class, () -> base.toBuilder()
+                .assetId(Property.ofValue("asset"))
+                .build()
+                .run(runContext)
+        );
 
-        assertThrows(NotImplementedException.class, () -> base.toBuilder()
-            .assetType(Property.ofValue(List.of("TABLE")))
-            .build()
-            .run(runContext));
+        assertThrows(
+            NotImplementedException.class, () -> base.toBuilder()
+                .assetType(Property.ofValue(List.of("TABLE")))
+                .build()
+                .run(runContext)
+        );
 
-        assertThrows(NotImplementedException.class, () -> base.toBuilder()
-            .metadataQuery(Property.ofValue(java.util.List.of(new FieldQuery("k", QueryType.EQUAL_TO, "v"))))
-            .build()
-            .run(runContext));
+        assertThrows(
+            NotImplementedException.class, () -> base.toBuilder()
+                .metadataQuery(Property.ofValue(java.util.List.of(new FieldQuery("k", QueryType.EQUAL_TO, "v"))))
+                .build()
+                .run(runContext)
+        );
     }
 
     @Test
@@ -279,15 +291,19 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
             .purgeAssetLineages(Property.ofValue(false))
             .build();
 
-        assertThrows(NotImplementedException.class, () -> base.toBuilder()
-            .assetType(Property.ofValue(List.of("TABLE")))
-            .build()
-            .run(runContext));
+        assertThrows(
+            NotImplementedException.class, () -> base.toBuilder()
+                .assetType(Property.ofValue(List.of("TABLE")))
+                .build()
+                .run(runContext)
+        );
 
-        assertThrows(NotImplementedException.class, () -> base.toBuilder()
-            .metadataQuery(Property.ofValue(java.util.List.of(new FieldQuery("k", QueryType.EQUAL_TO, "v"))))
-            .build()
-            .run(runContext));
+        assertThrows(
+            NotImplementedException.class, () -> base.toBuilder()
+                .metadataQuery(Property.ofValue(java.util.List.of(new FieldQuery("k", QueryType.EQUAL_TO, "v"))))
+                .build()
+                .run(runContext)
+        );
     }
 
     @Test
@@ -331,10 +347,12 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
             .id("purge_assets")
             .type(PurgeAssets.class.getName())
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build())
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
             .tenantId(Property.ofValue(TENANT_ID));
     }
 
@@ -393,7 +411,8 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
         Execution execution = queryExecution(created.getId(), namespace);
         Awaitility.await().until(() -> kestraTestDataUtils.getExecution(execution.getId()).getState().getCurrent() == StateType.SUCCESS);
         Awaitility.await().until(() -> kestraTestDataUtils.assetExists(inputAssetId) && kestraTestDataUtils.assetExists(outputAssetId));
-        Awaitility.await().until(() -> {
+        Awaitility.await().until(() ->
+        {
             try {
                 // One for input & one for output
                 return kestraTestDataUtils.getAssetUsagesForNamespace(namespace).getTotal().equals(assetUsagesBeforeExecution + 2L);
@@ -402,7 +421,8 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
                 return false;
             }
         });
-        Awaitility.await().until(() -> {
+        Awaitility.await().until(() ->
+        {
             try {
                 // One lineage event for the execution (covers both input & output assets)
                 return kestraTestDataUtils.getAssetLineagesForNamespace(namespace).getTotal().equals(assetLineagesBeforeExecution + 1L);
@@ -417,14 +437,17 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
         RunContext runContext = runContextFactory.of();
 
         return Await.until(
-            () -> {
+            () ->
+            {
                 try {
                     Query searchTask = Query.builder()
                         .kestraUrl(Property.ofValue(KESTRA_URL))
-                        .auth(AbstractKestraTask.Auth.builder()
-                            .username(Property.ofValue(USERNAME))
-                            .password(Property.ofValue(PASSWORD))
-                            .build())
+                        .auth(
+                            AbstractKestraTask.Auth.builder()
+                                .username(Property.ofValue(USERNAME))
+                                .password(Property.ofValue(PASSWORD))
+                                .build()
+                        )
                         .tenantId(Property.ofValue(TENANT_ID))
                         .namespace(Property.ofValue(namespace))
                         .flowId(Property.ofValue(flowId))

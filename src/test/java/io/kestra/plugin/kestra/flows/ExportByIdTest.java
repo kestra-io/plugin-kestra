@@ -1,5 +1,9 @@
 package io.kestra.plugin.kestra.flows;
 
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
@@ -8,10 +12,8 @@ import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.model.FlowWithSource;
 import io.kestra.sdk.model.IdWithNamespace;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -36,10 +38,11 @@ public class ExportByIdTest extends AbstractKestraOssContainerTest {
 
         ExportById exportFlows = ExportById.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build()
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
             )
             .tenantId(Property.ofValue(TENANT_ID))
             .flows(

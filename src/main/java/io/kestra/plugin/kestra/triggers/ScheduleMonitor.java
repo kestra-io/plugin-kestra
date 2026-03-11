@@ -1,5 +1,11 @@
 package io.kestra.plugin.kestra.triggers;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.conditions.ConditionContext;
@@ -13,15 +19,10 @@ import io.kestra.plugin.kestra.AbstractKestraTrigger;
 import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.model.*;
 import io.kestra.sdk.model.Trigger;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 @SuperBuilder
 @ToString
@@ -126,18 +127,20 @@ public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOut
         List<QueryFilter> filters = new ArrayList<>();
 
         if (rNamespace != null) {
-            filters.add(new QueryFilter()
-                .field(QueryFilterField.NAMESPACE)
-                .operation(QueryFilterOp.STARTS_WITH)
-                .value(rNamespace)
+            filters.add(
+                new QueryFilter()
+                    .field(QueryFilterField.NAMESPACE)
+                    .operation(QueryFilterOp.STARTS_WITH)
+                    .value(rNamespace)
             );
         }
 
         if (rFlowId != null) {
-            filters.add(new QueryFilter()
-                .field(QueryFilterField.FLOW_ID)
-                .operation(QueryFilterOp.EQUALS)
-                .value(rFlowId)
+            filters.add(
+                new QueryFilter()
+                    .field(QueryFilterField.FLOW_ID)
+                    .operation(QueryFilterOp.EQUALS)
+                    .value(rFlowId)
             );
         }
 
@@ -159,7 +162,8 @@ public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOut
 
                 Trigger triggerContext = t.getTriggerContext();
 
-                if (triggerContext == null) continue;
+                if (triggerContext == null)
+                    continue;
 
                 boolean isDisabled = Boolean.TRUE.equals(t.getAbstractTrigger().getDisabled()) || Boolean.TRUE.equals(triggerContext.getDisabled());
 
@@ -240,9 +244,9 @@ public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOut
         @Schema(
             title = "List of unhealthy schedule triggers",
             description = """
-            Includes stuck or misconfigured schedule triggers.
-            Disabled triggers included only when includeDisabled = true.
-        """
+                    Includes stuck or misconfigured schedule triggers.
+                    Disabled triggers included only when includeDisabled = true.
+                """
         )
         List<TriggerInfo> data;
     }

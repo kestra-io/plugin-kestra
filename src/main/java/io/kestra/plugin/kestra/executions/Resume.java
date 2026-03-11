@@ -1,5 +1,8 @@
 package io.kestra.plugin.kestra.executions;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
@@ -7,12 +10,10 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.VoidOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @SuperBuilder
 @ToString
@@ -28,8 +29,7 @@ import java.util.Map;
         @Example(
             title = "Resume an execution",
             full = true,
-            code = 
-                """
+            code = """
                 id: resume_execution
                 namespace: company.team
 
@@ -41,14 +41,13 @@ import java.util.Map;
                     auth:
                       username: "{{ secret('KESTRA_USERNAME') }}"
                       password: "{{ secret('KESTRA_PASSWORD') }}"
-                      
+
                 """
         ),
         @Example(
             title = "Resume an execution with inputs",
             full = true,
-            code = 
-                """
+            code = """
                 id: resume_execution_with_inputs
                 namespace: company.team
 
@@ -80,9 +79,7 @@ public class Resume extends AbstractKestraTask implements RunnableTask<VoidOutpu
 
     @Override
     public VoidOutput run(RunContext runContext) throws Exception {
-        String rExecutionId = this.executionId != null ?
-            runContext.render(this.executionId).as(String.class).orElse(null) :
-            null;
+        String rExecutionId = this.executionId != null ? runContext.render(this.executionId).as(String.class).orElse(null) : null;
 
         if (rExecutionId == null) {
             rExecutionId = runContext.render("{{ execution.id }}");

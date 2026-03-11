@@ -1,8 +1,9 @@
 package io.kestra.plugin.kestra.executions;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.util.ArrayList;
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
@@ -14,14 +15,17 @@ import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.model.Execution;
 import io.kestra.sdk.model.FlowWithSource;
 import io.kestra.sdk.model.StateType;
+
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
-import java.util.ArrayList;
-import java.util.Map;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
 public class ResumeTest extends AbstractKestraOssContainerTest {
-    @Inject protected RunContextFactory runContextFactory;
+    @Inject
+    protected RunContextFactory runContextFactory;
 
     protected static final String NAMESPACE = "kestra.tests.executions.resume";
 
@@ -32,8 +36,10 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
 
         Thread.sleep(1000);
         Execution pausedExecution = queryExecution(flow.getId());
-        assertThat("Execution should start in PAUSED state",
-            pausedExecution.getState().getCurrent(), is(StateType.PAUSED));
+        assertThat(
+            "Execution should start in PAUSED state",
+            pausedExecution.getState().getCurrent(), is(StateType.PAUSED)
+        );
 
         RunContext runContext = createRunContext(pausedExecution.getId());
 
@@ -42,8 +48,10 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
 
         Thread.sleep(1000);
         Execution resumedExecution = queryExecution(flow.getId());
-        assertThat("Execution should no longer be PAUSED",
-            resumedExecution.getState().getCurrent(), not(StateType.PAUSED));
+        assertThat(
+            "Execution should no longer be PAUSED",
+            resumedExecution.getState().getCurrent(), not(StateType.PAUSED)
+        );
     }
 
     @Test
@@ -93,10 +101,12 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
     private Resume createResumeTask(String executionId, Map<String, Object> inputs) {
         var builder = Resume.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build())
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
             .tenantId(Property.ofValue(TENANT_ID))
             .executionId(Property.ofValue(executionId));
 
@@ -111,10 +121,12 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
         RunContext runContext = runContextFactory.of();
         Query searchTask = Query.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build())
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
             .tenantId(Property.ofValue(TENANT_ID))
             .namespace(Property.ofValue(NAMESPACE))
             .flowId(Property.ofValue(flowId))
@@ -149,10 +161,12 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
 
         Resume resumeTask = Resume.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build())
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
             .build();
 
         Exception exception = assertThrows(Exception.class, () -> resumeTask.run(runContext));
@@ -160,9 +174,11 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
     }
 
     private RunContext createRunContext(String executionId) {
-        return runContextFactory.of(Map.of(
-            "execution", Map.of("id", executionId),
-            "flow", Map.of("tenantId", TENANT_ID)
-        ));
+        return runContextFactory.of(
+            Map.of(
+                "execution", Map.of("id", executionId),
+                "flow", Map.of("tenantId", TENANT_ID)
+            )
+        );
     }
 }

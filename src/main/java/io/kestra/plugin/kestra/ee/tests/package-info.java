@@ -1,4 +1,5 @@
-@PluginSubGroup(title = "Kestra Tests",categories = { PluginSubGroup.PluginCategory.CORE }
+@PluginSubGroup(
+    title = "Kestra Tests", categories = { PluginSubGroup.PluginCategory.CORE }
 )
 package io.kestra.plugin.kestra.ee.tests;
 

@@ -1,7 +1,8 @@
 package io.kestra.plugin.kestra;
 
-import io.kestra.sdk.internal.ApiException;
-import lombok.extern.slf4j.Slf4j;
+import java.time.Duration;
+import java.util.Base64;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.containers.GenericContainer;
@@ -10,8 +11,9 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import java.time.Duration;
-import java.util.Base64;
+import io.kestra.sdk.internal.ApiException;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

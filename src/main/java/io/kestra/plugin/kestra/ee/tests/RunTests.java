@@ -1,5 +1,9 @@
 package io.kestra.plugin.kestra.ee.tests;
 
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.flows.State;
@@ -10,15 +14,11 @@ import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.model.TestState;
 import io.kestra.sdk.model.TestSuiteServiceRunByQueryRequest;
 import io.kestra.sdk.model.TestSuiteServiceTestRunByQueryResult;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.slf4j.Logger;
-
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static io.kestra.plugin.kestra.ee.tests.RunTest.logTestCase;
 
@@ -82,7 +82,10 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
             .namespace(rNamespace)
             .includeChildNamespaces(rIncludeChildNamespaces)
             .flowId(rFlowId);
-        logger.info("Running tests for query: namespace: '{}', includeChildNamespaces: '{}', flowId: '{}'", runByQueryRequest.getNamespace(), runByQueryRequest.getIncludeChildNamespaces(), runByQueryRequest.getFlowId());
+        logger.info(
+            "Running tests for query: namespace: '{}', includeChildNamespaces: '{}', flowId: '{}'", runByQueryRequest.getNamespace(), runByQueryRequest.getIncludeChildNamespaces(),
+            runByQueryRequest.getFlowId()
+        );
 
         var result = testSuitesApi.runTestSuitesByQuery(rTenantId, runByQueryRequest);
         Objects.requireNonNull(result.getResults());
@@ -90,7 +93,8 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
 
         var outputBuilder = Output.builder().result(result);
         AtomicReference<Optional<State.Type>> errorState = new AtomicReference<>(Optional.empty());
-        result.getResults().forEach(testSuiteRunResult -> {
+        result.getResults().forEach(testSuiteRunResult ->
+        {
             var testSuiteFullId = testSuiteRunResult.getNamespace() + "." + testSuiteRunResult.getTestSuiteId();
             testSuiteRunResult.getResults()
                 .forEach(testCaseResult -> logTestCase(logger, testSuiteFullId, testCaseResult));
@@ -117,7 +121,7 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
                 }
             }
         });
-        if(errorState.get().isPresent()) {
+        if (errorState.get().isPresent()) {
             outputBuilder.taskStateOverride(Optional.of(errorState.get().get()));
         }
 
@@ -128,7 +132,8 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
         outputBuilder.testSuitesRunSkippedCount(testSuitesRunSkippedCount);
         var testSuitesRunFailedCount = result.getResults().stream().filter(t -> TestState.ERROR.equals(t.getState()) || TestState.FAILED.equals(t.getState())).count();
         outputBuilder.testSuitesRunFailedCount(testSuitesRunFailedCount);
-        logger.info("{} Test suites finished running, {} in success, {} skipped, {} failed", testSuitesRunCount, testSuitesRunSuccessCount, testSuitesRunSkippedCount, testSuitesRunFailedCount);
+        logger
+            .info("{} Test suites finished running, {} in success, {} skipped, {} failed", testSuitesRunCount, testSuitesRunSuccessCount, testSuitesRunSkippedCount, testSuitesRunFailedCount);
 
         return outputBuilder.build();
     }

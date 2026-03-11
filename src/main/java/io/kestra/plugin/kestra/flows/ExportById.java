@@ -1,5 +1,10 @@
 package io.kestra.plugin.kestra.flows;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.List;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
@@ -8,14 +13,10 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.model.IdWithNamespace;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.List;
 
 @SuperBuilder
 @ToString
@@ -86,17 +87,14 @@ public class ExportById extends AbstractKestraTask implements RunnableTask<Expor
         KestraClient kestraClient = kestraClient(runContext);
         byte[] zipBytes = kestraClient.flows().exportFlowsByIds(tId, ids);
 
-
         InputStream inputStream = new ByteArrayInputStream(zipBytes);
         String fileName = "exported_flows.zip";
         URI storedFileUri = runContext.storage().putFile(inputStream, fileName);
-
 
         return ExportById.Output.builder()
             .flowsZip(storedFileUri)
             .build();
     }
-
 
     @Builder
     @Getter

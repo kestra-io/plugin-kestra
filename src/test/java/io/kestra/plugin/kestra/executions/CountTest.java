@@ -1,5 +1,10 @@
 package io.kestra.plugin.kestra.executions;
 
+import java.time.Duration;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
@@ -9,11 +14,8 @@ import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.model.FlowWithSource;
 import io.kestra.sdk.model.StateType;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
-import java.util.List;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -36,10 +38,11 @@ class CountTest extends AbstractKestraOssContainerTest {
 
         Count task = Count.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build()
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
             )
             .tenantId(Property.ofValue(TENANT_ID))
             .namespaces(Property.ofValue(List.of(NAMESPACE)))
@@ -49,7 +52,8 @@ class CountTest extends AbstractKestraOssContainerTest {
             .expression("{{ count >= 1 }}")
             .build();
 
-        Count.Output output = Await.until(() -> {
+        Count.Output output = Await.until(() ->
+        {
             Count.Output o = null;
             try {
                 o = task.run(runContext);
@@ -57,7 +61,7 @@ class CountTest extends AbstractKestraOssContainerTest {
                 return null;
             }
             return o.getCount() >= 1 ? o : null;
-            },
+        },
             Duration.ofMillis(200),
             Duration.ofSeconds(10)
         );

@@ -1,5 +1,7 @@
 package io.kestra.plugin.kestra.flows;
 
+import org.junit.jupiter.api.Test;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
@@ -7,8 +9,8 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.namespaces.NamespacesWithFlows;
+
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -46,10 +48,11 @@ public class NamespacesWithFlowsTest extends AbstractKestraOssContainerTest {
     private NamespacesWithFlows distinctNamespacesTask(String prefix) {
         return NamespacesWithFlows.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder()
-                .username(Property.ofValue(USERNAME))
-                .password(Property.ofValue(PASSWORD))
-                .build()
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
             )
             .tenantId(Property.ofValue(TENANT_ID))
             .prefix(Property.ofValue(prefix))

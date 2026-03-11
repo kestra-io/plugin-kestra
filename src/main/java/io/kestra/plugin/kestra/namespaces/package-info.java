@@ -1,4 +1,5 @@
-@PluginSubGroup(title = "Kestra Namespaces",categories = { PluginSubGroup.PluginCategory.CORE }
+@PluginSubGroup(
+    title = "Kestra Namespaces", categories = { PluginSubGroup.PluginCategory.CORE }
 )
 package io.kestra.plugin.kestra.namespaces;
 

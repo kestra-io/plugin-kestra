@@ -1,5 +1,20 @@
 package io.kestra.plugin.kestra.ee.assets;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
@@ -10,22 +25,9 @@ import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.kestra.AbstractKestraEeContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTrigger;
 import io.kestra.sdk.model.AssetsControllerApiAsset;
+
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.Clock;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -63,9 +65,11 @@ public class FreshnessTriggerTest extends AbstractKestraEeContainerTest {
         Instant triggerTime = Instant.now().plus(Duration.ofHours(1));
         Mockito.doReturn(triggerTime).when(clock).instant();
         // This one should not be returned by the trigger since it's update date is less than an hour ago
-        kestraTestDataUtils.createAsset(TestsUtils.randomNamespace(), TestsUtils.randomString(), "ANY_TYPE", Map.of(
-            "a", "d"
-        ));
+        kestraTestDataUtils.createAsset(
+            TestsUtils.randomNamespace(), TestsUtils.randomString(), "ANY_TYPE", Map.of(
+                "a", "d"
+            )
+        );
 
         Map.Entry<ConditionContext, Trigger> conditionContextTriggerEntry = TestsUtils.mockTrigger(runContextFactory, freshnessTrigger);
         Optional<Execution> evaluate = freshnessTrigger.evaluate(conditionContextTriggerEntry.getKey(), conditionContextTriggerEntry.getValue());
@@ -75,13 +79,13 @@ public class FreshnessTriggerTest extends AbstractKestraEeContainerTest {
         assertThat(
             triggerOutputAssets,
             hasItems(
-                Matchers.<Map<?, ?>>allOf(
+                Matchers.<Map<?, ?>> allOf(
                     hasEntry("namespace", asset.getNamespace()),
                     hasEntry("id", asset.getId()),
                     hasEntry("type", asset.getType()),
                     hasEntry("metadata", Map.of("a", "b"))
                 ),
-                Matchers.<Map<?, ?>>allOf(
+                Matchers.<Map<?, ?>> allOf(
                     hasEntry("namespace", secondAsset.getNamespace()),
                     hasEntry("id", secondAsset.getId()),
                     hasEntry("type", secondAsset.getType()),
@@ -271,7 +275,6 @@ public class FreshnessTriggerTest extends AbstractKestraEeContainerTest {
         Map<String, Object> assetMap = triggerOutputAssets.get(0);
         assertThat(assetMap.get("id"), is(wanted.getId()));
     }
-
 
     private AbstractKestraTrigger.Auth basicAuth() {
         return AbstractKestraTrigger.Auth.builder()
