@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run an unit test",
-    description = "Run a single unit test. You can filter specific test cases to run, or all of them by default."
+    title = "Run a single test suite",
+    description = "Executes one unit test suite by namespace and id. Optionally restricts to listed test cases. Failures mark the task as WARNING unless failOnTestFailure is true; errors always fail."
 )
 @Plugin(
     examples = {
@@ -68,19 +68,19 @@ import java.util.stream.Collectors;
     }
 )
 public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.Output> {
-    @Schema(title = "The namespace")
+    @Schema(title = "Namespace containing the test suite")
     @NotNull
     private Property<String> namespace;
 
-    @Schema(title = "The test id")
+    @Schema(title = "Test suite id")
     @NotNull
     private Property<String> testId;
 
-    @Schema(title = "Specific test cases to run")
+    @Schema(title = "Test case ids to run", description = "Leave empty to run every test case in the suite.")
     @Nullable
     private Property<List<String>> testCases;
 
-    @Schema(title= "Should the task be marked as FAILED when a test fails")
+    @Schema(title= "Fail task on test failures", description = "Defaults to false. When true, FAILED test cases set the task state to FAILED instead of WARNING.")
     @Builder.Default
     private Property<Boolean> failOnTestFailure = Property.ofValue(false);
 

@@ -25,7 +25,8 @@ import java.util.stream.Stream;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Toggle a trigger: enable or disable it."
+    title = "Enable or disable a trigger",
+    description = "Switches a trigger's enabled flag by flow/namespace filters. Defaults to current flow namespace."
 )
 @Plugin(
     examples = {
@@ -69,18 +70,18 @@ import java.util.stream.Stream;
 )
 public class Toggle extends AbstractKestraTask implements RunnableTask<VoidOutput> {
     @Schema(
-        title = "The flow identifier of the trigger to toggle",
-        description = "If not set, the current flow identifier will be used."
+        title = "Flow id filter",
+        description = "Defaults to current flow id when null."
     )
     private Property<String> flowId;
 
-    @Schema(title = "The namespace to list flows from, if null, defaults to the namespace of the current flow.")
+    @Schema(title = "Namespace filter", description = "Defaults to current flow namespace.")
     private Property<String> namespace;
 
-    @Schema(title = "The identifier of the trigger to toggle")
+    @Schema(title = "Trigger id to toggle", description = "Optional; when null and multiple triggers match, all are toggled.")
     private Property<String> trigger;
 
-    @Schema(title = "Whether to enable or disable the trigger")
+    @Schema(title = "Set trigger enabled", description = "Defaults to false.")
     @Builder.Default
     private Property<Boolean> enabled = Property.ofValue(false);
 

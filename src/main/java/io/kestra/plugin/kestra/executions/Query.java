@@ -3,10 +3,12 @@ package io.kestra.plugin.kestra.executions;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.flows.FlowScope;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchOutput;
 import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.repositories.ExecutionRepositoryInterface;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.plugin.kestra.AbstractKestraTask;
@@ -36,7 +38,8 @@ import java.util.stream.Stream;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Search for Kestra executions."
+    title = "Search executions with filters",
+    description = "Queries executions by namespace, flow, labels, states, date range, or scope. Defaults to fetch all pages with page size 10 and stores results to internal storage unless fetchType overrides."
 )
 @Plugin(
     examples = {
@@ -54,8 +57,8 @@ import java.util.stream.Stream;
                     labels:
                       key: value
                     auth:
-                      username: "{{ secrets('KESTRA_USERNAME') }}"
-                      password: "{{ secrets('KESTRA_PASSWORD') }}"
+                      username: "{{ secret('KESTRA_USERNAME') }}"
+                      password: "{{ secret('KESTRA_PASSWORD') }}"
                     fetchType: STORE # Store the results in a file
                 """
         ),
@@ -71,8 +74,8 @@ import java.util.stream.Stream;
                     type: io.kestra.plugin.kestra.executions.Query
                     kestraUrl: http://localhost:8080
                     auth:
-                      username: "{{ secrets('KESTRA_USERNAME') }}"
-                      password: "{{ secrets('KESTRA_PASSWORD') }}" 
+                      username: "{{ secret('KESTRA_USERNAME') }}"
+                      password: "{{ secret('KESTRA_PASSWORD') }}"
                     timeRange: PT10H # In the last 10 hours
                     states:
                       - SUCCESS
@@ -83,59 +86,58 @@ import java.util.stream.Stream;
 )
 public class Query extends AbstractKestraTask implements RunnableTask<FetchOutput> {
     @Nullable
-    @Schema(title = "If not provided, all pages are fetched",
-        description = "To efficiently fetch only the first 10 API results, you can use `page: 1` along with `size: 10`.")
+    @Schema(title = "Page number", description = "When null, iterates through all pages. Combine with size to limit requests.")
     private Property<Integer> page;
 
     @Nullable
     @Builder.Default
-    @Schema(title = "The number of results to return per page")
+    @Schema(title = "Page size", description = "Defaults to 10.")
     private Property<Integer> size = Property.ofValue(10);
 
     @Nullable
     @Builder.Default
-    @Schema(title = "The way the fetched data will be stored")
+    @Schema(title = "Fetch strategy", description = "Defaults to STORE (writes to internal storage and returns URI). FETCH returns rows in output; FETCH_ONE returns the first execution.")
     private Property<FetchType> fetchType = Property.ofValue(FetchType.STORE);
 
     @Nullable
-    @Schema(title = "Can be set to USER to fetch only user-created executions, or to SYSTEM to fetch only system executions. By default, the task will handle both.")
+    @Schema(title = "Flow scope filter", description = "USER for user-created executions, SYSTEM for system executions; defaults to both.")
     private Property<List<FlowScope>> flowScopes;
 
     @Nullable
-    @Schema(title = "To list only executions from a given namespace")
+    @Schema(title = "Namespace filter")
     private Property<String> namespace;
 
     @Nullable
-    @Schema(title = "To list only executions of a given flow")
+    @Schema(title = "Flow id filter")
     private Property<String> flowId;
 
     @Nullable
-    @Schema(title = "To list only executions created after a given start date")
+    @Schema(title = "Start date (inclusive)")
     private Property<ZonedDateTime> startDate;
 
     @Nullable
-    @Schema(title = "To list only executions created before a given end date")
+    @Schema(title = "End date (inclusive)")
     private Property<ZonedDateTime> endDate;
 
     @Nullable
-    @Schema(title = "To list only executions created within a given time range duration")
+    @Schema(title = "Relative time range", description = "Duration back from now. Cannot be used with both startDate and endDate.")
     private Property<Duration> timeRange;
 
     @Nullable
-    @Schema(title = "To list only executions in given states")
+    @Schema(title = "Execution states")
     private Property<List<StateType>> states;
 
     @Nullable
-    @Schema(title = "To list only executions with given labels")
+    @Schema(title = "Labels filter", description = "Matches executions containing the provided key/value pairs.")
     private Property<Map<String, String>> labels;
 
     @Nullable
-    @Schema(title = "To list all downstream executions started from a given execution ID")
+    @Schema(title = "Downstream of execution ID")
     private Property<String> triggerExecutionId;
 
     @Nullable
-    @Schema(title = "To list only child executions of a given flow")
-    private Property<ExecutionRepositoryInterfaceChildFilter> childFilter;
+    @Schema(title = "Child filter", description = "Limits results to child execution context when set.")
+    private Property<ExecutionRepositoryInterface.ChildFilter> childFilter;
 
     @Override
     public FetchOutput run(RunContext runContext) throws Exception {
@@ -213,24 +215,24 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
         List<StateType> rState = runContext.render(this.states).asList(StateType.class);
         Map<String, String> rLabels = runContext.render(this.labels).asMap(String.class, String.class);
         String rTriggerExecutionId = runContext.render(this.triggerExecutionId).as(String.class).orElse(null);
-        ExecutionRepositoryInterfaceChildFilter rChildFilter = runContext.render(this.childFilter).as(ExecutionRepositoryInterfaceChildFilter.class).orElse(null);
+        ExecutionRepositoryInterface.ChildFilter rChildFilter = runContext.render(this.childFilter).as(ExecutionRepositoryInterface.ChildFilter.class).orElse(null);
 
         List<QueryFilter> filters = new java.util.ArrayList<>(Stream.of(
-                rNamespace != null ? new QueryFilter().field(QueryFilterField.NAMESPACE).operation(QueryFilterOp.EQUALS).value(rNamespace) : null,
-                rFlowId != null ? new QueryFilter().field(QueryFilterField.FLOW_ID).operation(QueryFilterOp.EQUALS).value(rFlowId) : null,
-                rStartDate != null ? new QueryFilter().field(QueryFilterField.START_DATE).operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO).value(rStartDate) : null,
-                rEndDate != null ? new QueryFilter().field(QueryFilterField.START_DATE).operation(QueryFilterOp.GREATER_THAN_OR_EQUAL_TO).value(rEndDate) : null,
-                rTriggerExecutionId != null ? new QueryFilter().field(QueryFilterField.TRIGGER_EXECUTION_ID).operation(QueryFilterOp.EQUALS).value(rTriggerExecutionId) : null,
-                rChildFilter != null ? new QueryFilter().field(QueryFilterField.CHILD_FILTER).operation(QueryFilterOp.EQUALS).value(rChildFilter) : null
+            rNamespace != null ? new QueryFilter().field(QueryFilterField.NAMESPACE).operation(QueryFilterOp.EQUALS).value(rNamespace) : null,
+            rFlowId != null ? new QueryFilter().field(QueryFilterField.FLOW_ID).operation(QueryFilterOp.EQUALS).value(rFlowId) : null,
+            rStartDate != null ? new QueryFilter().field(QueryFilterField.START_DATE).operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO).value(rStartDate) : null,
+            rEndDate != null ? new QueryFilter().field(QueryFilterField.START_DATE).operation(QueryFilterOp.GREATER_THAN_OR_EQUAL_TO).value(rEndDate) : null,
+            rTriggerExecutionId != null ? new QueryFilter().field(QueryFilterField.TRIGGER_EXECUTION_ID).operation(QueryFilterOp.EQUALS).value(rTriggerExecutionId) : null,
+            rChildFilter != null ? new QueryFilter().field(QueryFilterField.CHILD_FILTER).operation(QueryFilterOp.EQUALS).value(rChildFilter) : null
         ).filter(Objects::nonNull).toList());
 
         if (rFlowScopes != null && !rFlowScopes.isEmpty()) {
             rFlowScopes.forEach(flowScope -> {
                 filters.add(
-                        new QueryFilter()
-                                .field(QueryFilterField.SCOPE)
-                                .operation(QueryFilterOp.EQUALS)
-                                .value(flowScope)
+                    new QueryFilter()
+                        .field(QueryFilterField.SCOPE)
+                        .operation(QueryFilterOp.EQUALS)
+                        .value(flowScope)
                 );
             });
         }
@@ -238,10 +240,10 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
         if (rState != null && !rState.isEmpty()) {
             rState.forEach(state -> {
                 filters.add(
-                        new QueryFilter()
-                                .field(QueryFilterField.STATE)
-                                .operation(QueryFilterOp.EQUALS)
-                                .value(state)
+                    new QueryFilter()
+                        .field(QueryFilterField.STATE)
+                        .operation(QueryFilterOp.EQUALS)
+                        .value(state)
                 );
             });
         }
@@ -249,10 +251,10 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
         if (rLabels != null && !rLabels.isEmpty()) {
             rLabels.forEach((key, value) -> {
                 filters.add(
-                        new QueryFilter()
-                                .field(QueryFilterField.STATE)
-                                .operation(QueryFilterOp.EQUALS)
-                                .value(key + ":" + value)
+                    new QueryFilter()
+                        .field(QueryFilterField.STATE)
+                        .operation(QueryFilterOp.EQUALS)
+                        .value(key + ":" + value)
                 );
             });
         }
