@@ -25,7 +25,7 @@ public abstract class AbstractKestraTask extends Task {
     @Schema(
         title = "Override Kestra API endpoint",
         description = """
-            URL used for calls to the Kestra API. When null, renders `{{ kestra.url }}` from configuration; if still empty, defaults to http://localhost:8080. Trailing slashes are stripped before use.
+            URL used for calls to the Kestra API. When null, renders `{{ kestra.url }}` from configuration; if still empty, defaults to `http://localhost:8080`. Trailing slashes are stripped before use.
             """
     )
     private Property<String> kestraUrl;
