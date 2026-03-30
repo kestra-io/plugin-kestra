@@ -2,7 +2,9 @@ package io.kestra.plugin.kestra;
 
 import java.time.Duration;
 import java.util.Base64;
+import java.util.Map;
 
+import io.kestra.core.serializers.YamlParser;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.containers.GenericContainer;
@@ -72,10 +74,11 @@ public abstract class AbstractKestraContainerTest {
             .withStartupTimeout(Duration.ofMinutes(2));
 
         if (ee) {
+            var licenseFile = new String(Base64.getDecoder().decode(System.getenv("KESTRA_EE_UNIT_TEST_LICENSE_FILE")));
             container
-                .withEnv("KESTRA_EE_LICENSE_ID", decodeBase64(System.getenv("KESTRA_EE_LICENSE_ID")))
-                .withEnv("KESTRA_EE_LICENSE_KEY", decodeBase64(System.getenv("KESTRA_EE_LICENSE_KEY")))
-                .withEnv("KESTRA_EE_LICENSE_FINGERPRINT", decodeBase64(System.getenv("KESTRA_EE_LICENSE_FINGERPRINT")));
+                .withEnv("KESTRA_EE_LICENSE_FINGERPRINT", (String) getYamlValue(licenseFile, "kestra.ee.license.fingerprint"))
+                .withEnv("KESTRA_EE_LICENSE_KEY", ((String) getYamlValue(licenseFile, "kestra.ee.license.key")).replace("\n", ""))
+                .withEnv("KESTRA_EE_LICENSE_ID", (String) getYamlValue(licenseFile, "kestra.ee.license.id"));
         }
 
         return container;
@@ -86,5 +89,25 @@ public abstract class AbstractKestraContainerTest {
             return null;
         }
         return new String(Base64.getDecoder().decode(value));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object getYamlValue(String yaml, String path) {
+        Map<String, Object> current = YamlParser.parse(yaml, Map.class);
+        String[] keys = path.split("\\.");
+        for (int i = 0; i < keys.length; i++) {
+            Object value = current.get(keys[i]);
+            if (value == null) {
+                throw new IllegalArgumentException("Key not found: '" + keys[i] + "' in path '" + path + "'");
+            }
+            if (i == keys.length - 1) {
+                return value;
+            }
+            if (!(value instanceof Map)) {
+                throw new IllegalArgumentException("Expected a map at '" + keys[i] + "' but got: " + value.getClass().getSimpleName());
+            }
+            current = (Map<String, Object>) value;
+        }
+        throw new IllegalArgumentException("Empty path");
     }
 }
