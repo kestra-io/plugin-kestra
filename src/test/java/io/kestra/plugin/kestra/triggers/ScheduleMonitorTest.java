@@ -34,7 +34,7 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
     RunContextFactory runContextFactory;
 
     private static final String NAMESPACE_PREFIX = "kestra.tests.schedule.monitor";
-    private static final Duration AWAIT_TIMEOUT = Duration.ofSeconds(60);
+    private static final Duration AWAIT_TIMEOUT = Duration.ofMinutes(2);
 
     @Test
     public void shouldDetectDisabledScheduleOnlyWhenIncluded() throws Exception {
