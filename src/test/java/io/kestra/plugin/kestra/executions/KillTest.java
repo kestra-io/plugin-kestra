@@ -171,11 +171,12 @@ class KillTest extends AbstractKestraOssContainerTest {
         // With the propagateKill is false, after kill the parent execution the sub execution is still
         // paused and can be resumed to continue the execution.
         kestraTestDataUtils.resumeExecution(subExecution.getId());
-        Execution resumeExecution = kestraTestDataUtils.getExecution(subExecution.getId());
-        assertThat(
-            resumeExecution.getState().getCurrent(),
-            in(new StateType[] { StateType.RESTARTED, StateType.RUNNING, StateType.SUCCESS })
-        );
+        Awaitility.await()
+            .atMost(Duration.ofSeconds(10))
+            .until(() -> {
+                StateType state = kestraTestDataUtils.getExecution(subExecution.getId()).getState().getCurrent();
+                return state == StateType.RESTARTED || state == StateType.RUNNING || state == StateType.SUCCESS;
+            });
     }
 
     @Test
