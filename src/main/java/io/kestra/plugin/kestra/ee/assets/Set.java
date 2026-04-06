@@ -17,6 +17,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @Getter
@@ -55,33 +56,39 @@ public class Set extends AbstractKestraTask implements RunnableTask<VoidOutput> 
     @Schema(
         title = "Namespace for the asset"
     )
+    @PluginProperty(group = "connection")
     private Property<String> namespace;
 
     @NotNull
     @Schema(
         title = "Asset ID"
     )
+    @PluginProperty(group = "main")
     private Property<String> assetId;
 
     @NotNull
     @Schema(
         title = "Asset type"
     )
+    @PluginProperty(group = "main")
     private Property<String> assetType;
 
     @Schema(
         title = "Asset display name"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> displayName;
 
     @Schema(
         title = "Asset description"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> assetDescription;
 
     @Schema(
         title = "Asset metadata"
     )
+    @PluginProperty(group = "advanced")
     private Property<Map<String, Object>> metadata;
 
     @Override

@@ -13,6 +13,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @Getter
@@ -43,6 +44,7 @@ public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutpu
     @Schema(
         title = "Asset ID to delete"
     )
+    @PluginProperty(group = "main")
     private Property<String> assetId;
 
     @Override

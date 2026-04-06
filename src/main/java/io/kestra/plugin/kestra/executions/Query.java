@@ -32,6 +32,7 @@ import jakarta.annotation.Nullable;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import reactor.core.publisher.Flux;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder(toBuilder = true)
 @ToString
@@ -88,52 +89,64 @@ import reactor.core.publisher.Flux;
 public class Query extends AbstractKestraTask implements RunnableTask<FetchOutput> {
     @Nullable
     @Schema(title = "Page number", description = "When null, iterates through all pages. Combine with size to limit requests.")
+    @PluginProperty(group = "advanced")
     private Property<Integer> page;
 
     @Nullable
     @Builder.Default
     @Schema(title = "Page size", description = "Defaults to 10.")
+    @PluginProperty(group = "advanced")
     private Property<Integer> size = Property.ofValue(10);
 
     @Nullable
     @Builder.Default
     @Schema(title = "Fetch strategy", description = "Defaults to STORE (writes to internal storage and returns URI). FETCH returns rows in output; FETCH_ONE returns the first execution.")
+    @PluginProperty(group = "processing")
     private Property<FetchType> fetchType = Property.ofValue(FetchType.STORE);
 
     @Nullable
     @Schema(title = "Flow scope filter", description = "USER for user-created executions, SYSTEM for system executions; defaults to both.")
+    @PluginProperty(group = "advanced")
     private Property<List<FlowScope>> flowScopes;
 
     @Nullable
     @Schema(title = "Namespace filter")
+    @PluginProperty(group = "source")
     private Property<String> namespace;
 
     @Nullable
     @Schema(title = "Flow id filter")
+    @PluginProperty(group = "advanced")
     private Property<String> flowId;
 
     @Nullable
     @Schema(title = "Start date (inclusive)")
+    @PluginProperty(group = "advanced")
     private Property<ZonedDateTime> startDate;
 
     @Nullable
     @Schema(title = "End date (inclusive)")
+    @PluginProperty(group = "advanced")
     private Property<ZonedDateTime> endDate;
 
     @Nullable
     @Schema(title = "Relative time range", description = "Duration back from now. Cannot be used with both startDate and endDate.")
+    @PluginProperty(group = "advanced")
     private Property<Duration> timeRange;
 
     @Nullable
     @Schema(title = "Execution states")
+    @PluginProperty(group = "advanced")
     private Property<List<StateType>> states;
 
     @Nullable
     @Schema(title = "Labels filter", description = "Matches executions containing the provided key/value pairs.")
+    @PluginProperty(group = "advanced")
     private Property<Map<String, String>> labels;
 
     @Nullable
     @Schema(title = "Downstream of execution ID")
+    @PluginProperty(group = "advanced")
     private Property<String> triggerExecutionId;
 
     @Nullable

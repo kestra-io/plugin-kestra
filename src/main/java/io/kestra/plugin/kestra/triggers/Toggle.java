@@ -17,6 +17,7 @@ import io.kestra.sdk.model.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -72,16 +73,20 @@ public class Toggle extends AbstractKestraTask implements RunnableTask<VoidOutpu
         title = "Flow id filter",
         description = "Defaults to current flow id when null."
     )
+    @PluginProperty(group = "advanced")
     private Property<String> flowId;
 
     @Schema(title = "Namespace filter", description = "Defaults to current flow namespace.")
+    @PluginProperty(group = "source")
     private Property<String> namespace;
 
     @Schema(title = "Trigger id to toggle", description = "Optional; when null and multiple triggers match, all are toggled.")
+    @PluginProperty(group = "advanced")
     private Property<String> trigger;
 
     @Schema(title = "Set trigger enabled", description = "Defaults to false.")
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> enabled = Property.ofValue(false);
 
     @SuppressWarnings("unchecked")

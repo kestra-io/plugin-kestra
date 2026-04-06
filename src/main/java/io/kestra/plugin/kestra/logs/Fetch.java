@@ -24,6 +24,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwConsumer;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -71,9 +72,11 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 )
 public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Output> {
     @Schema(title = "Execution namespace", description = "Used when targeting another execution; defaults to the current flow namespace.")
+    @PluginProperty(group = "source")
     private Property<String> namespace;
 
     @Schema(title = "Execution flow id", description = "Required when fetching a different flow's execution without a fully qualified ID.")
+    @PluginProperty(group = "advanced")
     private Property<String> flowId;
 
     @Schema(
@@ -81,13 +84,16 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
         description = """
             Defaults to the current execution ID. Provide namespace and flowId when referencing an execution from another flow."""
     )
+    @PluginProperty(group = "advanced")
     private Property<String> executionId;
 
     @Schema(title = "Task ids filter", description = "Limit logs to these task ids; empty list fetches all tasks.")
+    @PluginProperty(group = "advanced")
     private Property<List<String>> tasksId;
 
     @Schema(title = "Minimum log level", description = "Defaults to INFO; lower levels are excluded.")
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Level> level = Property.ofValue(Level.INFO);
 
     @SuppressWarnings("unchecked")

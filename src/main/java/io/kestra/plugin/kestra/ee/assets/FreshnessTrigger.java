@@ -35,6 +35,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -146,12 +147,14 @@ public class FreshnessTrigger extends AbstractKestraTrigger implements PollingTr
         title = "Maximum allowed time since last update (e.g., PT24H, P1D)"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<Duration> maxStaleness;
 
     @Schema(
         title = "How often the trigger should check for stale assets. Default is 1 hour."
     )
     @Builder.Default
+    @PluginProperty(group = "execution")
     private final Duration interval = Duration.ofHours(1);
 
     private Property<List<FieldQuery>> metadataQuery;

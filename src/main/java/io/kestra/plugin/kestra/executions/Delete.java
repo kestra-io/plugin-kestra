@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -57,18 +58,22 @@ public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutpu
         description = "ID of the target execution; deleting the current execution is not allowed."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> executionId;
 
     @Schema(title = "Delete execution logs", description = "Defaults to true.")
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> deleteLogs = Property.ofValue(true);
 
     @Schema(title = "Delete execution metrics", description = "Defaults to true.")
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> deleteMetrics = Property.ofValue(true);
 
     @Schema(title = "Delete execution files", description = "Defaults to true; removes files stored in internal storage.")
     @Builder.Default
+    @PluginProperty(group = "destination")
     private Property<Boolean> deleteStorage = Property.ofValue(true);
 
     @Override

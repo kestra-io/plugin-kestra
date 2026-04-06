@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -72,18 +73,22 @@ import lombok.experimental.SuperBuilder;
 public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.Output> {
     @Schema(title = "Namespace containing the test suite")
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> namespace;
 
     @Schema(title = "Test suite id")
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> testId;
 
     @Schema(title = "Test case ids to run", description = "Leave empty to run every test case in the suite.")
     @Nullable
+    @PluginProperty(group = "advanced")
     private Property<List<String>> testCases;
 
     @Schema(title = "Fail task on test failures", description = "Defaults to false. When true, FAILED test cases set the task state to FAILED instead of WARNING.")
     @Builder.Default
+    @PluginProperty(group = "reliability")
     private Property<Boolean> failOnTestFailure = Property.ofValue(false);
 
     @Override

@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -79,6 +80,7 @@ public class Kill extends AbstractKestraTask implements RunnableTask<VoidOutput>
         description = "ID of the execution to kill; use `{{ execution.id }}` for the current one."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> executionId;
 
     @Schema(
@@ -86,6 +88,7 @@ public class Kill extends AbstractKestraTask implements RunnableTask<VoidOutput>
         description = "Defaults to true. When true, also kills subflow executions."
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> propagateKill = Property.ofValue(true);
 
     @Override

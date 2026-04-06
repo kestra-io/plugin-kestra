@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder(toBuilder = true)
 @ToString
@@ -64,6 +65,7 @@ public class NamespacesWithFlows extends AbstractKestraTask implements RunnableT
 
     @Schema(title = "Namespace prefix", description = "Defaults to empty string to include all namespaces.")
     @Nullable
+    @PluginProperty(group = "source")
     private Property<String> prefix;
 
     @Override

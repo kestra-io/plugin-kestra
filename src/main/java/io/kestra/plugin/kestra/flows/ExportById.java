@@ -17,6 +17,7 @@ import io.kestra.sdk.model.IdWithNamespace;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -77,6 +78,7 @@ import lombok.experimental.SuperBuilder;
 public class ExportById extends AbstractKestraTask implements RunnableTask<ExportById.Output> {
 
     @Schema(title = "Flows to export", description = "List of id/namespace pairs.")
+    @PluginProperty(group = "advanced")
     public Property<List<IdWithNamespace>> flows;
 
     @Override

@@ -28,6 +28,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder(toBuilder = true)
 @Getter
@@ -84,18 +85,21 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
         title = "Filter assets by namespace",
         description = "Exact match or prefix with .*"
     )
+    @PluginProperty(group = "connection")
     private Property<String> namespace;
 
     @Nullable
     @Schema(
         title = "Filter assets by id"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> assetId;
 
     @Nullable
     @Schema(
         title = "Filter by asset types"
     )
+    @PluginProperty(group = "advanced")
     private Property<List<String>> assetType;
 
     @Nullable
@@ -108,6 +112,7 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
     @Schema(
         title = "Purge assets created or updated before this date (ISO 8601)"
     )
+    @PluginProperty(group = "main")
     private Property<Instant> endDate;
 
     @NotNull
@@ -115,6 +120,7 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
         title = "Whether to purge assets matching the filters"
     )
     @Builder.Default
+    @PluginProperty(group = "main")
     private Property<Boolean> purgeAssets = Property.ofValue(true);
 
     @NotNull
@@ -122,6 +128,7 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
         title = "Whether to purge asset usage events (execution view) matching the filters"
     )
     @Builder.Default
+    @PluginProperty(group = "main")
     private Property<Boolean> purgeAssetUsages = Property.ofValue(true);
 
     @NotNull
@@ -129,6 +136,7 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
         title = "Whether to purge asset lineage events (for asset exporters) matching the filters"
     )
     @Builder.Default
+    @PluginProperty(group = "main")
     private Property<Boolean> purgeAssetLineages = Property.ofValue(true);
 
     @Override
@@ -301,16 +309,19 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
         @Schema(
             title = "Number of assets purged"
         )
+        @PluginProperty(group = "advanced")
         private Integer purgedAssetsCount;
 
         @Schema(
             title = "Number of asset usages purged"
         )
+        @PluginProperty(group = "advanced")
         private Integer purgedAssetUsagesCount;
 
         @Schema(
             title = "Number of asset lineages purged"
         )
+        @PluginProperty(group = "advanced")
         private Integer purgedAssetLineagesCount;
     }
 }

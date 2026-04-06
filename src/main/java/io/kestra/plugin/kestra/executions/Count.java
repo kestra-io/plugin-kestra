@@ -67,27 +67,32 @@ import lombok.experimental.SuperBuilder;
 )
 public class Count extends AbstractKestraTask implements RunnableTask<Count.Output> {
     @Schema(title = "Namespaces filter", description = "Limit the search to these namespaces; leave empty for all.")
+    @PluginProperty(group = "source")
     private Property<List<String>> namespaces;
 
     @Schema(title = "Flow id filter")
+    @PluginProperty(group = "advanced")
     private Property<String> flowId;
 
     @Schema(title = "Execution states", description = "Only count executions currently in these states.")
+    @PluginProperty(group = "advanced")
     private Property<List<StateType>> states;
 
     @Schema(
         title = "Start date",
         description = "Counts executions starting from this date."
     )
+    @PluginProperty(group = "advanced")
     private Property<String> startDate;
 
     @Schema(
         title = "End date",
         description = "Counts executions up to this date."
     )
+    @PluginProperty(group = "advanced")
     private Property<String> endDate;
 
-    @PluginProperty(dynamic = true) // we cannot use `Property` as we render it multiple time with different variables, which is an issue for the property cache
+    @PluginProperty(group = "advanced", dynamic = true) // we cannot use `Property` as we render it multiple time with different variables, which is an issue for the property cache
     @Schema(
         title = "Expression evaluated on count",
         description = "Rendered with variable `count`; if the expression does not return true, the exposed count is set to 0. Example: `{{ gte count 5 }}`."
