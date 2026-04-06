@@ -28,6 +28,7 @@ import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 import static io.kestra.core.utils.Rethrow.throwConsumer;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder(toBuilder = true)
 @Getter
@@ -75,6 +76,7 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         title = "Page number",
         description = "If omitted, all pages are iterated. Set to 1+ to fetch a single page with `size` items."
     )
+    @PluginProperty(group = "advanced")
     private Property<Integer> page;
 
     @Nullable
@@ -83,12 +85,14 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         title = "Page size",
         description = "Number of assets per page; defaults to 100."
     )
+    @PluginProperty(group = "advanced")
     private Property<Integer> size = Property.ofValue(100);
 
     @Nullable
     @Schema(
         title = "Namespace filter"
     )
+    @PluginProperty(group = "connection")
     private Property<String> namespace;
 
     @Nullable
@@ -108,6 +112,7 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         description = "Defines how results are returned (e.g., `FETCH` for direct output, `STORE` to persist as a file)."
     )
     @Builder.Default
+    @PluginProperty(group = "execution")
     private Property<FetchType> fetchType = Property.ofValue(FetchType.STORE);
 
     @Override

@@ -12,6 +12,7 @@ import io.kestra.sdk.KestraClient;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
@@ -28,16 +29,19 @@ public abstract class AbstractKestraTask extends Task {
             URL used for calls to the Kestra API. When null, renders `{{ kestra.url }}` from configuration; if still empty, defaults to `http://localhost:8080`. Trailing slashes are stripped before use.
             """
     )
+    @PluginProperty(group = "connection")
     private Property<String> kestraUrl;
 
     @Schema(
         title = "Select API authentication",
         description = "Use either an API token or HTTP Basic (username/password); do not provide both."
     )
+    @PluginProperty(group = "connection")
     private Auth auth;
 
     @Schema(title = "Override target tenant", description = "Tenant identifier applied to API calls; defaults to the current execution tenant.")
     @Setter
+    @PluginProperty(group = "connection")
     protected Property<String> tenantId;
 
     protected KestraClient kestraClient(RunContext runContext) throws IllegalVariableEvaluationException {
@@ -111,12 +115,15 @@ public abstract class AbstractKestraTask extends Task {
     @Getter
     public static class Auth {
         @Schema(title = "API token for bearer auth")
+        @PluginProperty(group = "connection")
         private Property<String> apiToken;
 
         @Schema(title = "Username for HTTP Basic auth")
+        @PluginProperty(group = "connection")
         private Property<String> username;
 
         @Schema(title = "Password for HTTP Basic auth")
+        @PluginProperty(group = "connection")
         private Property<String> password;
 
         @Schema(
@@ -128,6 +135,7 @@ public abstract class AbstractKestraTask extends Task {
                 The Enterprise edition also provides setting a default configuration at the Namespace of Tenant level by an administrator."""
         )
         @Builder.Default
+        @PluginProperty(group = "advanced")
         private Property<Boolean> auto = Property.ofValue(Boolean.TRUE);
     }
 }

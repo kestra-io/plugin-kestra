@@ -21,6 +21,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.plugin.kestra.ee.tests.RunTest.logTestCase;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -52,18 +53,22 @@ import static io.kestra.plugin.kestra.ee.tests.RunTest.logTestCase;
 public class RunTests extends AbstractKestraTask implements RunnableTask<RunTests.Output> {
     @Schema(title = "Namespace filter", description = "If null, runs against the current tenant. Set to limit to a namespace; includeChildNamespaces controls recursion.")
     @Nullable
+    @PluginProperty(group = "source")
     private Property<String> namespace;
 
     @Schema(title = "Include child namespaces", description = "Defaults to true. Applies when namespace is set.")
     @Builder.Default
+    @PluginProperty(group = "source")
     private Property<Boolean> includeChildNamespaces = Property.ofValue(true);
 
     @Schema(title = "Flow id filter", description = "Optional flow identifier to scope test suites.")
     @Nullable
+    @PluginProperty(group = "advanced")
     private Property<String> flowId;
 
     @Schema(title = "Fail task on test failures", description = "Defaults to false. When true, FAILED test suites set the task state to FAILED instead of WARNING.")
     @Builder.Default
+    @PluginProperty(group = "reliability")
     private Property<Boolean> failOnTestFailure = Property.ofValue(false);
 
     @Override

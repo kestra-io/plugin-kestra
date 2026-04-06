@@ -23,6 +23,7 @@ import io.kestra.sdk.model.Trigger;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -67,13 +68,16 @@ public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOut
     private final Duration interval = Duration.ofSeconds(60);
 
     @Schema(title = "Namespace filter", description = "Prefix match; null scans all namespaces.")
+    @PluginProperty(group = "connection")
     private Property<String> namespace;
 
     @Schema(title = "Flow filter")
+    @PluginProperty(group = "advanced")
     private Property<String> flowId;
 
     @Schema(title = "Include disabled schedules", description = "Defaults to false.")
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> includeDisabled = Property.ofValue(false);
 
     @Schema(
@@ -81,18 +85,21 @@ public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOut
         description = "Defaults to PT1M. If now is after next execution plus this delay, trigger is flagged."
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Duration> allowedDelay = Property.ofValue(Duration.ofMinutes(1));
 
     @Schema(
         title = "Max execution duration",
         description = "When set, a RUNNING execution longer than this is flagged."
     )
+    @PluginProperty(group = "execution")
     private Property<Duration> maxExecutionDuration;
 
     @Schema(
         title = "Max idle interval between runs",
         description = "Flags schedules with no execution within this period."
     )
+    @PluginProperty(group = "execution")
     private Property<Duration> maxExecutionInterval;
 
     @Override

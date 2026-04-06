@@ -14,6 +14,7 @@ import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -72,9 +73,11 @@ public class Resume extends AbstractKestraTask implements RunnableTask<VoidOutpu
         title = "Execution ID to resume",
         description = "Defaults to the current execution when not provided."
     )
+    @PluginProperty(group = "advanced")
     private Property<String> executionId;
 
     @Schema(title = "Inputs to send with resume")
+    @PluginProperty(group = "source")
     private Property<Map<String, Object>> inputs;
 
     @Override

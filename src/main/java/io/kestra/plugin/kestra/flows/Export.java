@@ -21,6 +21,7 @@ import io.kestra.sdk.model.QueryFilterOp;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -55,9 +56,11 @@ import lombok.experimental.SuperBuilder;
 public class Export extends AbstractKestraTask implements RunnableTask<Export.Output> {
 
     @Schema(title = "Namespace prefix", description = "Limit export to flows whose namespace matches this prefix.")
+    @PluginProperty(group = "source")
     public Property<String> namespace;
 
     @Schema(title = "Label filters", description = "List of `key:value` labels all flows must contain.")
+    @PluginProperty(group = "advanced")
     public Property<List<String>> labels;
 
     @Override

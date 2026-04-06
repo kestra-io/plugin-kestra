@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder(toBuilder = true)
 @ToString
@@ -85,19 +86,23 @@ import lombok.experimental.SuperBuilder;
 )
 public class List extends AbstractKestraTask implements RunnableTask<List.Output> {
     @Schema(title = "Namespace prefix", description = "Defaults to empty string to return all namespaces.")
+    @PluginProperty(group = "source")
     private Property<String> prefix;
 
     @Nullable
     @Schema(title = "Page number", description = "When null, fetches every page. Set with size to limit requests.")
+    @PluginProperty(group = "advanced")
     private Property<Integer> page;
 
     @Nullable
     @Builder.Default
     @Schema(title = "Page size", description = "Defaults to 10.")
+    @PluginProperty(group = "advanced")
     private Property<Integer> size = Property.ofValue(10);
 
     @Builder.Default
     @Schema(title = "Existing namespaces only", description = "Defaults to false. When true, returns namespaces backed by stored definition, excluding transient ones.")
+    @PluginProperty(group = "advanced")
     private Property<Boolean> existingOnly = Property.ofValue(false);
 
     @Override

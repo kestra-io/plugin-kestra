@@ -12,6 +12,7 @@ import io.kestra.sdk.model.Flow;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -63,6 +64,7 @@ import lombok.experimental.SuperBuilder;
 public class List extends AbstractKestraTask implements RunnableTask<List.Output> {
 
     @Schema(title = "Namespace to list", description = "Defaults to the current flow namespace when null.")
+    @PluginProperty(group = "source")
     private Property<String> namespace;
 
     @Override
