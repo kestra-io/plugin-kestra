@@ -11,7 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class AbstractKestraOssContainerTest extends AbstractKestraContainerTest {
     @Container
     protected static final GenericContainer<?> KESTRA_OSS_CONTAINER = new AbstractKestraOssContainerTest() {
-    }.buildContainer("kestra/kestra:v1.3-no-plugins", false);// TODO temporary solution, because develop has a regression somewhere
+        // the issue is here, some test work in 1.3 but not develop
+    }.buildContainer("kestra/kestra:develop-no-plugins", false);
 
     @Override
     protected GenericContainer<?> getContainer() {
