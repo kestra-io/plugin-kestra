@@ -155,7 +155,7 @@ public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOut
             PagedResultsTriggerControllerTriggers response = client.triggers().searchTriggers(page, size, tenantId, null, filters);
 
             total = response.getTotal();
-            List<TriggerControllerTriggers> results = response.getResults();
+            List<ApiTriggerAndState> results = response.getResults();
 
             if (results.isEmpty()) {
                 break;
