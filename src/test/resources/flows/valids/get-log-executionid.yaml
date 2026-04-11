@@ -3,15 +3,15 @@ namespace: io.kestra.tests
 
 tasks:
   - id: log-1
-    type: io.kestra.core.tasks.log.Log
+    type: io.kestra.plugin.core.log.Log
     message: "Log 1"
     level: INFO
   - id: log-2
-    type: io.kestra.core.tasks.log.Log
+    type: io.kestra.plugin.core.log.Log
     message: "Log 2"
     level: INFO
   - id: log-3
-    type: io.kestra.core.tasks.log.Log
+    type: io.kestra.plugin.core.log.Log
     message: "Log 3"
     level: INFO
 
