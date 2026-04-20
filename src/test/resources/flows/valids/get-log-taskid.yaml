@@ -3,11 +3,11 @@ namespace: io.kestra.tests
 
 tasks:
   - id: specific-task
-    type: io.kestra.core.tasks.log.Log
+    type: io.kestra.plugin.core.log.Log
     message: "Target Log"
     level: INFO
   - id: other-task
-    type: io.kestra.core.tasks.log.Log
+    type: io.kestra.plugin.core.log.Log
     message: "Ignored Log"
     level: INFO
 
