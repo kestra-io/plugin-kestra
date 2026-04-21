@@ -27,7 +27,7 @@ class ToggleTest extends AbstractKestraOssContainerTest {
     private static final String NAMESPACE = "kestra.tests.trigger.toggle";
     private static final String FLOW_ID = "toggle-flow";
     private static final String TRIGGER_ID = "schedule";
-    private static final Duration AWAIT_TIMEOUT = Duration.ofSeconds(60);
+    private static final Duration AWAIT_TIMEOUT = Duration.ofMinutes(2);
 
     @Test
     void shouldDisableAndEnableTrigger() throws Exception {

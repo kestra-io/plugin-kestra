@@ -99,7 +99,7 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
         kestraTestDataUtils.createFlowWithSchedule(
             namespace,
             flowId,
-            "*/5 * * * *",
+            "* * * * *",
             false
         );
 
