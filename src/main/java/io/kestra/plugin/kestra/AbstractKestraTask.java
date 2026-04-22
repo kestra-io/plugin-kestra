@@ -115,15 +115,15 @@ public abstract class AbstractKestraTask extends Task {
     @Getter
     public static class Auth {
         @Schema(title = "API token for bearer auth")
-        @PluginProperty(group = "connection")
+        @PluginProperty(group = "connection", secret = true)
         private Property<String> apiToken;
 
         @Schema(title = "Username for HTTP Basic auth")
-        @PluginProperty(group = "connection")
+        @PluginProperty(secret = true, group = "connection")
         private Property<String> username;
 
         @Schema(title = "Password for HTTP Basic auth")
-        @PluginProperty(group = "connection")
+        @PluginProperty(group = "connection", secret = true)
         private Property<String> password;
 
         @Schema(
