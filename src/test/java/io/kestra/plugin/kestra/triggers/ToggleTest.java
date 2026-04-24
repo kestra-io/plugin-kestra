@@ -27,6 +27,7 @@ class ToggleTest extends AbstractKestraOssContainerTest {
     private static final String NAMESPACE = "kestra.tests.trigger.toggle";
     private static final String FLOW_ID = "toggle-flow";
     private static final String TRIGGER_ID = "schedule";
+    private static final Duration INITIAL_AWAIT_TIMEOUT = Duration.ofMinutes(5);
     private static final Duration AWAIT_TIMEOUT = Duration.ofMinutes(2);
 
     @Test
@@ -41,10 +42,12 @@ class ToggleTest extends AbstractKestraOssContainerTest {
             false
         );
 
+        // Scheduler initializes trigger state at next minute boundary; allow up to 5 min
+        // to avoid flakiness when container is under load (e.g. concurrent 101-flow test).
         Await.until(
             () -> findTrigger(flowId),
-            Duration.ofMillis(100),
-            AWAIT_TIMEOUT
+            Duration.ofSeconds(1),
+            INITIAL_AWAIT_TIMEOUT
         );
 
         Toggle disable = Toggle.builder()
@@ -67,7 +70,7 @@ class ToggleTest extends AbstractKestraOssContainerTest {
                 var trigger = findTrigger(flowId);
                 return Boolean.TRUE.equals(trigger != null ? trigger.getDisabled() : null) ? trigger : null;
             },
-            Duration.ofMillis(100),
+            Duration.ofSeconds(1),
             AWAIT_TIMEOUT
         );
 
@@ -93,7 +96,7 @@ class ToggleTest extends AbstractKestraOssContainerTest {
                 var currentTrigger = findTrigger(flowId);
                 return Boolean.FALSE.equals(currentTrigger != null ? currentTrigger.getDisabled() : null) ? currentTrigger : null;
             },
-            Duration.ofMillis(100),
+            Duration.ofSeconds(1),
             AWAIT_TIMEOUT
         );
 
