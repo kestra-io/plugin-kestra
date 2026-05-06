@@ -61,7 +61,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 
                 tasks:
                   - id: send_alert
-                    type: io.kestra.plugin.notifications.slack.SlackIncoming
+                    type: io.kestra.plugin.slack.notifications.SlackIncomingWebhook
                     url: "{{ secret('SLACK_WEBHOOK') }}"
                     payload: |
                       {
@@ -126,7 +126,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 
                 tasks:
                  - id: alert_stale_regional_assets
-                   type: io.kestra.plugin.notifications.slack.SlackIncoming
+                   type: io.kestra.plugin.slack.notifications.SlackIncomingWebhook
                    url: "{{ secret('OPS_WEBHOOK') }}"
                    payload: |
                      {
