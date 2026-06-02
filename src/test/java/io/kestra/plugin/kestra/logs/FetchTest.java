@@ -37,15 +37,15 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
             tasks:
               - id: log-1
-                type: io.kestra.core.tasks.log.Log
+                type: io.kestra.plugin.core.log.Log
                 message: "Log number 1"
                 level: INFO
               - id: log-2
-                type: io.kestra.core.tasks.log.Log
+                type: io.kestra.plugin.core.log.Log
                 message: "Log number 2"
                 level: INFO
               - id: log-3
-                type: io.kestra.core.tasks.log.Log
+                type: io.kestra.plugin.core.log.Log
                 message: "Log number 3"
                 level: INFO
             """.formatted(NAMESPACE);
@@ -86,11 +86,11 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
             tasks:
               - id: specific-task
-                type: io.kestra.core.tasks.log.Log
+                type: io.kestra.plugin.core.log.Log
                 message: "Target Log"
                 level: INFO
               - id: other-task
-                type: io.kestra.core.tasks.log.Log
+                type: io.kestra.plugin.core.log.Log
                 message: "Ignored Log"
                 level: INFO
             """.formatted(NAMESPACE);
@@ -132,15 +132,15 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
             tasks:
               - id: log-1
-                type: io.kestra.core.tasks.log.Log
+                type: io.kestra.plugin.core.log.Log
                 message: "Log 1"
                 level: INFO
               - id: log-2
-                type: io.kestra.core.tasks.log.Log
+                type: io.kestra.plugin.core.log.Log
                 message: "Log 2"
                 level: INFO
               - id: log-3
-                type: io.kestra.core.tasks.log.Log
+                type: io.kestra.plugin.core.log.Log
                 message: "Log 3"
                 level: INFO
             """.formatted(NAMESPACE);

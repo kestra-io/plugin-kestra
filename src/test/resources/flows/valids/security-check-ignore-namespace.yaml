@@ -3,7 +3,7 @@ namespace: io.kestra.tests
 
 tasks:
   - id: log-1
-    type: io.kestra.core.tasks.log.Log
+    type: io.kestra.plugin.core.log.Log
     message: "I am safe"
     level: INFO
 
