@@ -18,7 +18,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
-import io.kestra.core.models.triggers.Trigger;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.utils.TestsUtils;
@@ -71,8 +70,8 @@ public class FreshnessTriggerTest extends AbstractKestraEeContainerTest {
             )
         );
 
-        Map.Entry<ConditionContext, Trigger> conditionContextTriggerEntry = TestsUtils.mockTrigger(runContextFactory, freshnessTrigger);
-        Optional<Execution> evaluate = freshnessTrigger.evaluate(conditionContextTriggerEntry.getKey(), conditionContextTriggerEntry.getValue());
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> conditionContextTriggerEntry = TestsUtils.mockTrigger(runContextFactory, freshnessTrigger);
+        Optional<Execution> evaluate = freshnessTrigger.evaluate(conditionContextTriggerEntry.getKey(), conditionContextTriggerEntry.getValue().context());
 
         assertThat(evaluate.isPresent(), is(true));
         List<Map<String, Object>> triggerOutputAssets = (List<Map<String, Object>>) evaluate.get().getTrigger().getVariables().get("assets");
@@ -146,8 +145,8 @@ public class FreshnessTriggerTest extends AbstractKestraEeContainerTest {
         Instant triggerTime = Instant.now().plus(Duration.ofHours(1));
         Mockito.doReturn(triggerTime).when(clock).instant();
 
-        Map.Entry<ConditionContext, Trigger> conditionContextTriggerEntry = TestsUtils.mockTrigger(runContextFactory, freshnessTrigger);
-        Optional<Execution> evaluate = freshnessTrigger.evaluate(conditionContextTriggerEntry.getKey(), conditionContextTriggerEntry.getValue());
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> conditionContextTriggerEntry = TestsUtils.mockTrigger(runContextFactory, freshnessTrigger);
+        Optional<Execution> evaluate = freshnessTrigger.evaluate(conditionContextTriggerEntry.getKey(), conditionContextTriggerEntry.getValue().context());
 
         assertThat(evaluate.isPresent(), is(true));
         List<Map<String, Object>> triggerOutputAssets = (List<Map<String, Object>>) evaluate.get().getTrigger().getVariables().get("assets");
@@ -179,8 +178,8 @@ public class FreshnessTriggerTest extends AbstractKestraEeContainerTest {
         Instant triggerTime = Instant.now().plus(Duration.ofHours(1));
         Mockito.doReturn(triggerTime).when(clock).instant();
 
-        Map.Entry<ConditionContext, Trigger> conditionContextTriggerEntry = TestsUtils.mockTrigger(runContextFactory, freshnessTrigger);
-        Optional<Execution> evaluate = freshnessTrigger.evaluate(conditionContextTriggerEntry.getKey(), conditionContextTriggerEntry.getValue());
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> conditionContextTriggerEntry = TestsUtils.mockTrigger(runContextFactory, freshnessTrigger);
+        Optional<Execution> evaluate = freshnessTrigger.evaluate(conditionContextTriggerEntry.getKey(), conditionContextTriggerEntry.getValue().context());
 
         assertThat(evaluate.isPresent(), is(true));
         List<Map<String, Object>> triggerOutputAssets = (List<Map<String, Object>>) evaluate.get().getTrigger().getVariables().get("assets");
@@ -213,8 +212,8 @@ public class FreshnessTriggerTest extends AbstractKestraEeContainerTest {
         Instant triggerTime = Instant.now().plus(Duration.ofHours(1));
         Mockito.doReturn(triggerTime).when(clock).instant();
 
-        Map.Entry<ConditionContext, Trigger> conditionContextTriggerEntry = TestsUtils.mockTrigger(runContextFactory, freshnessTrigger);
-        Optional<Execution> evaluate = freshnessTrigger.evaluate(conditionContextTriggerEntry.getKey(), conditionContextTriggerEntry.getValue());
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> conditionContextTriggerEntry = TestsUtils.mockTrigger(runContextFactory, freshnessTrigger);
+        Optional<Execution> evaluate = freshnessTrigger.evaluate(conditionContextTriggerEntry.getKey(), conditionContextTriggerEntry.getValue().context());
 
         assertThat(evaluate.isPresent(), is(true));
         List<Map<String, Object>> triggerOutputAssets = (List<Map<String, Object>>) evaluate.get().getTrigger().getVariables().get("assets");
@@ -236,7 +235,7 @@ public class FreshnessTriggerTest extends AbstractKestraEeContainerTest {
             .clock(clock)
             .build();
 
-        evaluate = freshnessTrigger.evaluate(conditionContextTriggerEntry.getKey(), conditionContextTriggerEntry.getValue());
+        evaluate = freshnessTrigger.evaluate(conditionContextTriggerEntry.getKey(), conditionContextTriggerEntry.getValue().context());
 
         assertThat(evaluate.isPresent(), is(true));
         triggerOutputAssets = (List<Map<String, Object>>) evaluate.get().getTrigger().getVariables().get("assets");
@@ -266,8 +265,8 @@ public class FreshnessTriggerTest extends AbstractKestraEeContainerTest {
         Instant triggerTime = Instant.now().plus(Duration.ofHours(1));
         Mockito.doReturn(triggerTime).when(clock).instant();
 
-        Map.Entry<ConditionContext, Trigger> conditionContextTriggerEntry = TestsUtils.mockTrigger(runContextFactory, freshnessTrigger);
-        Optional<Execution> evaluate = freshnessTrigger.evaluate(conditionContextTriggerEntry.getKey(), conditionContextTriggerEntry.getValue());
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> conditionContextTriggerEntry = TestsUtils.mockTrigger(runContextFactory, freshnessTrigger);
+        Optional<Execution> evaluate = freshnessTrigger.evaluate(conditionContextTriggerEntry.getKey(), conditionContextTriggerEntry.getValue().context());
 
         assertThat(evaluate.isPresent(), is(true));
         List<Map<String, Object>> triggerOutputAssets = (List<Map<String, Object>>) evaluate.get().getTrigger().getVariables().get("assets");
