@@ -125,15 +125,16 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         var kestraClient = kestraClient(runContext);
 
         java.util.List<AssetsControllerApiAsset> fetchedAssets;
+        var rTenantForAssets = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         if (rPage != null) {
             fetchedAssets = kestraClient.assets().searchAssets(
+                rTenantForAssets,
                 rPage,
                 rSize,
+                null,
                 toQueryFilters(
                     runContext.render(namespace).as(String.class).orElse(null), runContext.render(types).asList(String.class), runContext.render(metadataQuery).asList(FieldQuery.class)
-                ),
-                runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId()),
-                null
+                )
             ).getResults();
         } else {
             fetchedAssets = new ArrayList<>();
@@ -142,13 +143,13 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
             long total;
             do {
                 PagedResultsAssetsControllerApiAsset results = kestraClient.assets().searchAssets(
+                    rTenantForAssets,
                     currentPage,
                     rSize,
+                    null,
                     toQueryFilters(
                         runContext.render(namespace).as(String.class).orElse(null), runContext.render(types).asList(String.class), runContext.render(metadataQuery).asList(FieldQuery.class)
-                    ),
-                    runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId()),
-                    null
+                    )
                 );
                 fetchedAssets.addAll(results.getResults());
                 total = results.getTotal();

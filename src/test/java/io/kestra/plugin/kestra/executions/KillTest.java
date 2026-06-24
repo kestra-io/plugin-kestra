@@ -68,7 +68,7 @@ class KillTest extends AbstractKestraOssContainerTest {
             .atMost(Duration.ofSeconds(2))
             .until(checkExecutionState(beforeExecution.getId(), StateType.KILLED));
 
-        Execution afterExecution = kestraTestDataUtils.getExecution(beforeExecution.getId());
+        var afterExecution = kestraTestDataUtils.getExecution(beforeExecution.getId());
 
         assertThat(
             afterExecution.getState().getCurrent(),
@@ -119,7 +119,7 @@ class KillTest extends AbstractKestraOssContainerTest {
         Awaitility.await()
             .atMost(Duration.ofSeconds(5))
             .until(checkExecutionState(parentExecution.getId(), StateType.KILLED));
-        Execution afterSubExecution = kestraTestDataUtils.getExecution(subExecution.getId());
+        var afterSubExecution = kestraTestDataUtils.getExecution(subExecution.getId());
 
         assertThat(afterSubExecution.getState().getCurrent(), is(StateType.KILLED));
     }
@@ -223,7 +223,7 @@ class KillTest extends AbstractKestraOssContainerTest {
         Awaitility.await()
             .during(Duration.ofSeconds(2))
             .until(checkExecutionState(subExecution.getId(), StateType.KILLED));
-        Execution afterParentExecution = kestraTestDataUtils.getExecution(parentExecution.getId());
+        var afterParentExecution = kestraTestDataUtils.getExecution(parentExecution.getId());
 
         assertThat(afterParentExecution.getState().getCurrent(), is(StateType.KILLED));
     }

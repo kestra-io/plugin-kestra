@@ -138,7 +138,7 @@ public class DeleteTest extends AbstractKestraOssContainerTest {
         Awaitility.await()
             .atMost(Duration.ofSeconds(5))
             .until(checkExecutionState(beforeExecution.getId(), StateType.KILLED));
-        Execution afterExecution = kestraTestDataUtils.getExecution(beforeExecution.getId());
+        var afterExecution = kestraTestDataUtils.getExecution(beforeExecution.getId());
         assertThat(afterExecution.getState().getCurrent(), is(StateType.KILLED));
 
         // Delete the execution

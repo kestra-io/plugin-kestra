@@ -120,12 +120,12 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         if (rPage != null) {
             PagedResultsNamespace results = kestraClient.namespaces()
                 .searchNamespaces(
-                    rPage,
-                    rSize,
-                    rExistingOnly,
                     tId,
                     ns,
-                    null
+                    rPage,
+                    rSize,
+                    null,
+                    rExistingOnly
                 );
             results.getResults().forEach(namespace -> allNamespaces.add(namespace.getId()));
         } else {
@@ -134,12 +134,12 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
             do {
                 PagedResultsNamespace results = kestraClient.namespaces()
                     .searchNamespaces(
-                        currentPage,
-                        rSize,
-                        rExistingOnly,
                         tId,
                         ns,
-                        null
+                        currentPage,
+                        rSize,
+                        null,
+                        rExistingOnly
                     );
                 results.getResults().forEach(namespace -> allNamespaces.add(namespace.getId()));
                 total = results.getTotal();

@@ -18,7 +18,6 @@ import io.kestra.plugin.core.trigger.Schedule;
 import io.kestra.plugin.kestra.AbstractKestraTrigger;
 import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.model.*;
-import io.kestra.sdk.model.Trigger;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -152,36 +151,36 @@ public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOut
         }
 
         while ((long) (page - 1) * size < total) {
-            PagedResultsTriggerControllerTriggers response = client.triggers().searchTriggers(page, size, tenantId, null, filters);
+            PagedResultsApiTriggerAndState response = client.triggers().searchTriggers(tenantId, page, size, null, filters);
 
             total = response.getTotal();
-            List<TriggerControllerTriggers> results = response.getResults();
+            List<ApiTriggerAndState> results = response.getResults();
 
             if (results.isEmpty()) {
                 break;
             }
 
-            for (TriggerControllerTriggers t : results) {
+            for (ApiTriggerAndState t : results) {
 
-                if (t.getAbstractTrigger() == null || !Schedule.class.getName().equals(t.getAbstractTrigger().getType())) {
+                if (t.getTrigger() == null || !Schedule.class.getName().equals(t.getTrigger().getType())) {
                     continue;
                 }
 
-                Trigger triggerContext = t.getTriggerContext();
+                ApiTriggerState triggerState = t.getState();
 
-                if (triggerContext == null)
+                if (triggerState == null)
                     continue;
 
-                boolean isDisabled = Boolean.TRUE.equals(t.getAbstractTrigger().getDisabled()) || Boolean.TRUE.equals(triggerContext.getDisabled());
+                boolean isDisabled = Boolean.TRUE.equals(t.getTrigger().getDisabled()) || Boolean.TRUE.equals(triggerState.getDisabled());
 
                 Instant now = Instant.now();
-                Instant lastExec = triggerContext.getDate() != null ? triggerContext.getDate().toInstant() : null;
-                Instant nextExec = triggerContext.getNextExecutionDate() != null ? triggerContext.getNextExecutionDate().toInstant() : null;
+                Instant lastExec = triggerState.getEvaluatedAt() != null ? triggerState.getEvaluatedAt().toInstant() : null;
+                Instant nextExec = triggerState.getNextEvaluationDate() != null ? triggerState.getNextEvaluationDate().toInstant() : null;
 
                 TriggerInfo info = TriggerInfo.builder()
-                    .namespace(triggerContext.getNamespace())
-                    .flowId(triggerContext.getFlowId())
-                    .triggerId(triggerContext.getTriggerId())
+                    .namespace(triggerState.getNamespace())
+                    .flowId(triggerState.getFlowId())
+                    .triggerId(triggerState.getTriggerId())
                     .lastExecution(lastExec)
                     .expectedNext(nextExec)
                     .build();
@@ -193,21 +192,8 @@ public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOut
                     continue;
                 }
 
-                if (triggerContext.getBackfill() != null) {
+                if (triggerState.getBackfill() != null) {
                     continue;
-                }
-
-                if (rMaxExecutionDuration != null && triggerContext.getExecutionId() != null) {
-                    io.kestra.sdk.model.Execution exec = client.executions().execution(triggerContext.getExecutionId(), tenantId);
-
-                    if (exec.getState() != null && exec.getState().getCurrent() == StateType.RUNNING && exec.getState().getStartDate() != null) {
-
-                        Instant start = exec.getState().getStartDate().toInstant();
-                        if (Duration.between(start, now).compareTo(rMaxExecutionDuration) > 0) {
-                            detectedTriggers.add(info);
-                            continue;
-                        }
-                    }
                 }
 
                 if (rMaxExecutionInterval != null && lastExec != null) {

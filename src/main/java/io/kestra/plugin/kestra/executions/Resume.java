@@ -1,6 +1,5 @@
 package io.kestra.plugin.kestra.executions;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import io.kestra.core.models.annotations.Example;
@@ -91,11 +90,9 @@ public class Resume extends AbstractKestraTask implements RunnableTask<VoidOutpu
         String rTenant = runContext.render(this.tenantId).as(String.class)
             .orElse(runContext.flowInfo().tenantId());
 
-        Map<String, Object> rInputs = runContext.render(this.inputs).asMap(String.class, Object.class);
-
         runContext.logger().info("Resuming execution {}", rExecutionId);
         this.kestraClient(runContext).executions()
-            .resumeExecution(rExecutionId, rTenant, new HashMap<>(rInputs));
+            .resumeExecution(rExecutionId, rTenant);
 
         runContext.logger().debug("Successfully resumed execution {}", rExecutionId);
 
