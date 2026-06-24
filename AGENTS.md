@@ -26,6 +26,9 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 - `io.kestra.plugin.kestra.ee.assets.List`
 - `io.kestra.plugin.kestra.ee.assets.PurgeAssets`
 - `io.kestra.plugin.kestra.ee.assets.Set`
+- `io.kestra.plugin.kestra.ee.iam.roles.Delete`
+- `io.kestra.plugin.kestra.ee.iam.roles.List`
+- `io.kestra.plugin.kestra.ee.iam.roles.Set`
 - `io.kestra.plugin.kestra.ee.tests.RunTest`
 - `io.kestra.plugin.kestra.ee.tests.RunTests`
 - `io.kestra.plugin.kestra.executions.Count`
