@@ -1,0 +1,8 @@
+group: io.kestra.plugin.kestra.ee.iam.groups
+name: "groups"
+title: "Kestra IAM Groups"
+description: "Tasks that create, list, delete, and manage members of IAM groups."
+body: "Set the Kestra API URL and auth token to upsert groups, enumerate them, remove them, or add and remove individual members, enabling automated group lifecycle management from orchestrated workflows."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

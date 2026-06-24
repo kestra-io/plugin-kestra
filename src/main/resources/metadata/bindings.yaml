@@ -1,0 +1,8 @@
+group: io.kestra.plugin.kestra.ee.iam.bindings
+name: "bindings"
+title: "Kestra IAM Bindings"
+description: "Task that manages role bindings for users and service accounts."
+body: "Provide the Kestra API URL, auth token, and a subject (user or service account) with the desired roles to create or replace IAM role bindings in a namespace."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

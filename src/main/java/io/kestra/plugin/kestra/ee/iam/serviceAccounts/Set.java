@@ -7,6 +7,8 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
+import io.kestra.sdk.KestraClient;
+import io.kestra.sdk.internal.ApiException;
 import io.kestra.sdk.model.IAMServiceAccountControllerApiServiceAccountRequest;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -91,7 +93,7 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
         return Output.builder().id(serviceAccountId).build();
     }
 
-    private String findByName(io.kestra.sdk.KestraClient kestraClient, String tenant, String name) throws io.kestra.sdk.internal.ApiException {
+    private String findByName(KestraClient kestraClient, String tenant, String name) throws ApiException {
         int page = 1;
         int size = 100;
         long total = Long.MAX_VALUE;
