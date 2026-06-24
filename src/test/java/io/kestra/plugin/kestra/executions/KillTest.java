@@ -16,7 +16,7 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.Await;
 import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.sdk.model.Execution;
+import io.kestra.sdk.model.ApiLightExecution;
 import io.kestra.sdk.model.FlowWithSource;
 import io.kestra.sdk.model.StateType;
 
@@ -43,7 +43,7 @@ class KillTest extends AbstractKestraOssContainerTest {
         kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
 
         // Query the execution
-        Execution beforeExecution = queryExecution(flow.getId());
+        var beforeExecution = queryExecution(flow.getId());
         Awaitility.await().until(checkExecutionState(beforeExecution.getId(), StateType.PAUSED));
 
         Kill killTask = Kill.builder()
@@ -89,11 +89,11 @@ class KillTest extends AbstractKestraOssContainerTest {
         kestraTestDataUtils.createRandomizedExecution(parentFlow.getId(), parentFlow.getNamespace());
 
         // Query the executions
-        Execution parentExecution = queryExecution(parentFlow.getId());
+        var parentExecution = queryExecution(parentFlow.getId());
         Awaitility.await()
             .atMost(Duration.ofSeconds(2))
             .until(checkExecutionState(parentExecution.getId(), StateType.RUNNING));
-        Execution subExecution = queryExecution(subFlow.getId());
+        var subExecution = queryExecution(subFlow.getId());
         Awaitility.await()
             .atMost(Duration.ofSeconds(2))
             .until(checkExecutionState(subExecution.getId(), StateType.PAUSED));
@@ -137,11 +137,11 @@ class KillTest extends AbstractKestraOssContainerTest {
         kestraTestDataUtils.createRandomizedExecution(parentFlow.getId(), parentFlow.getNamespace());
 
         // Query the executions
-        Execution parentExecution = queryExecution(parentFlow.getId());
+        var parentExecution = queryExecution(parentFlow.getId());
         Awaitility.await()
             .atMost(Duration.ofSeconds(2))
             .until(checkExecutionState(parentExecution.getId(), StateType.RUNNING));
-        Execution subExecution = queryExecution(subFlow.getId());
+        var subExecution = queryExecution(subFlow.getId());
         Awaitility.await()
             .atMost(Duration.ofSeconds(2))
             .until(checkExecutionState(subExecution.getId(), StateType.PAUSED));
@@ -192,11 +192,11 @@ class KillTest extends AbstractKestraOssContainerTest {
         kestraTestDataUtils.createRandomizedExecution(parentFlow.getId(), parentFlow.getNamespace());
 
         // Query the executions
-        Execution parentExecution = queryExecution(parentFlow.getId());
+        var parentExecution = queryExecution(parentFlow.getId());
         Awaitility.await()
             .atMost(Duration.ofSeconds(2))
             .until(checkExecutionState(parentExecution.getId(), StateType.RUNNING));
-        Execution subExecution = queryExecution(subFlow.getId());
+        var subExecution = queryExecution(subFlow.getId());
         Awaitility.await()
             .atMost(Duration.ofSeconds(2))
             .until(checkExecutionState(subExecution.getId(), StateType.PAUSED));
@@ -228,7 +228,7 @@ class KillTest extends AbstractKestraOssContainerTest {
         assertThat(afterParentExecution.getState().getCurrent(), is(StateType.KILLED));
     }
 
-    private Execution queryExecution(String flowId) throws Exception {
+    private ApiLightExecution queryExecution(String flowId) throws Exception {
         RunContext runContext = runContextFactory.of();
 
         return Await.until(() ->
@@ -255,7 +255,7 @@ class KillTest extends AbstractKestraOssContainerTest {
 
                 var row = output.getRows().getFirst();
                 if (row instanceof ArrayList<?> arrayList && !arrayList.isEmpty()) {
-                    return (Execution) arrayList.getFirst();
+                    return (ApiLightExecution) arrayList.getFirst();
                 }
                 return null;
             } catch (Exception e) {

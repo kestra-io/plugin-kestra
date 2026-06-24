@@ -14,7 +14,7 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.executions.Query;
-import io.kestra.sdk.model.Execution;
+import io.kestra.sdk.model.ApiLightExecution;
 
 import jakarta.inject.Inject;
 
@@ -56,7 +56,7 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
         Thread.sleep(2000);
 
-        Execution execution = queryExecution("get-log");
+        var execution = queryExecution("get-log");
 
         Fetch fetchTask = Fetch.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
@@ -101,7 +101,7 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
         Thread.sleep(2000);
 
-        Execution execution = queryExecution("get-log-taskid");
+        var execution = queryExecution("get-log-taskid");
 
         Fetch fetchTask = Fetch.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
@@ -151,7 +151,7 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
         Thread.sleep(2000);
 
-        Execution execution = queryExecution("get-log-executionid");
+        var execution = queryExecution("get-log-executionid");
 
         Fetch fetchTask = Fetch.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
@@ -171,7 +171,7 @@ public class FetchTest extends AbstractKestraOssContainerTest {
         assertThat(output.getSize()).isEqualTo(3);
     }
 
-    private Execution queryExecution(String flowId) throws Exception {
+    private ApiLightExecution queryExecution(String flowId) throws Exception {
         RunContext runContext = runContextFactory.of();
 
         Query searchTask = Query.builder()
@@ -195,7 +195,7 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
         var row = output.getRows().getFirst();
         if (row instanceof ArrayList<?> arrayList) {
-            return (Execution) arrayList.getFirst();
+            return (ApiLightExecution) arrayList.getFirst();
         }
 
         throw new RuntimeException("Could not extract execution from query result");
