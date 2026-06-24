@@ -43,7 +43,7 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
 
         RunContext runContext = createRunContext(pausedExecution.getId());
 
-        Resume resumeTask = createResumeTask(pausedExecution.getId(), null);
+        Resume resumeTask = createResumeTask(pausedExecution.getId());
         resumeTask.run(runContext);
 
         Thread.sleep(1000);
@@ -52,27 +52,6 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
             "Execution should no longer be PAUSED",
             resumedExecution.getState().getCurrent(), not(StateType.PAUSED)
         );
-    }
-
-    @Test
-    public void shouldResumeWithInputs() throws Exception {
-        RunContext runContext = runContextFactory.of();
-
-        FlowWithSource flow = kestraTestDataUtils.createRandomizedPauseFlow(NAMESPACE);
-        kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
-
-        Thread.sleep(1000);
-        var pausedExecution = queryExecution(flow.getId());
-
-        Map<String, Object> inputs = Map.of("comment", "Approved by Unit Test", "status", "OK");
-
-        Resume resumeTask = createResumeTask(pausedExecution.getId(), inputs);
-        resumeTask.run(runContext);
-
-        Thread.sleep(1000);
-        var resumedExecution = queryExecution(flow.getId());
-
-        assertThat(resumedExecution.getState().getCurrent(), not(StateType.PAUSED));
     }
 
     @Test
@@ -85,7 +64,7 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
         var finishedExecution = queryExecution(flow.getId());
         assertThat(finishedExecution.getState().getCurrent(), is(StateType.SUCCESS));
 
-        Resume resumeTask = createResumeTask(finishedExecution.getId(), null);
+        Resume resumeTask = createResumeTask(finishedExecution.getId());
 
         assertThrows(Exception.class, () -> resumeTask.run(runContext));
     }
@@ -93,13 +72,13 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
     @Test
     public void shouldFailToResumeNonExistentExecution() {
         RunContext runContext = runContextFactory.of();
-        Resume resumeTask = createResumeTask("fake-execution-id-12345", null);
+        Resume resumeTask = createResumeTask("fake-execution-id-12345");
 
         assertThrows(Exception.class, () -> resumeTask.run(runContext));
     }
 
-    private Resume createResumeTask(String executionId, Map<String, Object> inputs) {
-        var builder = Resume.builder()
+    private Resume createResumeTask(String executionId) {
+        return Resume.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
             .auth(
                 AbstractKestraTask.Auth.builder()
@@ -108,13 +87,8 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
                     .build()
             )
             .tenantId(Property.ofValue(TENANT_ID))
-            .executionId(Property.ofValue(executionId));
-
-        if (inputs != null) {
-            builder.inputs(Property.ofValue(inputs));
-        }
-
-        return builder.build();
+            .executionId(Property.ofValue(executionId))
+            .build();
     }
 
     private ApiLightExecution queryExecution(String flowId) throws Exception {

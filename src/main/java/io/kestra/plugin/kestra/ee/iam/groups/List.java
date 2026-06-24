@@ -1,5 +1,11 @@
 package io.kestra.plugin.kestra.ee.iam.groups;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.net.URI;
+import java.util.ArrayList;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -21,12 +27,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.net.URI;
-import java.util.ArrayList;
 
 import static io.kestra.core.utils.Rethrow.throwConsumer;
 
@@ -114,7 +114,8 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
             case STORE -> {
                 File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
                 try (var fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
-                    fetched.forEach(throwConsumer(group -> {
+                    fetched.forEach(throwConsumer(group ->
+                    {
                         fileWriter.write(JacksonMapper.ofIon().writeValueAsString(group));
                         fileWriter.write("\n");
                     }));

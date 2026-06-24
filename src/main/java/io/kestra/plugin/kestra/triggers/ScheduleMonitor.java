@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
@@ -22,7 +23,6 @@ import io.kestra.sdk.model.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -31,7 +31,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @NoArgsConstructor
 @Schema(
     title = "Detect unhealthy schedule triggers",
-    description = "Finds SCHEDULE triggers that are overdue, running too long, missing next execution, or optionally disabled. Defaults: poll every 60s, allowedDelay 1 minute, disabled ignored unless includeDisabled is true."
+    description = "Finds SCHEDULE triggers that are overdue, missing next execution, or optionally disabled. Defaults: poll every 60s, allowedDelay 1 minute, disabled ignored unless includeDisabled is true."
 )
 @Plugin(
     examples = {
@@ -88,13 +88,6 @@ public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOut
     private Property<Duration> allowedDelay = Property.ofValue(Duration.ofMinutes(1));
 
     @Schema(
-        title = "Max execution duration",
-        description = "When set, a RUNNING execution longer than this is flagged."
-    )
-    @PluginProperty(group = "execution")
-    private Property<Duration> maxExecutionDuration;
-
-    @Schema(
         title = "Max idle interval between runs",
         description = "Flags schedules with no execution within this period."
     )
@@ -120,7 +113,6 @@ public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOut
         String rNamespace = runContext.render(namespace).as(String.class).orElse(null);
         String rFlowId = runContext.render(flowId).as(String.class).orElse(null);
         boolean rIncludeDisabled = runContext.render(includeDisabled).as(Boolean.class).orElse(false);
-        Duration rMaxExecutionDuration = runContext.render(maxExecutionDuration).as(Duration.class).orElse(null);
         Duration rMaxExecutionInterval = runContext.render(maxExecutionInterval).as(Duration.class).orElse(null);
         Duration rAllowedDelay = runContext.render(allowedDelay).as(Duration.class).orElse(Duration.ofMinutes(1));
 

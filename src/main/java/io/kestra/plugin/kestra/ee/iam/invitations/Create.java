@@ -1,5 +1,7 @@
 package io.kestra.plugin.kestra.ee.iam.invitations;
 
+import java.util.List;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -19,8 +21,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-import java.util.List;
-
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -28,7 +28,13 @@ import java.util.List;
 @NoArgsConstructor
 @Schema(
     title = "Create an invitation",
-    description = "Sends an invitation to a user by email, optionally assigning groups and roles."
+    description = """
+        Sends an invitation to a user by email, optionally assigning groups and roles.
+
+        The target Kestra instance must have `kestra.url` configured so that invitation emails contain a valid \
+        link for the recipient to accept the invitation. Without it the invitation is created but the email link \
+        will be empty or broken.
+        """
 )
 @Plugin(
     examples = {

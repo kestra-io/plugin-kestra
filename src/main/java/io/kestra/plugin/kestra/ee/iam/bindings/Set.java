@@ -1,5 +1,7 @@
 package io.kestra.plugin.kestra.ee.iam.bindings;
 
+import java.util.List;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -9,7 +11,11 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.internal.ApiException;
 import io.kestra.sdk.model.BindingType;
+import io.kestra.sdk.model.IAMBindingControllerApiBindingDetail;
 import io.kestra.sdk.model.IAMBindingControllerApiCreateBindingRequest;
+import io.kestra.sdk.model.QueryFilter;
+import io.kestra.sdk.model.QueryFilterField;
+import io.kestra.sdk.model.QueryFilterOp;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -111,19 +117,39 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
             if (e.getCode() == 409) {
                 if (rFailIfExists) {
                     throw new IllegalStateException(
-                        "Binding already exists for externalId=" + rExternalId + " roleId=" + rRoleId
-                            + ". Set failIfExists=false to return the existing binding ID instead.", e
+                        "Binding already exists for type=" + rType + " externalId=" + rExternalId + " roleId=" + rRoleId
+                            + ". Set failIfExists=false to return the existing binding ID instead.",
+                        e
                     );
                 }
-                // Locate the existing binding by role ID (one binding per subject+role is unique)
-                var existing = kestraClient.bindings().searchBindings(rTenant, 1, 100, null, null)
+                // Filter server-side by type to reduce candidates, then match on roleId and externalId in memory
+                var typeFilter = new QueryFilter()
+                    .field(QueryFilterField.TYPE)
+                    .operation(QueryFilterOp.EQUALS)
+                    .value(rType.getValue());
+                var existing = kestraClient.bindings()
+                    .searchBindings(rTenant, 1, 100, null, List.of(typeFilter))
                     .getResults().stream()
-                    .filter(b -> b.getRole() != null && rRoleId.equals(b.getRole().getId()))
+                    .filter(b -> matchesBinding(b, rType, rExternalId, rRoleId))
                     .findFirst();
-                return Output.builder().id(existing.map(b -> b.getId()).orElse(null)).build();
+                return Output.builder().id(existing.map(IAMBindingControllerApiBindingDetail::getId).orElse(null)).build();
             }
             throw e;
         }
+    }
+
+    /**
+     * Returns true when the binding detail matches the specific subject (type + externalId) and role being created.
+     * The externalId lives in user.id for USER bindings and in group.id for GROUP bindings.
+     */
+    private static boolean matchesBinding(IAMBindingControllerApiBindingDetail b, BindingType type, String externalId, String roleId) {
+        if (b.getRole() == null || !roleId.equals(b.getRole().getId())) {
+            return false;
+        }
+        if (type == BindingType.USER) {
+            return b.getUser() != null && externalId.equals(b.getUser().getId());
+        }
+        return b.getGroup() != null && externalId.equals(b.getGroup().getId());
     }
 
     @Builder

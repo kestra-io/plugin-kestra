@@ -1,5 +1,11 @@
 package io.kestra.plugin.kestra.ee.iam.invitations;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.net.URI;
+import java.util.ArrayList;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -21,12 +27,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.net.URI;
-import java.util.ArrayList;
 
 import static io.kestra.core.utils.Rethrow.throwConsumer;
 
@@ -102,8 +102,7 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
             int currentPage = 1;
             long total;
             do {
-                PagedResultsIAMInvitationControllerApiInvitationDetail results =
-                    kestraClient.invitations().searchInvitations(rTenant, currentPage, rSize, null, null);
+                PagedResultsIAMInvitationControllerApiInvitationDetail results = kestraClient.invitations().searchInvitations(rTenant, currentPage, rSize, null, null);
                 fetched.addAll(results.getResults());
                 total = results.getTotal();
             } while ((long) currentPage++ * rSize < total);
@@ -115,7 +114,8 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
             case STORE -> {
                 File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
                 try (var fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
-                    fetched.forEach(throwConsumer(inv -> {
+                    fetched.forEach(throwConsumer(inv ->
+                    {
                         fileWriter.write(JacksonMapper.ofIon().writeValueAsString(inv));
                         fileWriter.write("\n");
                     }));

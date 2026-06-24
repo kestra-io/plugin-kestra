@@ -50,7 +50,14 @@ import lombok.experimental.SuperBuilder;
 public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> {
 
     @NotNull
-    @Schema(title = "Service account name")
+    @Schema(
+        title = "Service account name",
+        description = """
+            Name of the service account to create or update. Must match `^(?=.{1,63}$)[a-z0-9]+(?:-[a-z0-9]+)*$`:
+            lowercase alphanumeric characters and hyphens only, starting and ending with an alphanumeric character,
+            maximum 63 characters.
+            """
+    )
     @PluginProperty(group = "main")
     private Property<String> name;
 
@@ -69,16 +76,12 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
             .name(rName)
             .description(rDescription);
 
-        // No name-based filter available for service accounts; retrieve and match in Java
-        var existing = kestraClient.serviceAccount()
-            .listServiceAccountsForTenant(rTenant, 1, 100, null, null)
-            .getResults().stream()
-            .filter(sa -> rName.equals(sa.getName()))
-            .findFirst();
+        // No name-based filter available for service accounts; paginate and match in Java
+        String existingId = findByName(kestraClient, rTenant, rName);
 
         String serviceAccountId;
-        if (existing.isPresent()) {
-            serviceAccountId = existing.get().getId();
+        if (existingId != null) {
+            serviceAccountId = existingId;
             kestraClient.serviceAccount().updateServiceAccount(serviceAccountId, rTenant, request);
         } else {
             var created = kestraClient.serviceAccount().createServiceAccountForTenant(rTenant, request);
@@ -86,6 +89,33 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
         }
 
         return Output.builder().id(serviceAccountId).build();
+    }
+
+    private String findByName(io.kestra.sdk.KestraClient kestraClient, String tenant, String name) throws io.kestra.sdk.internal.ApiException {
+        int page = 1;
+        int size = 100;
+        long total = Long.MAX_VALUE;
+
+        while ((long) (page - 1) * size < total) {
+            var response = kestraClient.serviceAccount().listServiceAccountsForTenant(tenant, page, size, null, null);
+            total = response.getTotal();
+
+            var match = response.getResults().stream()
+                .filter(sa -> name.equals(sa.getName()))
+                .findFirst();
+
+            if (match.isPresent()) {
+                return match.get().getId();
+            }
+
+            if (response.getResults().isEmpty()) {
+                break;
+            }
+
+            page++;
+        }
+
+        return null;
     }
 
     @Builder

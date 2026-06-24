@@ -173,7 +173,8 @@ class KillTest extends AbstractKestraOssContainerTest {
         kestraTestDataUtils.resumeExecution(subExecution.getId());
         Awaitility.await()
             .atMost(Duration.ofSeconds(10))
-            .until(() -> {
+            .until(() ->
+            {
                 StateType state = kestraTestDataUtils.getExecution(subExecution.getId()).getState().getCurrent();
                 return state == StateType.RESTARTED || state == StateType.RUNNING || state == StateType.SUCCESS;
             });
