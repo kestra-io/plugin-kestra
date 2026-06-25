@@ -43,7 +43,7 @@ import io.kestra.core.models.annotations.PluginProperty;
                     kestraUrl: http://localhost:8080
                     auth:
                       username: admin@kestra.io # pass your Kestra username as secret or KV pair
-                      password: Admin1234 # pass your Kestra password as secret or KV pair
+                      password: "{{ secret('KESTRA_PASSWORD') }}" # pass your Kestra password as secret or KV pair
                     flows:
                       - id: my_flow_id
                         namespace: my.flow.namespace
@@ -62,7 +62,7 @@ import io.kestra.core.models.annotations.PluginProperty;
                     kestraUrl: https://my-ee-instance.io
                     auth:
                       username: admin@kestra.io # pass your Kestra username as secret or KV pair
-                      password: Admin1234 # pass your Kestra password as secret or KV pair
+                      password: "{{ secret('KESTRA_PASSWORD') }}" # pass your Kestra password as secret or KV pair
                     tenantId: main
                     flows:
                       - id: flow_one

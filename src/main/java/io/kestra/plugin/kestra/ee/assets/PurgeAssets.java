@@ -34,7 +34,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Purges assets from the catalog based on retention policies.",
+    title = "Purges assets from the catalog based on retention policies",
     description = "By default, the task purges assets, asset usage events (execution view), and asset lineage events (for asset exporters) matching the filters. You can configure it to only purge specific types of records. Asset lineage event purging currently does not support filtering by asset ID, type or metadata. Asset usage event purging currently does not support filtering by asset type or metadata."
 )
 @Plugin(
@@ -65,16 +65,16 @@ import io.kestra.core.models.annotations.PluginProperty;
                 namespace: company.infra
 
                 triggers:
-                - id: monthly_cleanup
-                 type: io.kestra.plugin.core.trigger.Schedule
-                 cron: "0 0 1 * *"
+                  - id: monthly_cleanup
+                    type: io.kestra.plugin.core.trigger.Schedule
+                    cron: "0 0 1 * *"
 
                 tasks:
-                - id: purge_old_vms
-                 type: io.kestra.plugin.kestra.ee.assets.PurgeAssets
-                 assetType:
-                   - io.kestra.plugin.ee.assets.VM
-                 endDate: "{{ now() | dateAdd(-180, 'DAYS') }}"
+                  - id: purge_old_vms
+                    type: io.kestra.plugin.kestra.ee.assets.PurgeAssets
+                    assetType:
+                      - io.kestra.plugin.ee.assets.VM
+                    endDate: "{{ now() | dateAdd(-180, 'DAYS') }}"
                 """
         )
     }

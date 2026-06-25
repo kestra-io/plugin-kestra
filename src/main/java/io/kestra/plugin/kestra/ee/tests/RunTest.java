@@ -194,6 +194,7 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
         )
         private TestSuiteRunResult result;
 
+        @Schema(title = "Task state override applied based on the test result")
         @Builder.Default
         private Optional<State.Type> taskStateOverride = Optional.empty();
 

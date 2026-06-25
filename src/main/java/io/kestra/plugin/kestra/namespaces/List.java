@@ -41,7 +41,7 @@ import io.kestra.core.models.annotations.PluginProperty;
                     kestraUrl: http://localhost:8080
                     auth:
                       username: admin@kestra.io # pass your Kestra username as secret or KV pair
-                      password: Admin1234 # pass your Kestra password as secret or KV pair
+                      password: "{{ secret('KESTRA_PASSWORD') }}" # pass your Kestra password as secret or KV pair
                     page: 1
                     size: 20
                 """
@@ -59,7 +59,7 @@ import io.kestra.core.models.annotations.PluginProperty;
                     kestraUrl: https://cloud.kestra.io
                     auth:
                       username: admin@kestra.io # pass your Kestra username as secret or KV pair
-                      password: Admin1234 # pass your Kestra password as secret or KV pair
+                      password: "{{ secret('KESTRA_PASSWORD') }}" # pass your Kestra password as secret or KV pair
                     tenantId: mytenant
                     prefix: dev.
                     existingOnly: true
@@ -78,7 +78,7 @@ import io.kestra.core.models.annotations.PluginProperty;
                     kestraUrl: http://localhost:8080
                     auth:
                       username: admin@kestra.io # pass your Kestra username as secret or KV pair
-                      password: Admin1234 # pass your Kestra password as secret or KV pair
+                      password: "{{ secret('KESTRA_PASSWORD') }}" # pass your Kestra password as secret or KV pair
                     # No 'page' or 'size' properties to fetch all
                 """
         )
