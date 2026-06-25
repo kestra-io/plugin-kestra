@@ -231,19 +231,19 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "List containing the fetched assets.",
+            title = "List containing the fetched assets",
             description = "Only populated if using `fetchType=FETCH`."
         )
         private java.util.List<AssetsControllerApiAsset> assets;
 
         @Schema(
-            title = "First fetched asset.",
+            title = "First fetched asset",
             description = "Only populated if using `fetchType=FETCH_ONE`."
         )
         private AssetsControllerApiAsset asset;
 
         @Schema(
-            title = "Kestra's internal storage URI of the stored assets.",
+            title = "Kestra's internal storage URI of the stored assets",
             description = "Only populated if using `fetchType=STORE`."
         )
         private URI uri;

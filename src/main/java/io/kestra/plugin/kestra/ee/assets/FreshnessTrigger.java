@@ -136,11 +136,18 @@ import io.kestra.core.models.annotations.PluginProperty;
         )
     }
 )
+@Schema(
+    title = "Trigger on Kestra asset freshness",
+    description = "Polls Kestra EE data assets and fires an execution when an asset has not been updated within the configured maximum staleness."
+)
 public class FreshnessTrigger extends AbstractKestraTrigger implements PollingTriggerInterface, TriggerOutput<FreshnessTrigger.Output> {
+    @Schema(title = "Asset id to monitor")
     private Property<String> assetId;
 
+    @Schema(title = "Namespace to filter assets by")
     private Property<String> namespace;
 
+    @Schema(title = "Asset type to filter by")
     private Property<String> assetType;
 
     @Schema(
@@ -151,12 +158,13 @@ public class FreshnessTrigger extends AbstractKestraTrigger implements PollingTr
     private Property<Duration> maxStaleness;
 
     @Schema(
-        title = "How often the trigger should check for stale assets. Default is 1 hour."
+        title = "How often the trigger should check for stale assets. Default is 1 hour"
     )
     @Builder.Default
     @PluginProperty(group = "execution")
     private final Duration interval = Duration.ofHours(1);
 
+    @Schema(title = "Metadata field queries to filter assets by")
     private Property<List<FieldQuery>> metadataQuery;
 
     @Hidden

@@ -61,12 +61,20 @@ import io.kestra.core.models.annotations.PluginProperty;
                 """
         ),
         @Example(
-            code = {
-                "level: WARN",
-                "executionId: \"{{ execution.id }}\"",
-                "tasksId: ",
-                "  - \"previous_task_id\""
-            }
+            title = "Fetch WARN logs for a specific execution and task",
+            full = true,
+            code = """
+                id: kestra_logs_fetch
+                namespace: company.team
+
+                tasks:
+                  - id: fetch
+                    type: io.kestra.plugin.kestra.logs.Fetch
+                    level: WARN
+                    executionId: "{{ execution.id }}"
+                    tasksId:
+                      - "previous_task_id"
+                """
         )
     }
 )

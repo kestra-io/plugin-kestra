@@ -1,0 +1,8 @@
+group: io.kestra.plugin.kestra.logs
+name: "logs"
+title: "Kestra Logs"
+description: "Tasks that fetch logs from a Kestra instance."
+body: "Set the Kestra API URL and auth token to fetch execution logs for analysis or downstream processing."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
