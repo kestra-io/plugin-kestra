@@ -83,8 +83,12 @@ public class Create extends AbstractKestraTask implements RunnableTask<Create.Ou
             .groups(rGroupIds.isEmpty() ? null : rGroupIds)
             .roles(rRoles.isEmpty() ? null : rRoles);
 
-        var created = kestraClient.invitations().createInvitation(rTenant, request);
-        return Output.builder().invitationId(created.getId()).build();
+        kestraClient.invitations().createInvitation(rTenant, request);
+
+        // createInvitation returns void since SDK 1.3.0; look the invitation up by email to recover its id
+        var created = kestraClient.invitations().listInvitationsByEmail(rTenant, rEmail);
+        var invitationId = created.isEmpty() ? null : created.getFirst().getId();
+        return Output.builder().invitationId(invitationId).build();
     }
 
     @Builder

@@ -99,7 +99,7 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
         long total = Long.MAX_VALUE;
 
         while ((long) (page - 1) * size < total) {
-            var response = kestraClient.serviceAccount().listServiceAccountsForTenant(tenant, page, size, null, null);
+            var response = kestraClient.serviceAccount().listServiceAccounts(page, size, null, null);
             total = response.getTotal();
 
             var match = response.getResults().stream()

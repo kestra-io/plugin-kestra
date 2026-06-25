@@ -96,13 +96,13 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
 
         java.util.List<IAMServiceAccountControllerApiServiceAccountDetail> fetched;
         if (rPage != null) {
-            fetched = kestraClient.serviceAccount().listServiceAccountsForTenant(rTenant, rPage, rSize, null, null).getResults();
+            fetched = kestraClient.serviceAccount().listServiceAccounts(rPage, rSize, null, null).getResults();
         } else {
             fetched = new ArrayList<>();
             int currentPage = 1;
             long total;
             do {
-                PagedResultsIAMServiceAccountControllerApiServiceAccountDetail results = kestraClient.serviceAccount().listServiceAccountsForTenant(rTenant, currentPage, rSize, null, null);
+                PagedResultsIAMServiceAccountControllerApiServiceAccountDetail results = kestraClient.serviceAccount().listServiceAccounts(currentPage, rSize, null, null);
                 fetched.addAll(results.getResults());
                 total = results.getTotal();
             } while ((long) currentPage++ * rSize < total);
