@@ -1,5 +1,7 @@
 package io.kestra.plugin.kestra;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Optional;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
@@ -44,9 +46,8 @@ public abstract class AbstractKestraTask extends Task {
     @PluginProperty(group = "connection")
     protected Property<String> tenantId;
 
-    protected KestraClient kestraClient(RunContext runContext) throws IllegalVariableEvaluationException {
-        // use the kestraUrl property if set, otherwise the config value, or else the default
-        String rKestraUrl = runContext.render(kestraUrl).as(String.class)
+    protected String resolveKestraUrl(RunContext runContext) throws IllegalVariableEvaluationException {
+        String raw = runContext.render(kestraUrl).as(String.class)
             .orElseGet(() ->
             {
                 try {
@@ -55,10 +56,56 @@ public abstract class AbstractKestraTask extends Task {
                     return DEFAULT_KESTRA_URL;
                 }
             });
+        return raw.trim().replaceAll("/+$", "");
+    }
 
-        runContext.logger().info("Kestra URL: {}", rKestraUrl);
+    protected String resolveAuthorizationHeader(RunContext runContext) throws IllegalVariableEvaluationException {
+        if (auth != null) {
+            if (auth.getApiToken() != null && (auth.getUsername() != null || auth.getPassword() != null)) {
+                throw new IllegalArgumentException("Cannot use both API Token authentication and HTTP Basic authentication");
+            }
+            String rApiToken = runContext.render(auth.getApiToken()).as(String.class).orElse(null);
+            if (rApiToken != null) {
+                return "Bearer " + rApiToken;
+            }
+            Optional<String> maybeUsername = runContext.render(auth.getUsername()).as(String.class);
+            Optional<String> maybePassword = runContext.render(auth.getPassword()).as(String.class);
+            if (maybeUsername.isPresent() && maybePassword.isPresent()) {
+                return "Basic " + Base64.getEncoder().encodeToString(
+                    (maybeUsername.get() + ":" + maybePassword.get()).getBytes(StandardCharsets.UTF_8)
+                );
+            }
+            if (maybeUsername.isPresent() || maybePassword.isPresent()) {
+                throw new IllegalArgumentException("Both username and password are required for HTTP Basic authentication");
+            }
+            if (runContext.render(auth.getAuto()).as(Boolean.class).orElse(Boolean.TRUE)) {
+                return sdkAuthToHeader(runContext);
+            }
+            throw new IllegalArgumentException("No authentication method provided");
+        }
+        return sdkAuthToHeader(runContext);
+    }
 
-        String normalizedUrl = rKestraUrl.trim().replaceAll("/+$", "");
+    private String sdkAuthToHeader(RunContext runContext) {
+        Optional<SDK.Auth> autoAuth = runContext.sdk().defaultAuthentication();
+        if (autoAuth.isEmpty())
+            return null;
+        if (autoAuth.get().apiToken().isPresent()) {
+            return "Bearer " + autoAuth.get().apiToken().get();
+        }
+        if (autoAuth.get().username().isPresent() && autoAuth.get().password().isPresent()) {
+            return "Basic " + Base64.getEncoder().encodeToString(
+                (autoAuth.get().username().get() + ":" + autoAuth.get().password().get())
+                    .getBytes(StandardCharsets.UTF_8)
+            );
+        }
+        return null;
+    }
+
+    protected KestraClient kestraClient(RunContext runContext) throws IllegalVariableEvaluationException {
+        String normalizedUrl = resolveKestraUrl(runContext);
+
+        runContext.logger().info("Kestra URL: {}", normalizedUrl);
 
         var builder = KestraClient.builder();
         builder.url(normalizedUrl);

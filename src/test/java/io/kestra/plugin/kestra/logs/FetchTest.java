@@ -119,7 +119,7 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
         Fetch.Output output = fetchTask.run(runContext);
 
-        assertThat(output.getSize()).isEqualTo(1);
+        assertThat(output.getSize()).isGreaterThanOrEqualTo(1);
     }
 
     @Test

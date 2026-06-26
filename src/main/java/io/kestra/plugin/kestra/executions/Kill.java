@@ -1,5 +1,10 @@
 package io.kestra.plugin.kestra.executions;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -8,7 +13,6 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.VoidOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.sdk.KestraClient;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -96,15 +100,26 @@ public class Kill extends AbstractKestraTask implements RunnableTask<VoidOutput>
         boolean rPropagateKill = runContext.render(this.propagateKill).as(Boolean.class).orElse(true);
         String rTenantId = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         String rExecutionId = runContext.render(this.executionId).as(String.class).orElseThrow();
+        String rBaseUrl = resolveKestraUrl(runContext);
 
-        runContext
-            .logger()
-            .info("Killing execution {} with propagateKill={}", rExecutionId, rPropagateKill);
-        KestraClient kestraClient = kestraClient(runContext);
+        runContext.logger().info("Killing execution {} with propagateKill={}", rExecutionId, rPropagateKill);
 
-        kestraClient.executions().killExecution(rExecutionId, rTenantId, rPropagateKill);
+        // Kestra v2.0 changed kill from DELETE to POST
+        String path = "/api/v1/" + rTenantId + "/executions/" + rExecutionId + "/kill?isOnKillCascade=" + rPropagateKill;
+        var reqBuilder = HttpRequest.newBuilder()
+            .uri(URI.create(rBaseUrl + path))
+            .POST(HttpRequest.BodyPublishers.noBody());
+        String authHeader = resolveAuthorizationHeader(runContext);
+        if (authHeader != null) {
+            reqBuilder.header("Authorization", authHeader);
+        }
+        var response = HttpClient.newHttpClient()
+            .send(reqBuilder.build(), HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 400) {
+            throw new RuntimeException("Kill execution " + rExecutionId + " failed with HTTP " + response.statusCode() + ": " + response.body());
+        }
+
         runContext.logger().debug("Successfully killed execution {}", rExecutionId);
-
         return null;
     }
 }

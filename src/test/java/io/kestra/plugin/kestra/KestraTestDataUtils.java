@@ -1,5 +1,11 @@
 package io.kestra.plugin.kestra;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -23,12 +29,18 @@ import lombok.extern.slf4j.Slf4j;
 public class KestraTestDataUtils {
     private final String defaultNameSpace = "default";
     private final String tenantId;
+    private final String kestraBaseUrl;
+    private final String authorizationHeader;
     @Getter
     private final KestraClient kestraClient;
     private static final Random random = new Random();
 
     public KestraTestDataUtils(String kestraUrl, String username, String password, String tenantId) {
         this.tenantId = tenantId;
+        this.kestraBaseUrl = kestraUrl.replaceAll("/+$", "");
+        this.authorizationHeader = "Basic " + Base64.getEncoder().encodeToString(
+            (username + ":" + password).getBytes(StandardCharsets.UTF_8)
+        );
 
         var builder = KestraClient.builder();
         builder.url(kestraUrl);
@@ -159,14 +171,20 @@ public class KestraTestDataUtils {
         }
     }
 
-    public void killExecution(String executionId, boolean isOnKillCascade) throws ApiException {
+    public void killExecution(String executionId, boolean isOnKillCascade) {
         try {
-            kestraClient.executions().killExecution(executionId, tenantId, isOnKillCascade);
-        } catch (ApiException e) {
-            log.error(
-                "ApiException thrown, probably false positive as we are in `killExecution` :"
-                    + e.getMessage()
-            );
+            String path = "/api/v1/" + tenantId + "/executions/" + executionId + "/kill?isOnKillCascade=" + isOnKillCascade;
+            var request = HttpRequest.newBuilder()
+                .uri(URI.create(kestraBaseUrl + path))
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .header("Authorization", authorizationHeader)
+                .build();
+            var response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 400) {
+                log.error("killExecution failed: HTTP {} {}", response.statusCode(), response.body());
+            }
+        } catch (Exception e) {
+            log.error("killExecution failed: {}", e.getMessage(), e);
         }
     }
 
