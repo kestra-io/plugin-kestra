@@ -1,10 +1,5 @@
 package io.kestra.plugin.kestra.executions;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -67,23 +62,10 @@ public class Resume extends AbstractKestraTask implements RunnableTask<VoidOutpu
 
         String rTenant = runContext.render(this.tenantId).as(String.class)
             .orElse(runContext.flowInfo().tenantId());
-        String rBaseUrl = resolveKestraUrl(runContext);
 
         runContext.logger().info("Resuming execution {}", rExecutionId);
-
-        String path = "/api/v1/" + rTenant + "/executions/" + rExecutionId + "/resume";
-        var reqBuilder = HttpRequest.newBuilder()
-            .uri(URI.create(rBaseUrl + path))
-            .POST(HttpRequest.BodyPublishers.noBody());
-        String authHeader = resolveAuthorizationHeader(runContext);
-        if (authHeader != null) {
-            reqBuilder.header("Authorization", authHeader);
-        }
-        var response = HttpClient.newHttpClient()
-            .send(reqBuilder.build(), HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() >= 400) {
-            throw new RuntimeException("Resume execution " + rExecutionId + " failed with HTTP " + response.statusCode() + ": " + response.body());
-        }
+        this.kestraClient(runContext).executions()
+            .resumeExecution(rExecutionId, rTenant);
 
         runContext.logger().debug("Successfully resumed execution {}", rExecutionId);
         return null;
