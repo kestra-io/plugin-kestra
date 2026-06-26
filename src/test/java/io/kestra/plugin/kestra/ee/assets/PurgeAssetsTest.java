@@ -20,7 +20,7 @@ import io.kestra.plugin.kestra.AbstractKestraEeContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.plugin.kestra.executions.Query;
 import io.kestra.sdk.internal.ApiException;
-import io.kestra.sdk.model.Execution;
+import io.kestra.sdk.model.ApiLightExecution;
 import io.kestra.sdk.model.FlowWithSource;
 import io.kestra.sdk.model.StateType;
 
@@ -408,7 +408,7 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
         FlowWithSource created = kestraTestDataUtils.getKestraClient().flows().createFlow(TENANT_ID, flow);
         kestraTestDataUtils.createRandomizedExecution(created.getId(), created.getNamespace());
 
-        Execution execution = queryExecution(created.getId(), namespace);
+        ApiLightExecution execution = queryExecution(created.getId(), namespace);
         Awaitility.await().until(() -> kestraTestDataUtils.getExecution(execution.getId()).getState().getCurrent() == StateType.SUCCESS);
         Awaitility.await().until(() -> kestraTestDataUtils.assetExists(inputAssetId) && kestraTestDataUtils.assetExists(outputAssetId));
         Awaitility.await().until(() ->
@@ -433,7 +433,7 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
         });
     }
 
-    private Execution queryExecution(String flowId, String namespace) throws Exception {
+    private ApiLightExecution queryExecution(String flowId, String namespace) throws Exception {
         RunContext runContext = runContextFactory.of();
 
         return Await.until(
@@ -462,7 +462,7 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
 
                     Object row = output.getRows().getFirst();
                     if (row instanceof java.util.ArrayList<?> arrayList && !arrayList.isEmpty()) {
-                        return (Execution) arrayList.getFirst();
+                        return (ApiLightExecution) arrayList.getFirst();
                     }
 
                     return null;

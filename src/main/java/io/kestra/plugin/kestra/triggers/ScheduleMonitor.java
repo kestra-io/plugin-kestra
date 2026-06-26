@@ -109,7 +109,7 @@ public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOut
     public Output runChecks(RunContext runContext) throws Exception {
         KestraClient client = kestraClient(runContext);
 
-        String tenantId = runContext.flowInfo().tenantId();
+        String tenantId = runContext.render(this.tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         String rNamespace = runContext.render(namespace).as(String.class).orElse(null);
         String rFlowId = runContext.render(flowId).as(String.class).orElse(null);
         boolean rIncludeDisabled = runContext.render(includeDisabled).as(Boolean.class).orElse(false);
