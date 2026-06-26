@@ -11,7 +11,7 @@ import io.kestra.core.utils.Await;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.sdk.model.Trigger;
+import io.kestra.sdk.model.ApiTriggerState;
 
 import jakarta.inject.Inject;
 
@@ -110,10 +110,10 @@ class ToggleTest extends AbstractKestraOssContainerTest {
             .build();
     }
 
-    private Trigger findTrigger(String flowId) {
+    private ApiTriggerState findTrigger(String flowId) {
         return kestraTestDataUtils.getKestraClient()
             .triggers()
-            .searchTriggersForFlow(1, 1000, NAMESPACE, flowId, TENANT_ID, null, null)
+            .searchTriggersForFlow(NAMESPACE, flowId, TENANT_ID, 1, 1000, null, null)
             .getResults()
             .stream()
             .filter(trigger -> TRIGGER_ID.equals(trigger.getTriggerId()))

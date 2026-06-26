@@ -12,7 +12,7 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.sdk.model.Execution;
+import io.kestra.sdk.model.ApiLightExecution;
 import io.kestra.sdk.model.FlowWithSource;
 import io.kestra.sdk.model.StateType;
 
@@ -35,7 +35,7 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
         kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
 
         Thread.sleep(1000);
-        Execution pausedExecution = queryExecution(flow.getId());
+        ApiLightExecution pausedExecution = queryExecution(flow.getId());
         assertThat(
             "Execution should start in PAUSED state",
             pausedExecution.getState().getCurrent(), is(StateType.PAUSED)
@@ -47,7 +47,7 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
         resumeTask.run(runContext);
 
         Thread.sleep(1000);
-        Execution resumedExecution = queryExecution(flow.getId());
+        ApiLightExecution resumedExecution = queryExecution(flow.getId());
         assertThat(
             "Execution should no longer be PAUSED",
             resumedExecution.getState().getCurrent(), not(StateType.PAUSED)
@@ -62,7 +62,7 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
         kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
 
         Thread.sleep(1000);
-        Execution pausedExecution = queryExecution(flow.getId());
+        ApiLightExecution pausedExecution = queryExecution(flow.getId());
 
         Map<String, Object> inputs = Map.of("comment", "Approved by Unit Test", "status", "OK");
 
@@ -70,7 +70,7 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
         resumeTask.run(runContext);
 
         Thread.sleep(1000);
-        Execution resumedExecution = queryExecution(flow.getId());
+        ApiLightExecution resumedExecution = queryExecution(flow.getId());
 
         assertThat(resumedExecution.getState().getCurrent(), not(StateType.PAUSED));
     }
@@ -82,7 +82,7 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
         kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
 
         Thread.sleep(1000);
-        Execution finishedExecution = queryExecution(flow.getId());
+        ApiLightExecution finishedExecution = queryExecution(flow.getId());
         assertThat(finishedExecution.getState().getCurrent(), is(StateType.SUCCESS));
 
         Resume resumeTask = createResumeTask(finishedExecution.getId(), null);
@@ -117,7 +117,7 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
         return builder.build();
     }
 
-    private Execution queryExecution(String flowId) throws Exception {
+    private ApiLightExecution queryExecution(String flowId) throws Exception {
         RunContext runContext = runContextFactory.of();
         Query searchTask = Query.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
@@ -142,8 +142,8 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
 
         var row = output.getRows().getFirst();
         if (row instanceof ArrayList<?> arrayList) {
-            return (Execution) arrayList.getFirst();
-        } else if (row instanceof Execution execution) {
+            return (ApiLightExecution) arrayList.getFirst();
+        } else if (row instanceof ApiLightExecution execution) {
             return execution;
         }
 

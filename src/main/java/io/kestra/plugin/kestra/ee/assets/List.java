@@ -127,12 +127,12 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         java.util.List<AssetsControllerApiAsset> fetchedAssets;
         if (rPage != null) {
             fetchedAssets = kestraClient.assets().searchAssets(
-                rPage,
-                rSize,
                 toQueryFilters(
                     runContext.render(namespace).as(String.class).orElse(null), runContext.render(types).asList(String.class), runContext.render(metadataQuery).asList(FieldQuery.class)
                 ),
                 runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId()),
+                rPage,
+                rSize,
                 null
             ).getResults();
         } else {
@@ -142,12 +142,12 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
             long total;
             do {
                 PagedResultsAssetsControllerApiAsset results = kestraClient.assets().searchAssets(
-                    currentPage,
-                    rSize,
                     toQueryFilters(
                         runContext.render(namespace).as(String.class).orElse(null), runContext.render(types).asList(String.class), runContext.render(metadataQuery).asList(FieldQuery.class)
                     ),
                     runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId()),
+                    currentPage,
+                    rSize,
                     null
                 );
                 fetchedAssets.addAll(results.getResults());

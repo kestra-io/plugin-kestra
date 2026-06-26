@@ -191,8 +191,8 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
                         QueryFilterField.ID,
                         QueryFilterField.UPDATED
                     ),
-                    true,
-                    runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId())
+                    runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId()),
+                    true
                 ).getCount()
             );
         }

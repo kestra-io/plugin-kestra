@@ -161,17 +161,17 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
         Integer rPage = runContext.render(this.page).as(Integer.class).orElse(null);
         Integer rSize = runContext.render(this.size).as(Integer.class).orElse(10);
 
-        List<Execution> executions = new java.util.ArrayList<>(List.of());
+        List<ApiLightExecution> executions = new java.util.ArrayList<>(List.of());
         long total;
 
         if (rPage != null) {
-            PagedResultsExecution results = executeSearch(runContext, kestraClient, rPage, rSize);
+            PagedResultsApiLightExecution results = executeSearch(runContext, kestraClient, rPage, rSize);
             executions.addAll(results.getResults());
             total = results.getTotal();
         } else {
             int currentPage = 1;
             do {
-                PagedResultsExecution results = executeSearch(runContext, kestraClient, currentPage, rSize);
+                PagedResultsApiLightExecution results = executeSearch(runContext, kestraClient, currentPage, rSize);
                 executions.addAll(results.getResults());
                 total = results.getTotal();
                 currentPage++;
@@ -184,7 +184,7 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
             case STORE -> {
                 File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
                 try (var fileOutput = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
-                    Flux<Execution> flux = Flux.fromIterable(executions);
+                    Flux<ApiLightExecution> flux = Flux.fromIterable(executions);
                     FileSerde.writeAll(fileOutput, flux).block();
                 }
                 yield output.uri(runContext.storage().putFile(tempFile)).build();
@@ -201,7 +201,7 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
 
     }
 
-    private PagedResultsExecution executeSearch(
+    private PagedResultsApiLightExecution executeSearch(
         RunContext runContext,
         KestraClient kestraClient,
         Integer page,
@@ -277,11 +277,12 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
         }
 
         return kestraClient.executions().searchExecutions(
+            tId,
             page,
             size,
-            tId,
             null,
-            filters
+            filters,
+            null
         );
     }
 

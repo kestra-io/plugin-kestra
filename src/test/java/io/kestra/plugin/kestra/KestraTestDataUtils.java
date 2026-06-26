@@ -150,7 +150,7 @@ public class KestraTestDataUtils {
         throws ApiException {
         String np = namespace != null ? namespace : defaultNameSpace;
         try {
-            kestraClient.executions().createExecution(np, flowId, false, tenantId, null, null, null, null, null);
+            kestraClient.executions().createExecution(np, flowId, tenantId, null, false, null, null, null, null);
         } catch (ApiException e) {
             log.error(
                 "ApiException thrown, probably false positive as we are in `createRandomizedExecution` :"
@@ -161,7 +161,7 @@ public class KestraTestDataUtils {
 
     public void killExecution(String executionId, boolean isOnKillCascade) throws ApiException {
         try {
-            kestraClient.executions().killExecution(executionId, isOnKillCascade, tenantId);
+            kestraClient.executions().killExecution(executionId, tenantId, isOnKillCascade);
         } catch (ApiException e) {
             log.error(
                 "ApiException thrown, probably false positive as we are in `killExecution` :"
@@ -170,12 +170,12 @@ public class KestraTestDataUtils {
         }
     }
 
-    public Execution getExecution(String executionId) throws ApiException {
+    public ApiExecution getExecution(String executionId) throws ApiException {
         return kestraClient.executions().execution(executionId, tenantId);
     }
 
     public AssetsControllerApiAsset getAsset(String assetId, boolean allowDeleted) throws ApiException {
-        return kestraClient.assets().asset(assetId, allowDeleted, tenantId);
+        return kestraClient.assets().asset(assetId, tenantId, allowDeleted);
     }
 
     public boolean assetExists(String assetId) {
@@ -189,23 +189,23 @@ public class KestraTestDataUtils {
 
     public PagedResultsAssetsControllerApiAssetUsage getAssetUsagesForNamespace(String namespace) throws ApiException {
         return kestraClient.assets().searchAssetUsages(
-            1, Integer.MAX_VALUE, List.of(
+            List.of(
                 new QueryFilter()
                     .field(QueryFilterField.NAMESPACE)
                     .operation(QueryFilterOp.EQUALS)
                     .value(namespace)
-            ), tenantId, null
+            ), tenantId, 1, Integer.MAX_VALUE, null
         );
     }
 
     public PagedResultsAssetsControllerApiAssetLineageEvent getAssetLineagesForNamespace(String namespace) throws ApiException {
         return kestraClient.assets().searchAssetLineageEvents(
-            1, Integer.MAX_VALUE, List.of(
+            List.of(
                 new QueryFilter()
                     .field(QueryFilterField.NAMESPACE)
                     .operation(QueryFilterOp.EQUALS)
                     .value(namespace)
-            ), tenantId, null
+            ), tenantId, 1, Integer.MAX_VALUE, null
         );
     }
 

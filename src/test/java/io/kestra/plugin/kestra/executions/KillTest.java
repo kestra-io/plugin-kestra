@@ -16,7 +16,8 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.Await;
 import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.sdk.model.Execution;
+import io.kestra.sdk.model.ApiExecution;
+import io.kestra.sdk.model.ApiLightExecution;
 import io.kestra.sdk.model.FlowWithSource;
 import io.kestra.sdk.model.StateType;
 
@@ -43,7 +44,7 @@ class KillTest extends AbstractKestraOssContainerTest {
         kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
 
         // Query the execution
-        Execution beforeExecution = queryExecution(flow.getId());
+        ApiLightExecution beforeExecution = queryExecution(flow.getId());
         Awaitility.await().until(checkExecutionState(beforeExecution.getId(), StateType.PAUSED));
 
         Kill killTask = Kill.builder()
@@ -68,7 +69,7 @@ class KillTest extends AbstractKestraOssContainerTest {
             .atMost(Duration.ofSeconds(2))
             .until(checkExecutionState(beforeExecution.getId(), StateType.KILLED));
 
-        Execution afterExecution = kestraTestDataUtils.getExecution(beforeExecution.getId());
+        ApiExecution afterExecution = kestraTestDataUtils.getExecution(beforeExecution.getId());
 
         assertThat(
             afterExecution.getState().getCurrent(),
@@ -89,11 +90,11 @@ class KillTest extends AbstractKestraOssContainerTest {
         kestraTestDataUtils.createRandomizedExecution(parentFlow.getId(), parentFlow.getNamespace());
 
         // Query the executions
-        Execution parentExecution = queryExecution(parentFlow.getId());
+        ApiLightExecution parentExecution = queryExecution(parentFlow.getId());
         Awaitility.await()
             .atMost(Duration.ofSeconds(2))
             .until(checkExecutionState(parentExecution.getId(), StateType.RUNNING));
-        Execution subExecution = queryExecution(subFlow.getId());
+        ApiLightExecution subExecution = queryExecution(subFlow.getId());
         Awaitility.await()
             .atMost(Duration.ofSeconds(2))
             .until(checkExecutionState(subExecution.getId(), StateType.PAUSED));
@@ -119,7 +120,7 @@ class KillTest extends AbstractKestraOssContainerTest {
         Awaitility.await()
             .atMost(Duration.ofSeconds(5))
             .until(checkExecutionState(parentExecution.getId(), StateType.KILLED));
-        Execution afterSubExecution = kestraTestDataUtils.getExecution(subExecution.getId());
+        ApiExecution afterSubExecution = kestraTestDataUtils.getExecution(subExecution.getId());
 
         assertThat(afterSubExecution.getState().getCurrent(), is(StateType.KILLED));
     }
@@ -137,11 +138,11 @@ class KillTest extends AbstractKestraOssContainerTest {
         kestraTestDataUtils.createRandomizedExecution(parentFlow.getId(), parentFlow.getNamespace());
 
         // Query the executions
-        Execution parentExecution = queryExecution(parentFlow.getId());
+        ApiLightExecution parentExecution = queryExecution(parentFlow.getId());
         Awaitility.await()
             .atMost(Duration.ofSeconds(2))
             .until(checkExecutionState(parentExecution.getId(), StateType.RUNNING));
-        Execution subExecution = queryExecution(subFlow.getId());
+        ApiLightExecution subExecution = queryExecution(subFlow.getId());
         Awaitility.await()
             .atMost(Duration.ofSeconds(2))
             .until(checkExecutionState(subExecution.getId(), StateType.PAUSED));
@@ -192,11 +193,11 @@ class KillTest extends AbstractKestraOssContainerTest {
         kestraTestDataUtils.createRandomizedExecution(parentFlow.getId(), parentFlow.getNamespace());
 
         // Query the executions
-        Execution parentExecution = queryExecution(parentFlow.getId());
+        ApiLightExecution parentExecution = queryExecution(parentFlow.getId());
         Awaitility.await()
             .atMost(Duration.ofSeconds(2))
             .until(checkExecutionState(parentExecution.getId(), StateType.RUNNING));
-        Execution subExecution = queryExecution(subFlow.getId());
+        ApiLightExecution subExecution = queryExecution(subFlow.getId());
         Awaitility.await()
             .atMost(Duration.ofSeconds(2))
             .until(checkExecutionState(subExecution.getId(), StateType.PAUSED));
@@ -223,12 +224,12 @@ class KillTest extends AbstractKestraOssContainerTest {
         Awaitility.await()
             .during(Duration.ofSeconds(2))
             .until(checkExecutionState(subExecution.getId(), StateType.KILLED));
-        Execution afterParentExecution = kestraTestDataUtils.getExecution(parentExecution.getId());
+        ApiExecution afterParentExecution = kestraTestDataUtils.getExecution(parentExecution.getId());
 
         assertThat(afterParentExecution.getState().getCurrent(), is(StateType.KILLED));
     }
 
-    private Execution queryExecution(String flowId) throws Exception {
+    private ApiLightExecution queryExecution(String flowId) throws Exception {
         RunContext runContext = runContextFactory.of();
 
         return Await.until(() ->
@@ -255,7 +256,7 @@ class KillTest extends AbstractKestraOssContainerTest {
 
                 var row = output.getRows().getFirst();
                 if (row instanceof ArrayList<?> arrayList && !arrayList.isEmpty()) {
-                    return (Execution) arrayList.getFirst();
+                    return (ApiLightExecution) arrayList.getFirst();
                 }
                 return null;
             } catch (Exception e) {

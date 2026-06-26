@@ -102,7 +102,7 @@ public class Kill extends AbstractKestraTask implements RunnableTask<VoidOutput>
             .info("Killing execution {} with propagateKill={}", rExecutionId, rPropagateKill);
         KestraClient kestraClient = kestraClient(runContext);
 
-        kestraClient.executions().killExecution(rExecutionId, rPropagateKill, rTenantId);
+        kestraClient.executions().killExecution(rExecutionId, rTenantId, rPropagateKill);
         runContext.logger().debug("Successfully killed execution {}", rExecutionId);
 
         return null;

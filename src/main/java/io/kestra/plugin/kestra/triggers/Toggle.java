@@ -10,7 +10,6 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.VoidOutput;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.model.*;
 
@@ -106,17 +105,11 @@ public class Toggle extends AbstractKestraTask implements RunnableTask<VoidOutpu
             ).filter(Objects::nonNull).toList()
         );
 
-        var disabledTriggers = JacksonMapper.ofJson()
-            .convertValue(kestraClient.triggers().disabledTriggersByQuery(!runContext.render(enabled).as(Boolean.class).orElse(false), rTenantId, filters), TriggerResponse.class);
+        var disabledTriggers = kestraClient.triggers()
+            .disabledTriggersByQuery(rTenantId, filters, !runContext.render(enabled).as(Boolean.class).orElse(false));
 
-        runContext.logger().info("{} triggers found to toggle", disabledTriggers.getCount());
+        runContext.logger().info("{} triggers found to toggle", disabledTriggers.getTotalItems());
 
         return null;
-    }
-
-    @Builder
-    @Getter
-    public static class TriggerResponse {
-        private long count;
     }
 }
