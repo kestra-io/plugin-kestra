@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -116,6 +118,7 @@ public class Toggle extends AbstractKestraTask implements RunnableTask<VoidOutpu
 
     @Builder
     @Getter
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class TriggerResponse {
         private long count;
     }
