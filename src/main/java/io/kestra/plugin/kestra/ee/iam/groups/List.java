@@ -133,18 +133,21 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "List of fetched groups.",
+            title = "List of fetched groups",
             description = "Only populated when using `fetchType=FETCH` or `fetchType=FETCH_ONE`."
         )
         private java.util.List<ApiGroupSummary> groups;
 
         @Schema(
-            title = "Kestra internal storage URI of the stored groups.",
+            title = "Kestra internal storage URI of the stored groups",
             description = "Only populated when using `fetchType=STORE`."
         )
         private URI uri;
 
-        @Schema(title = "Number of fetched groups. Only populated if fetchType is not NONE.")
+        @Schema(
+            title = "Number of fetched groups",
+            description = "Only populated if fetchType is not NONE."
+        )
         private Long size;
     }
 }

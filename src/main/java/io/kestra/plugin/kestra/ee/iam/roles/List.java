@@ -133,18 +133,21 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "List of fetched roles.",
+            title = "List of fetched roles",
             description = "Only populated when using `fetchType=FETCH` or `fetchType=FETCH_ONE`."
         )
         private java.util.List<ApiRoleSummary> roles;
 
         @Schema(
-            title = "Kestra internal storage URI of the stored roles.",
+            title = "Kestra internal storage URI of the stored roles",
             description = "Only populated when using `fetchType=STORE`."
         )
         private URI uri;
 
-        @Schema(title = "Number of fetched roles. Only populated if fetchType is not NONE.")
+        @Schema(
+            title = "Number of fetched roles",
+            description = "Only populated if fetchType is not NONE."
+        )
         private Long size;
     }
 }
