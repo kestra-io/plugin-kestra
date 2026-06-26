@@ -107,7 +107,7 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
             () ->
             {
                 var trigger = findTrigger(namespace, flowId);
-                return trigger != null && trigger.getDate() != null ? trigger : null;
+                return trigger != null && trigger.getEvaluatedAt() != null ? trigger : null;
             },
             Duration.ofMillis(100),
             AWAIT_TIMEOUT
@@ -154,9 +154,9 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
                 var response = kestraTestDataUtils.getKestraClient()
                     .triggers()
                     .searchTriggers(
-                        1,
-                        1,
                         TENANT_ID,
+                        1,
+                        1,
                         null,
                         List.of(
                             new QueryFilter()
@@ -215,10 +215,10 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
         }
     }
 
-    private io.kestra.sdk.model.Trigger findTrigger(String namespace, String flowId) {
+    private io.kestra.sdk.model.ApiTriggerState findTrigger(String namespace, String flowId) {
         return kestraTestDataUtils.getKestraClient()
             .triggers()
-            .searchTriggersForFlow(1, 1000, namespace, flowId, TENANT_ID, null, null)
+            .searchTriggersForFlow(TENANT_ID, namespace, flowId, 1, 1000, null, null)
             .getResults()
             .stream()
             .filter(trigger -> "schedule".equals(trigger.getTriggerId()))

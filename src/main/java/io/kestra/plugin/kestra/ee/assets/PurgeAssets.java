@@ -10,6 +10,7 @@ import org.apache.commons.lang3.NotImplementedException;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Output;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -28,7 +29,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder(toBuilder = true)
 @Getter
@@ -179,9 +179,11 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
 
         String rNamespace = runContext.render(namespace).as(String.class).orElse(null);
         Instant rEndDate = runContext.render(endDate).as(Instant.class).orElse(null);
+        var rTenantForPurge = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         if (runContext.render(purgeAssets).as(Boolean.class).orElse(true)) {
             outputBuilder.purgedAssetsCount(
                 kestraClient.assets().deleteAssetsByQuery(
+                    rTenantForPurge,
                     this.toQueryFilters(
                         rAssetId,
                         rNamespace,
@@ -191,8 +193,7 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
                         QueryFilterField.ID,
                         QueryFilterField.UPDATED
                     ),
-                    true,
-                    runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId())
+                    true
                 ).getCount()
             );
         }
@@ -200,6 +201,7 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
         if (rPurgeAssetUsages) {
             outputBuilder.purgedAssetUsagesCount(
                 kestraClient.assets().deleteAssetUsagesByQuery(
+                    rTenantForPurge,
                     this.toQueryFilters(
                         rAssetId,
                         rNamespace,
@@ -208,8 +210,7 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
                         rEndDate,
                         QueryFilterField.ASSET_ID,
                         QueryFilterField.CREATED
-                    ),
-                    runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId())
+                    )
                 ).getCount()
             );
         }
@@ -217,6 +218,7 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
         if (rPurgeAssetLineages) {
             outputBuilder.purgedAssetLineagesCount(
                 kestraClient.assets().deleteAssetLineageEventsByQuery(
+                    rTenantForPurge,
                     this.toQueryFilters(
                         rAssetId,
                         rNamespace,
@@ -225,8 +227,7 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
                         rEndDate,
                         QueryFilterField.ASSET_ID,
                         QueryFilterField.CREATED
-                    ),
-                    runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId())
+                    )
                 ).getCount()
             );
         }

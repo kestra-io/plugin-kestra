@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
@@ -18,12 +19,10 @@ import io.kestra.plugin.core.trigger.Schedule;
 import io.kestra.plugin.kestra.AbstractKestraTrigger;
 import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.model.*;
-import io.kestra.sdk.model.Trigger;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -32,7 +31,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @NoArgsConstructor
 @Schema(
     title = "Detect unhealthy schedule triggers",
-    description = "Finds SCHEDULE triggers that are overdue, running too long, missing next execution, or optionally disabled. Defaults: poll every 60s, allowedDelay 1 minute, disabled ignored unless includeDisabled is true."
+    description = "Finds SCHEDULE triggers that are overdue, missing next execution, or optionally disabled. Defaults: poll every 60s, allowedDelay 1 minute, disabled ignored unless includeDisabled is true."
 )
 @Plugin(
     examples = {
@@ -89,13 +88,6 @@ public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOut
     private Property<Duration> allowedDelay = Property.ofValue(Duration.ofMinutes(1));
 
     @Schema(
-        title = "Max execution duration",
-        description = "When set, a RUNNING execution longer than this is flagged."
-    )
-    @PluginProperty(group = "execution")
-    private Property<Duration> maxExecutionDuration;
-
-    @Schema(
         title = "Max idle interval between runs",
         description = "Flags schedules with no execution within this period."
     )
@@ -117,11 +109,10 @@ public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOut
     public Output runChecks(RunContext runContext) throws Exception {
         KestraClient client = kestraClient(runContext);
 
-        String tenantId = runContext.flowInfo().tenantId();
+        String tenantId = runContext.render(this.tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         String rNamespace = runContext.render(namespace).as(String.class).orElse(null);
         String rFlowId = runContext.render(flowId).as(String.class).orElse(null);
         boolean rIncludeDisabled = runContext.render(includeDisabled).as(Boolean.class).orElse(false);
-        Duration rMaxExecutionDuration = runContext.render(maxExecutionDuration).as(Duration.class).orElse(null);
         Duration rMaxExecutionInterval = runContext.render(maxExecutionInterval).as(Duration.class).orElse(null);
         Duration rAllowedDelay = runContext.render(allowedDelay).as(Duration.class).orElse(Duration.ofMinutes(1));
 
@@ -152,36 +143,36 @@ public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOut
         }
 
         while ((long) (page - 1) * size < total) {
-            PagedResultsTriggerControllerTriggers response = client.triggers().searchTriggers(page, size, tenantId, null, filters);
+            PagedResultsApiTriggerAndState response = client.triggers().searchTriggers(tenantId, page, size, null, filters);
 
             total = response.getTotal();
-            List<TriggerControllerTriggers> results = response.getResults();
+            List<ApiTriggerAndState> results = response.getResults();
 
             if (results.isEmpty()) {
                 break;
             }
 
-            for (TriggerControllerTriggers t : results) {
+            for (ApiTriggerAndState t : results) {
 
-                if (t.getAbstractTrigger() == null || !Schedule.class.getName().equals(t.getAbstractTrigger().getType())) {
+                if (t.getTrigger() == null || !Schedule.class.getName().equals(t.getTrigger().getType())) {
                     continue;
                 }
 
-                Trigger triggerContext = t.getTriggerContext();
+                ApiTriggerState triggerState = t.getState();
 
-                if (triggerContext == null)
+                if (triggerState == null)
                     continue;
 
-                boolean isDisabled = Boolean.TRUE.equals(t.getAbstractTrigger().getDisabled()) || Boolean.TRUE.equals(triggerContext.getDisabled());
+                boolean isDisabled = Boolean.TRUE.equals(t.getTrigger().getDisabled()) || Boolean.TRUE.equals(triggerState.getDisabled());
 
                 Instant now = Instant.now();
-                Instant lastExec = triggerContext.getDate() != null ? triggerContext.getDate().toInstant() : null;
-                Instant nextExec = triggerContext.getNextExecutionDate() != null ? triggerContext.getNextExecutionDate().toInstant() : null;
+                Instant lastExec = triggerState.getEvaluatedAt() != null ? triggerState.getEvaluatedAt().toInstant() : null;
+                Instant nextExec = triggerState.getNextEvaluationDate() != null ? triggerState.getNextEvaluationDate().toInstant() : null;
 
                 TriggerInfo info = TriggerInfo.builder()
-                    .namespace(triggerContext.getNamespace())
-                    .flowId(triggerContext.getFlowId())
-                    .triggerId(triggerContext.getTriggerId())
+                    .namespace(triggerState.getNamespace())
+                    .flowId(triggerState.getFlowId())
+                    .triggerId(triggerState.getTriggerId())
                     .lastExecution(lastExec)
                     .expectedNext(nextExec)
                     .build();
@@ -193,21 +184,8 @@ public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOut
                     continue;
                 }
 
-                if (triggerContext.getBackfill() != null) {
+                if (triggerState.getBackfill() != null) {
                     continue;
-                }
-
-                if (rMaxExecutionDuration != null && triggerContext.getExecutionId() != null) {
-                    io.kestra.sdk.model.Execution exec = client.executions().execution(triggerContext.getExecutionId(), tenantId);
-
-                    if (exec.getState() != null && exec.getState().getCurrent() == StateType.RUNNING && exec.getState().getStartDate() != null) {
-
-                        Instant start = exec.getState().getStartDate().toInstant();
-                        if (Duration.between(start, now).compareTo(rMaxExecutionDuration) > 0) {
-                            detectedTriggers.add(info);
-                            continue;
-                        }
-                    }
                 }
 
                 if (rMaxExecutionInterval != null && lastExec != null) {

@@ -71,7 +71,8 @@ public class AbstractKestraTaskTest extends AbstractKestraOssContainerTest {
 
         Exception exception = assertThrows(Exception.class, () -> task.run(runContext));
 
+        // Message format is locale-dependent (e.g. "connexion refusée" in French), check only the stable parts
         String message = exception.getMessage().toLowerCase();
-        assertThat(message.contains("failed: connection refused") && message.contains("localhost:8080"), is(true));
+        assertThat(message.contains("localhost:8080") && message.contains("failed:"), is(true));
     }
 }

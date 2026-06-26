@@ -1,0 +1,8 @@
+group: io.kestra.plugin.kestra.ee.iam.tenantAccess
+name: "tenantAccess"
+title: "Kestra IAM Tenant Access"
+description: "Tasks that grant or revoke tenant-level access for users."
+body: "Set the Kestra API URL and auth token to assign or remove a user's access to the current tenant, enabling automated tenant membership management from orchestrated workflows."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
