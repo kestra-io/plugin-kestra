@@ -18,6 +18,9 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
+import io.kestra.sdk.model.QueryFilter;
+import io.kestra.sdk.model.QueryFilterField;
+import io.kestra.sdk.model.QueryFilterOp;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -128,15 +131,23 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
 
             List<String> taskIds = runContext.render(this.tasksId).asList(String.class);
 
+            QueryFilter levelFilter = new QueryFilter()
+                .field(QueryFilterField.LEVEL)
+                .operation(QueryFilterOp.GREATER_THAN_OR_EQUAL_TO)
+                .value(sdkLogLevel);
+
             if (!taskIds.isEmpty()) {
                 for (String taskId : taskIds) {
                     var logs = kestraClient.logs().listLogsFromExecution(
                         executionInfo.id(),
                         targetTenantId,
-                        sdkLogLevel,
-                        null,
-                        taskId,
-                        null
+                        List.of(
+                            levelFilter,
+                            new QueryFilter()
+                                .field(QueryFilterField.TASK_ID)
+                                .operation(QueryFilterOp.EQUALS)
+                                .value(taskId)
+                        )
                     );
 
                     if (logs != null) {
@@ -151,10 +162,7 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
                 var logs = kestraClient.logs().listLogsFromExecution(
                     executionInfo.id(),
                     targetTenantId,
-                    sdkLogLevel,
-                    null,
-                    null,
-                    null
+                    List.of(levelFilter)
                 );
 
                 if (logs != null) {

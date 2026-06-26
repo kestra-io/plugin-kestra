@@ -186,8 +186,6 @@ public class FreshnessTrigger extends AbstractKestraTrigger implements PollingTr
         String tenantId = runContext.render(this.tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         do {
             PagedResultsAssetsControllerApiAsset results = kestraClient.assets().searchAssets(
-                currentPage,
-                size,
                 toQueryFilters(
                     runContext.render(assetId).as(String.class).orElse(null),
                     runContext.render(namespace).as(String.class).orElse(null),
@@ -196,6 +194,8 @@ public class FreshnessTrigger extends AbstractKestraTrigger implements PollingTr
                     now.minus(runContext.render(maxStaleness).as(Duration.class).orElseThrow())
                 ),
                 tenantId,
+                currentPage,
+                size,
                 null
             );
             fetchedAssets.addAll(results.getResults());

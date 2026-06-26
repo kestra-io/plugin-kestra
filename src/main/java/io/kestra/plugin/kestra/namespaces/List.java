@@ -10,6 +10,9 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.model.PagedResultsNamespace;
+import io.kestra.sdk.model.QueryFilter;
+import io.kestra.sdk.model.QueryFilterField;
+import io.kestra.sdk.model.QueryFilterOp;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
@@ -116,16 +119,26 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         KestraClient kestraClient = kestraClient(runContext);
         java.util.List<String> allNamespaces = new ArrayList<String>();
 
+        java.util.List<QueryFilter> filters = new ArrayList<>();
+        if (!ns.isEmpty()) {
+            filters.add(
+                new QueryFilter()
+                    .field(QueryFilterField.QUERY)
+                    .operation(QueryFilterOp.EQUALS)
+                    .value(ns)
+            );
+        }
+
         // If page is provided, fetch only that specific page
         if (rPage != null) {
             PagedResultsNamespace results = kestraClient.namespaces()
                 .searchNamespaces(
+                    filters,
+                    tId,
                     rPage,
                     rSize,
-                    rExistingOnly,
-                    tId,
-                    ns,
-                    null
+                    null,
+                    rExistingOnly
                 );
             results.getResults().forEach(namespace -> allNamespaces.add(namespace.getId()));
         } else {
@@ -134,12 +147,12 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
             do {
                 PagedResultsNamespace results = kestraClient.namespaces()
                     .searchNamespaces(
+                        filters,
+                        tId,
                         currentPage,
                         rSize,
-                        rExistingOnly,
-                        tId,
-                        ns,
-                        null
+                        null,
+                        rExistingOnly
                     );
                 results.getResults().forEach(namespace -> allNamespaces.add(namespace.getId()));
                 total = results.getTotal();

@@ -13,7 +13,7 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
-import io.kestra.sdk.model.PagedResultsExecution;
+import io.kestra.sdk.model.PagedResultsApiLightExecution;
 import io.kestra.sdk.model.QueryFilter;
 import io.kestra.sdk.model.QueryFilterField;
 import io.kestra.sdk.model.QueryFilterOp;
@@ -161,12 +161,13 @@ public class Count extends AbstractKestraTask implements RunnableTask<Count.Outp
             );
         }
 
-        PagedResultsExecution results = client.executions().searchExecutions(
-            1,
-            1,
+        PagedResultsApiLightExecution results = client.executions().searchExecutions(
             rTenantId,
+            1,
+            1,
             null,
-            filters
+            filters,
+            null
         );
 
         long count = results.getTotal();
