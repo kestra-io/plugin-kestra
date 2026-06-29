@@ -3,6 +3,7 @@ package io.kestra.plugin.kestra;
 import java.util.Optional;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
@@ -12,7 +13,6 @@ import io.kestra.sdk.KestraClient;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
@@ -44,9 +44,8 @@ public abstract class AbstractKestraTask extends Task {
     @PluginProperty(group = "connection")
     protected Property<String> tenantId;
 
-    protected KestraClient kestraClient(RunContext runContext) throws IllegalVariableEvaluationException {
-        // use the kestraUrl property if set, otherwise the config value, or else the default
-        String rKestraUrl = runContext.render(kestraUrl).as(String.class)
+    protected String resolveKestraUrl(RunContext runContext) throws IllegalVariableEvaluationException {
+        String raw = runContext.render(kestraUrl).as(String.class)
             .orElseGet(() ->
             {
                 try {
@@ -55,10 +54,13 @@ public abstract class AbstractKestraTask extends Task {
                     return DEFAULT_KESTRA_URL;
                 }
             });
+        return raw.trim().replaceAll("/+$", "");
+    }
 
-        runContext.logger().info("Kestra URL: {}", rKestraUrl);
+    protected KestraClient kestraClient(RunContext runContext) throws IllegalVariableEvaluationException {
+        String normalizedUrl = resolveKestraUrl(runContext);
 
-        String normalizedUrl = rKestraUrl.trim().replaceAll("/+$", "");
+        runContext.logger().info("Kestra URL: {}", normalizedUrl);
 
         var builder = KestraClient.builder();
         builder.url(normalizedUrl);

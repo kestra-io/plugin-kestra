@@ -1,0 +1,8 @@
+group: io.kestra.plugin.kestra.ee.iam.roles
+name: "roles"
+title: "Kestra IAM Roles"
+description: "Tasks that create, list, and delete IAM roles."
+body: "Set the Kestra API URL and auth token to upsert roles with specific permissions, list existing roles, or delete them by name, enabling automated role lifecycle management from orchestrated workflows."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

@@ -17,7 +17,7 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.Await;
 import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.sdk.model.Execution;
+import io.kestra.sdk.model.ApiLightExecution;
 import io.kestra.sdk.model.FlowWithSource;
 import io.kestra.sdk.model.StateType;
 
@@ -45,7 +45,7 @@ public class DeleteTest extends AbstractKestraOssContainerTest {
         kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
 
         // Query an execution for a given flow
-        Execution execution = queryExecution(flow.getId());
+        var execution = queryExecution(flow.getId());
         assertThat(execution.getId(), is(notNullValue()));
 
         // Delete the execution
@@ -81,7 +81,7 @@ public class DeleteTest extends AbstractKestraOssContainerTest {
 
         // Query an execution for a given flow
         Thread.sleep(500);
-        Execution execution = queryExecution(flow.getId());
+        var execution = queryExecution(flow.getId());
         assertThat(execution.getId(), is(notNullValue()));
 
         // Delete the execution
@@ -126,7 +126,7 @@ public class DeleteTest extends AbstractKestraOssContainerTest {
         kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
 
         // Query an execution for a given flow and wait for it to reach PAUSED
-        Execution beforeExecution = queryExecution(flow.getId());
+        var beforeExecution = queryExecution(flow.getId());
         Awaitility.await()
             .atMost(Duration.ofSeconds(5))
             .until(checkExecutionState(beforeExecution.getId(), StateType.PAUSED));
@@ -138,7 +138,7 @@ public class DeleteTest extends AbstractKestraOssContainerTest {
         Awaitility.await()
             .atMost(Duration.ofSeconds(5))
             .until(checkExecutionState(beforeExecution.getId(), StateType.KILLED));
-        Execution afterExecution = kestraTestDataUtils.getExecution(beforeExecution.getId());
+        var afterExecution = kestraTestDataUtils.getExecution(beforeExecution.getId());
         assertThat(afterExecution.getState().getCurrent(), is(StateType.KILLED));
 
         // Delete the execution
@@ -163,7 +163,7 @@ public class DeleteTest extends AbstractKestraOssContainerTest {
         assertThat(output, is(nullValue()));
     }
 
-    private Execution queryExecution(String flowId) throws Exception {
+    private ApiLightExecution queryExecution(String flowId) throws Exception {
         RunContext runContext = runContextFactory.of();
 
         return Await.until(
@@ -190,10 +190,10 @@ public class DeleteTest extends AbstractKestraOssContainerTest {
                         return null;
                     }
 
-                    Execution execution = null;
+                    ApiLightExecution execution = null;
                     var row = output.getRows().getFirst();
                     if (row instanceof ArrayList<?> arrayList && !arrayList.isEmpty()) {
-                        execution = (Execution) arrayList.getFirst();
+                        execution = (ApiLightExecution) arrayList.getFirst();
                     }
 
                     return execution;

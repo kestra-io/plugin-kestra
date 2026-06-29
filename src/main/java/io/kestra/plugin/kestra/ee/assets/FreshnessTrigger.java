@@ -16,6 +16,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.assets.Asset;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
@@ -35,7 +36,6 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -186,17 +186,17 @@ public class FreshnessTrigger extends AbstractKestraTrigger implements PollingTr
         String tenantId = runContext.render(this.tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         do {
             PagedResultsAssetsControllerApiAsset results = kestraClient.assets().searchAssets(
+                tenantId,
                 currentPage,
                 size,
+                null,
                 toQueryFilters(
                     runContext.render(assetId).as(String.class).orElse(null),
                     runContext.render(namespace).as(String.class).orElse(null),
                     runContext.render(assetType).as(String.class).orElse(null),
                     runContext.render(metadataQuery).asList(FieldQuery.class),
                     now.minus(runContext.render(maxStaleness).as(Duration.class).orElseThrow())
-                ),
-                tenantId,
-                null
+                )
             );
             fetchedAssets.addAll(results.getResults());
             total = results.getTotal();

@@ -1,0 +1,8 @@
+group: io.kestra.plugin.kestra.ee.iam.invitations
+name: "invitations"
+title: "Kestra IAM Invitations"
+description: "Tasks that create, list, and delete user invitations."
+body: "Provide the Kestra API URL, auth token, and an email address with optional roles to send invitations, enumerate pending invitations, or revoke them before acceptance."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
