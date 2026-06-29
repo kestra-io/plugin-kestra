@@ -106,8 +106,8 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
         Await.until(
             () ->
             {
-                var trigger = findTrigger(namespace, flowId);
-                return trigger != null && trigger.getEvaluatedAt() != null ? trigger : null;
+                // date is set immediately in v1.3; evaluatedAt is set after first fire in v2.0
+                return findTrigger(namespace, flowId);
             },
             Duration.ofMillis(100),
             AWAIT_TIMEOUT
