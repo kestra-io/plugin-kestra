@@ -1,0 +1,8 @@
+group: io.kestra.plugin.kestra.dashboards
+name: "dashboards"
+title: "Kestra Dashboards"
+description: "Tasks that export Kestra dashboard chart data."
+body: "Set the Kestra API URL, dashboard and chart identifiers, and auth token to export chart data as CSV or ION files, ready to attach to a scheduled report."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

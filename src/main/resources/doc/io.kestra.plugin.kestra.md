@@ -8,6 +8,10 @@ Set `kestraUrl` to the target instance URL. Authenticate via `auth.apiToken` (Be
 
 ## Tasks
 
+### Dashboards
+
+`dashboards.Export` exports a dashboard's chart data to file(s) — optionally set `dashboardId` (defaults to the tenant's default dashboard) and `chartId` (defaults to every non-Markdown chart). Set `format` (default `CSV`, also supports `ION`) and optionally override `startDate`/`endDate`. The output includes `files`, a map of chart id to exported file URI.
+
 ### Executions
 
 `executions.Count` counts executions matching optional filters — filter by `namespaces`, `flowId`, `states`, `startDate`, `endDate`, or `expression`. The output includes `count`.
