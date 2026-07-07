@@ -10,6 +10,8 @@ import java.util.Map;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.dashboards.charts.DataChart;
+import io.kestra.core.models.dashboards.charts.DataChartKPI;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
@@ -76,7 +78,6 @@ import lombok.experimental.SuperBuilder;
     }
 )
 public class Export extends AbstractKestraTask implements RunnableTask<Export.Output> {
-    private static final String MARKDOWN_CHART_TYPE = "io.kestra.plugin.core.dashboard.chart.Markdown";
     private static final String DEFAULT_DASHBOARD_ID = "_default";
 
     @Schema(title = "Dashboard id", description = "Identifier of the dashboard to export from. Defaults to the current tenant's default dashboard.")
@@ -143,9 +144,18 @@ public class Export extends AbstractKestraTask implements RunnableTask<Export.Ou
         }
 
         return dashboard.getCharts().stream()
-            .filter(chart -> !MARKDOWN_CHART_TYPE.equals(chart.getType()))
+            .filter(Export::isExportableChart)
             .map(ChartChartOption::getId)
             .toList();
+    }
+
+    private static boolean isExportableChart(ChartChartOption chart) {
+        try {
+            Class<?> chartClass = Class.forName(chart.getType());
+            return DataChart.class.isAssignableFrom(chartClass) || DataChartKPI.class.isAssignableFrom(chartClass);
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
     }
 
     public enum Format {
