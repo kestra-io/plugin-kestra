@@ -2,6 +2,7 @@ package io.kestra.plugin.kestra.namespaces;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
@@ -12,7 +13,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder(toBuilder = true)
 @ToString
@@ -38,7 +38,7 @@ import io.kestra.core.models.annotations.PluginProperty;
                     kestraUrl: http://localhost:8080
                     auth:
                       username: admin@kestra.io # pass your Kestra username as secret or KV pair
-                      password: Admin1234 # pass your Kestra password as secret or KV pair
+                      password: "{{ secret('KESTRA_PASSWORD') }}" # pass your Kestra password as secret or KV pair
                 """
         ),
         @Example(
@@ -54,7 +54,7 @@ import io.kestra.core.models.annotations.PluginProperty;
                     kestraUrl: https://my-ee-instance.io
                     auth:
                       username: admin@kestra.io # pass your Kestra username as secret or KV pair
-                      password: Admin1234 # pass your Kestra password as secret or KV pair
+                      password: "{{ secret('KESTRA_PASSWORD') }}" # pass your Kestra password as secret or KV pair
                     prefix: dev
                     tenantId: mytenant
                 """

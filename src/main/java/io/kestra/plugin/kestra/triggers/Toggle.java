@@ -4,8 +4,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.VoidOutput;
@@ -17,7 +20,6 @@ import io.kestra.sdk.model.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -107,7 +109,7 @@ public class Toggle extends AbstractKestraTask implements RunnableTask<VoidOutpu
         );
 
         var disabledTriggers = JacksonMapper.ofJson()
-            .convertValue(kestraClient.triggers().disabledTriggersByQuery(!runContext.render(enabled).as(Boolean.class).orElse(false), rTenantId, filters), TriggerResponse.class);
+            .convertValue(kestraClient.triggers().disabledTriggersByQuery(rTenantId, !runContext.render(enabled).as(Boolean.class).orElse(false), filters), TriggerResponse.class);
 
         runContext.logger().info("{} triggers found to toggle", disabledTriggers.getCount());
 
@@ -116,6 +118,7 @@ public class Toggle extends AbstractKestraTask implements RunnableTask<VoidOutpu
 
     @Builder
     @Getter
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class TriggerResponse {
         private long count;
     }

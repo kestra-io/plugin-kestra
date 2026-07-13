@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
 
-import io.kestra.core.serializers.YamlParser;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.containers.GenericContainer;
@@ -13,6 +12,7 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import io.kestra.core.serializers.YamlParser;
 import io.kestra.sdk.internal.ApiException;
 
 import lombok.extern.slf4j.Slf4j;

@@ -11,6 +11,7 @@ import org.slf4j.event.Level;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
@@ -24,7 +25,6 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwConsumer;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -61,12 +61,20 @@ import io.kestra.core.models.annotations.PluginProperty;
                 """
         ),
         @Example(
-            code = {
-                "level: WARN",
-                "executionId: \"{{ execution.id }}\"",
-                "tasksId: ",
-                "  - \"previous_task_id\""
-            }
+            title = "Fetch WARN logs for a specific execution and task",
+            full = true,
+            code = """
+                id: kestra_logs_fetch
+                namespace: company.team
+
+                tasks:
+                  - id: fetch
+                    type: io.kestra.plugin.kestra.logs.Fetch
+                    level: WARN
+                    executionId: "{{ execution.id }}"
+                    tasksId:
+                      - "previous_task_id"
+                """
         )
     }
 )

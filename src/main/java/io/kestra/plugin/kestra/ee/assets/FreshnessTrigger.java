@@ -16,6 +16,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.assets.Asset;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
@@ -35,7 +36,6 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -136,11 +136,18 @@ import io.kestra.core.models.annotations.PluginProperty;
         )
     }
 )
+@Schema(
+    title = "Trigger on Kestra asset freshness",
+    description = "Polls Kestra EE data assets and fires an execution when an asset has not been updated within the configured maximum staleness."
+)
 public class FreshnessTrigger extends AbstractKestraTrigger implements PollingTriggerInterface, TriggerOutput<FreshnessTrigger.Output> {
+    @Schema(title = "Asset id to monitor")
     private Property<String> assetId;
 
+    @Schema(title = "Namespace to filter assets by")
     private Property<String> namespace;
 
+    @Schema(title = "Asset type to filter by")
     private Property<String> assetType;
 
     @Schema(
@@ -151,12 +158,13 @@ public class FreshnessTrigger extends AbstractKestraTrigger implements PollingTr
     private Property<Duration> maxStaleness;
 
     @Schema(
-        title = "How often the trigger should check for stale assets. Default is 1 hour."
+        title = "How often the trigger should check for stale assets. Default is 1 hour"
     )
     @Builder.Default
     @PluginProperty(group = "execution")
     private final Duration interval = Duration.ofHours(1);
 
+    @Schema(title = "Metadata field queries to filter assets by")
     private Property<List<FieldQuery>> metadataQuery;
 
     @Hidden
@@ -178,17 +186,17 @@ public class FreshnessTrigger extends AbstractKestraTrigger implements PollingTr
         String tenantId = runContext.render(this.tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         do {
             PagedResultsAssetsControllerApiAsset results = kestraClient.assets().searchAssets(
+                tenantId,
                 currentPage,
                 size,
+                null,
                 toQueryFilters(
                     runContext.render(assetId).as(String.class).orElse(null),
                     runContext.render(namespace).as(String.class).orElse(null),
                     runContext.render(assetType).as(String.class).orElse(null),
                     runContext.render(metadataQuery).asList(FieldQuery.class),
                     now.minus(runContext.render(maxStaleness).as(Duration.class).orElseThrow())
-                ),
-                tenantId,
-                null
+                )
             );
             fetchedAssets.addAll(results.getResults());
             total = results.getTotal();

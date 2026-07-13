@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.flows.State;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -21,7 +22,6 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.plugin.kestra.ee.tests.RunTest.logTestCase;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -176,6 +176,7 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
         )
         private Long testSuitesRunFailedCount;
 
+        @Schema(title = "Task state override applied based on the test result")
         @Builder.Default
         private Optional<State.Type> taskStateOverride = Optional.empty();
 

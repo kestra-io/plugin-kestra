@@ -4,20 +4,20 @@ import java.util.Map;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.VoidOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
-import io.kestra.sdk.model.Execution;
+import io.kestra.sdk.model.ApiExecution;
 import io.kestra.sdk.model.StateType;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -109,7 +109,7 @@ public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutpu
             );
 
         KestraClient kestraClient = kestraClient(runContext);
-        Execution execution = kestraClient.executions().execution(rExecutionId, rTenantId);
+        ApiExecution execution = kestraClient.executions().execution(rExecutionId, rTenantId);
 
         if (execution == null) {
             throw new IllegalArgumentException("Execution " + rExecutionId + " not found");

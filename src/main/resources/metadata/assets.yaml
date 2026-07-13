@@ -1,0 +1,8 @@
+group: io.kestra.plugin.kestra.ee.assets
+name: "assets"
+title: "Kestra Assets"
+description: "Tasks and triggers to manage Kestra EE data assets."
+body: "Set the Kestra API URL and auth token to list, set, delete, and purge assets, or trigger on asset freshness."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

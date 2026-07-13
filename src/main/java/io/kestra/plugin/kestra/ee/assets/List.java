@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchType;
@@ -28,7 +29,6 @@ import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 import static io.kestra.core.utils.Rethrow.throwConsumer;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder(toBuilder = true)
 @Getter
@@ -125,15 +125,16 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         var kestraClient = kestraClient(runContext);
 
         java.util.List<AssetsControllerApiAsset> fetchedAssets;
+        var rTenantForAssets = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         if (rPage != null) {
             fetchedAssets = kestraClient.assets().searchAssets(
+                rTenantForAssets,
                 rPage,
                 rSize,
+                null,
                 toQueryFilters(
                     runContext.render(namespace).as(String.class).orElse(null), runContext.render(types).asList(String.class), runContext.render(metadataQuery).asList(FieldQuery.class)
-                ),
-                runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId()),
-                null
+                )
             ).getResults();
         } else {
             fetchedAssets = new ArrayList<>();
@@ -142,13 +143,13 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
             long total;
             do {
                 PagedResultsAssetsControllerApiAsset results = kestraClient.assets().searchAssets(
+                    rTenantForAssets,
                     currentPage,
                     rSize,
+                    null,
                     toQueryFilters(
                         runContext.render(namespace).as(String.class).orElse(null), runContext.render(types).asList(String.class), runContext.render(metadataQuery).asList(FieldQuery.class)
-                    ),
-                    runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId()),
-                    null
+                    )
                 );
                 fetchedAssets.addAll(results.getResults());
                 total = results.getTotal();
@@ -231,19 +232,19 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "List containing the fetched assets.",
+            title = "List containing the fetched assets",
             description = "Only populated if using `fetchType=FETCH`."
         )
         private java.util.List<AssetsControllerApiAsset> assets;
 
         @Schema(
-            title = "First fetched asset.",
+            title = "First fetched asset",
             description = "Only populated if using `fetchType=FETCH_ONE`."
         )
         private AssetsControllerApiAsset asset;
 
         @Schema(
-            title = "Kestra's internal storage URI of the stored assets.",
+            title = "Kestra's internal storage URI of the stored assets",
             description = "Only populated if using `fetchType=STORE`."
         )
         private URI uri;
