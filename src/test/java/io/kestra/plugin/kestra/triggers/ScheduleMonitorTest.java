@@ -64,8 +64,8 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
             .includeDisabled(Property.ofValue(false))
             .build();
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, monitor1);
-        Optional<Execution> execution = monitor1.evaluate(context.getKey(), context.getValue());
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, monitor1);
+        Optional<Execution> execution = monitor1.evaluate(context.getKey(), context.getValue().context());
 
         assertThat(execution.isPresent(), is(false));
 
@@ -79,10 +79,10 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
             .includeDisabled(Property.ofValue(true))
             .build();
 
-        var context2 = TestsUtils.mockTrigger(runContextFactory, monitor2);
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context2 = TestsUtils.mockTrigger(runContextFactory, monitor2);
         execution = Optional.ofNullable(
             Await.until(
-                () -> evaluate(monitor2, context2.getKey(), context2.getValue()).orElse(null),
+                () -> evaluate(monitor2, context2.getKey(), context2.getValue().context()).orElse(null),
                 Duration.ofMillis(100),
                 AWAIT_TIMEOUT
             )
@@ -123,10 +123,10 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
             .maxExecutionInterval(Property.ofValue(Duration.ofSeconds(1)))
             .build();
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, monitor);
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, monitor);
 
         var execution = Await.until(
-            () -> evaluate(monitor, context.getKey(), context.getValue()).orElse(null),
+            () -> evaluate(monitor, context.getKey(), context.getValue().context()).orElse(null),
             Duration.ofMillis(100),
             AWAIT_TIMEOUT
         );
@@ -181,7 +181,7 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
             .includeDisabled(Property.ofValue(true))
             .build();
 
-        var context = TestsUtils.mockTrigger(runContextFactory, monitor);
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, monitor);
         var output = runChecks(monitor, context.getKey());
 
         assertThat(output.getData(), hasSize(flowCount));
@@ -197,7 +197,7 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
     private Optional<Execution> evaluate(
         ScheduleMonitor monitor,
         ConditionContext conditionContext,
-        io.kestra.core.models.triggers.Trigger triggerContext) {
+        io.kestra.core.models.triggers.TriggerContext triggerContext) {
         try {
             return monitor.evaluate(conditionContext, triggerContext);
         } catch (Exception e) {
