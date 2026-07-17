@@ -1,5 +1,8 @@
 package io.kestra.plugin.kestra.executions;
 
+import java.util.List;
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 
 import io.kestra.core.junit.annotations.KestraTest;
@@ -50,5 +53,44 @@ public class QueryTest extends AbstractKestraOssContainerTest {
         assertThat(output, is(notNullValue()));
         assertThat(output.getRows(), is(notNullValue()));
         assertThat(output.getRows().size(), is(greaterThanOrEqualTo(1)));
+    }
+
+    @Test
+    public void shouldSearchExecutionsByLabel() throws Exception {
+        RunContext runContext = runContextFactory.of();
+
+        FlowWithSource flow = kestraTestDataUtils.createRandomizedFlow(NAMESPACE);
+        kestraTestDataUtils.getKestraClient().executions().createExecution(
+            TENANT_ID, flow.getNamespace(), flow.getId(), List.of("key:value"), false, null, null, null, null
+        );
+
+        Query matchingLabel = Query.builder()
+            .kestraUrl(Property.ofValue(KESTRA_URL))
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
+            .tenantId(Property.ofValue(TENANT_ID))
+            .namespace(Property.ofValue(NAMESPACE))
+            .labels(Property.ofValue(Map.of("key", "value")))
+            .size(Property.ofValue(10))
+            .fetchType(Property.ofValue(io.kestra.core.models.tasks.common.FetchType.FETCH))
+            .build();
+
+        FetchOutput matchingOutput = matchingLabel.run(runContext);
+
+        assertThat(matchingOutput, is(notNullValue()));
+        assertThat(matchingOutput.getSize(), is(greaterThanOrEqualTo(1L)));
+
+        Query nonMatchingLabel = matchingLabel.toBuilder()
+            .labels(Property.ofValue(Map.of("key", "wrong-value")))
+            .build();
+
+        FetchOutput nonMatchingOutput = nonMatchingLabel.run(runContext);
+
+        assertThat(nonMatchingOutput, is(notNullValue()));
+        assertThat(nonMatchingOutput.getSize(), is(0L));
     }
 }
