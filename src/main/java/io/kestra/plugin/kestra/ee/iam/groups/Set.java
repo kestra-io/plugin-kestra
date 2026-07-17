@@ -72,7 +72,7 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
         var rDescription = runContext.render(groupDescription).as(String.class).orElse(null);
 
         var existing = kestraClient.groups().searchGroups(
-            rTenant, 1, 100, null,
+            rTenant, 1, 100, null, null,
             List.of(new QueryFilter().field(QueryFilterField.NAME).operation(QueryFilterOp.EQUALS).value(rName))
         ).getResults();
 
