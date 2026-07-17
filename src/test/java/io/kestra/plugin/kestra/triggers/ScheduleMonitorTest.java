@@ -34,6 +34,9 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
     RunContextFactory runContextFactory;
 
     private static final String NAMESPACE_PREFIX = "kestra.tests.schedule.monitor";
+    // Scheduler initializes trigger state at next minute boundary; allow up to 5 min
+    // to avoid flakiness when container is under load (see ToggleTest for the same pattern).
+    private static final Duration INITIAL_AWAIT_TIMEOUT = Duration.ofMinutes(5);
     private static final Duration AWAIT_TIMEOUT = Duration.ofMinutes(2);
 
     @Test
@@ -51,7 +54,7 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
         Await.until(
             () -> findTrigger(namespace, flowId),
             Duration.ofMillis(100),
-            AWAIT_TIMEOUT
+            INITIAL_AWAIT_TIMEOUT
         );
 
         ScheduleMonitor monitor1 = ScheduleMonitor.builder()
@@ -110,7 +113,7 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
                 return findTrigger(namespace, flowId);
             },
             Duration.ofMillis(100),
-            AWAIT_TIMEOUT
+            INITIAL_AWAIT_TIMEOUT
         );
 
         ScheduleMonitor monitor = ScheduleMonitor.builder()
@@ -168,7 +171,7 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
                 return response.getTotal() >= flowCount ? response : null;
             },
             Duration.ofMillis(100),
-            AWAIT_TIMEOUT
+            INITIAL_AWAIT_TIMEOUT
         );
 
         var monitor = ScheduleMonitor.builder()
