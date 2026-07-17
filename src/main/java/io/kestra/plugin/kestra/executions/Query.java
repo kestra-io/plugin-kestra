@@ -269,9 +269,9 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
             {
                 filters.add(
                     new QueryFilter()
-                        .field(QueryFilterField.STATE)
+                        .field(QueryFilterField.LABELS)
                         .operation(QueryFilterOp.EQUALS)
-                        .value(key + ":" + value)
+                        .value(Map.of(key, value))
                 );
             });
         }
