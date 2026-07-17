@@ -55,6 +55,43 @@ public class ResumeTest extends AbstractKestraOssContainerTest {
     }
 
     @Test
+    public void shouldResumePausedExecutionWithInputs() throws Exception {
+        FlowWithSource flow = kestraTestDataUtils.createRandomizedPauseFlowWithInputs(NAMESPACE);
+        kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
+
+        Thread.sleep(1000);
+        var pausedExecution = queryExecution(flow.getId());
+        assertThat(
+            "Execution should start in PAUSED state",
+            pausedExecution.getState().getCurrent(), is(StateType.PAUSED)
+        );
+
+        RunContext runContext = createRunContext(pausedExecution.getId());
+
+        // onResume declares a required input, so resume only succeeds if inputs are forwarded
+        Resume resumeTask = Resume.builder()
+            .kestraUrl(Property.ofValue(KESTRA_URL))
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
+            .tenantId(Property.ofValue(TENANT_ID))
+            .executionId(Property.ofValue(pausedExecution.getId()))
+            .inputs(Property.ofValue(Map.of("quorum_status", "TIMEOUT")))
+            .build();
+        resumeTask.run(runContext);
+
+        Thread.sleep(1000);
+        var resumedExecution = queryExecution(flow.getId());
+        assertThat(
+            "Execution should no longer be PAUSED",
+            resumedExecution.getState().getCurrent(), not(StateType.PAUSED)
+        );
+    }
+
+    @Test
     public void shouldFailToResumeFinishedExecution() throws Exception {
         RunContext runContext = runContextFactory.of();
         FlowWithSource flow = kestraTestDataUtils.createRandomizedFlow(NAMESPACE);

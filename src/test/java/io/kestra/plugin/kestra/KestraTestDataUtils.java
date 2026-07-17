@@ -97,6 +97,25 @@ public class KestraTestDataUtils {
         return kestraClient.flows().createFlow(tenantId, flow);
     }
 
+    public FlowWithSource createRandomizedPauseFlowWithInputs(@Nullable String namespace) throws ApiException {
+        String np = namespace != null ? namespace : "default";
+        String flow = """
+            id: random_flow_%s
+            namespace: %s
+
+            tasks:
+              - id: pause
+                type: io.kestra.plugin.core.flow.Pause
+                onResume:
+                  - id: quorum_status
+                    type: STRING
+                    required: true
+            """
+            .formatted(UUID.randomUUID().toString().substring(0, 8).replace("-", "_"), np);
+
+        return kestraClient.flows().createFlow(tenantId, flow);
+    }
+
     public FlowWithSource createRandomizedFlowWithLabel(@Nullable String namespace)
         throws ApiException {
         String np = namespace != null ? namespace : "default";
