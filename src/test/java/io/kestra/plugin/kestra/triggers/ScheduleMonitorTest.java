@@ -87,7 +87,7 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
             Await.until(
                 () -> evaluate(monitor2, context2.getKey(), context2.getValue()).orElse(null),
                 Duration.ofMillis(100),
-                AWAIT_TIMEOUT
+                INITIAL_AWAIT_TIMEOUT
             )
         );
 
