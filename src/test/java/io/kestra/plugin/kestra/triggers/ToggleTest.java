@@ -30,6 +30,9 @@ class ToggleTest extends AbstractKestraOssContainerTest {
     private static final String NAMESPACE = "kestra.tests.trigger.toggle";
     private static final String FLOW_ID = "toggle-flow";
     private static final String TRIGGER_ID = "schedule";
+    // Scheduler registers the trigger state row at the next minute boundary; allow up to 5 min
+    // so registration survives a scheduler backlog on the shared container.
+    private static final Duration INITIAL_AWAIT_TIMEOUT = Duration.ofMinutes(5);
     private static final Duration AWAIT_TIMEOUT = Duration.ofMinutes(2);
 
     private final List<String> createdFlowIds = new ArrayList<>();
@@ -52,6 +55,14 @@ class ToggleTest extends AbstractKestraOssContainerTest {
             false
         );
         createdFlowIds.add(flowId);
+
+        // Toggle's disabledTriggersByQuery only updates trigger-state rows that already exist, so
+        // wait for the scheduler to register the trigger before toggling it.
+        Await.until(
+            () -> findTrigger(flowId),
+            Duration.ofSeconds(1),
+            INITIAL_AWAIT_TIMEOUT
+        );
 
         Toggle disable = Toggle.builder()
             .id("disable-" + IdUtils.create())
