@@ -1,7 +1,10 @@
 package io.kestra.plugin.kestra.triggers;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import io.kestra.core.junit.annotations.KestraTest;
@@ -27,8 +30,15 @@ class ToggleTest extends AbstractKestraOssContainerTest {
     private static final String NAMESPACE = "kestra.tests.trigger.toggle";
     private static final String FLOW_ID = "toggle-flow";
     private static final String TRIGGER_ID = "schedule";
-    private static final Duration INITIAL_AWAIT_TIMEOUT = Duration.ofMinutes(5);
     private static final Duration AWAIT_TIMEOUT = Duration.ofMinutes(2);
+
+    private final List<String> createdFlowIds = new ArrayList<>();
+
+    @AfterEach
+    void cleanupFlows() {
+        createdFlowIds.forEach(flowId -> kestraTestDataUtils.deleteFlow(NAMESPACE, flowId));
+        createdFlowIds.clear();
+    }
 
     @Test
     void shouldDisableAndEnableTrigger() throws Exception {
@@ -41,14 +51,7 @@ class ToggleTest extends AbstractKestraOssContainerTest {
             "* * * * *",
             false
         );
-
-        // Scheduler initializes trigger state at next minute boundary; allow up to 5 min
-        // to avoid flakiness when container is under load (e.g. concurrent 101-flow test).
-        Await.until(
-            () -> findTrigger(flowId),
-            Duration.ofSeconds(1),
-            INITIAL_AWAIT_TIMEOUT
-        );
+        createdFlowIds.add(flowId);
 
         Toggle disable = Toggle.builder()
             .id("disable-" + IdUtils.create())
