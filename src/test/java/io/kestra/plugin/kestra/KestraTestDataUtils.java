@@ -341,6 +341,45 @@ public class KestraTestDataUtils {
         return kestraClient.testSuites().createTestSuite(tenantId, testSuite);
     }
 
+    /**
+     * Deletes a single flow. Used by tests to clean up flows they created so the shared scheduler
+     * (and its trigger state) doesn't accumulate load across the whole test run.
+     */
+    public void deleteFlow(String namespace, String flowId) {
+        try {
+            kestraClient.flows().deleteFlow(namespace, flowId, tenantId);
+        } catch (ApiException e) {
+            log.error(
+                "ApiException thrown, probably false positive as we are in `deleteFlow` :"
+                    + e.getMessage()
+            );
+        }
+    }
+
+    /**
+     * Bulk-deletes every flow in a namespace. Preferred over per-flow {@link #deleteFlow} when a
+     * test creates many flows in a single namespace (e.g. pagination tests), since it removes all
+     * their triggers from the scheduler in one call instead of one round-trip per flow.
+     */
+    public void deleteFlowsInNamespace(String namespace) {
+        try {
+            kestraClient.flows().deleteFlowsByQuery(
+                tenantId,
+                List.of(
+                    new QueryFilter()
+                        .field(QueryFilterField.NAMESPACE)
+                        .operation(QueryFilterOp.EQUALS)
+                        .value(namespace)
+                )
+            );
+        } catch (ApiException e) {
+            log.error(
+                "ApiException thrown, probably false positive as we are in `deleteFlowsInNamespace` :"
+                    + e.getMessage()
+            );
+        }
+    }
+
     public FlowWithSource createFlowWithSchedule(String namespace, String flowId, String cron, boolean disabled)
         throws ApiException {
 

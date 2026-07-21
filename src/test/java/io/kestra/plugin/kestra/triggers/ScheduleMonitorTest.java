@@ -1,10 +1,12 @@
 package io.kestra.plugin.triggers;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import io.kestra.core.junit.annotations.KestraTest;
@@ -39,10 +41,19 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
     private static final Duration INITIAL_AWAIT_TIMEOUT = Duration.ofMinutes(5);
     private static final Duration AWAIT_TIMEOUT = Duration.ofMinutes(2);
 
+    private final List<String> createdNamespaces = new ArrayList<>();
+
+    @AfterEach
+    void cleanupFlows() {
+        createdNamespaces.forEach(kestraTestDataUtils::deleteFlowsInNamespace);
+        createdNamespaces.clear();
+    }
+
     @Test
     public void shouldDetectDisabledScheduleOnlyWhenIncluded() throws Exception {
         var namespace = randomNamespace();
         var flowId = "myflow-" + IdUtils.create();
+        createdNamespaces.add(namespace);
 
         kestraTestDataUtils.createFlowWithSchedule(
             namespace,
@@ -98,6 +109,7 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
     public void shouldDetectNoExecutionWithinInterval() throws Exception {
         var namespace = randomNamespace();
         var flowId = "intervalflow-" + IdUtils.create();
+        createdNamespaces.add(namespace);
 
         kestraTestDataUtils.createFlowWithSchedule(
             namespace,
@@ -141,6 +153,7 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
     public void shouldDetectDisabledSchedulesAcrossPages() throws Exception {
         var namespace = randomNamespace();
         var flowCount = 101;
+        createdNamespaces.add(namespace);
 
         for (var i = 0; i < flowCount; i++) {
             kestraTestDataUtils.createFlowWithSchedule(
