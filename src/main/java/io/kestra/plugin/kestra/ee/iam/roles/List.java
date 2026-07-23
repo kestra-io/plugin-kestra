@@ -96,13 +96,13 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
 
         java.util.List<ApiRoleSummary> fetched;
         if (rPage != null) {
-            fetched = kestraClient.roles().searchRoles(rTenant, rPage, rSize, null, null, null).getResults();
+            fetched = kestraClient.roles().searchRoles(rTenant, rPage, rSize, null, null).getResults();
         } else {
             fetched = new ArrayList<>();
             int currentPage = 1;
             long total;
             do {
-                PagedResultsApiRoleSummary results = kestraClient.roles().searchRoles(rTenant, currentPage, rSize, null, null, null);
+                PagedResultsApiRoleSummary results = kestraClient.roles().searchRoles(rTenant, currentPage, rSize, null, null);
                 fetched.addAll(results.getResults());
                 total = results.getTotal();
             } while ((long) currentPage++ * rSize < total);

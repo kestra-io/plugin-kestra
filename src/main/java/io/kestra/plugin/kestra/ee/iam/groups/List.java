@@ -96,13 +96,13 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
 
         java.util.List<ApiGroupSummary> fetched;
         if (rPage != null) {
-            fetched = kestraClient.groups().searchGroups(rTenant, rPage, rSize, null, null, null).getResults();
+            fetched = kestraClient.groups().searchGroups(rTenant, rPage, rSize, null, null).getResults();
         } else {
             fetched = new ArrayList<>();
             int currentPage = 1;
             long total;
             do {
-                PagedResultsApiGroupSummary results = kestraClient.groups().searchGroups(rTenant, currentPage, rSize, null, null, null);
+                PagedResultsApiGroupSummary results = kestraClient.groups().searchGroups(rTenant, currentPage, rSize, null, null);
                 fetched.addAll(results.getResults());
                 total = results.getTotal();
             } while ((long) currentPage++ * rSize < total);
