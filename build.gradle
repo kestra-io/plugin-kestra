@@ -54,7 +54,7 @@ dependencies {
     compileOnly group: "io.kestra", name: "script", version: kestraVersion
 
     // kestra API client
-    implementation "io.kestra:kestra-api-client:1.3.2"
+    implementation "io.kestra:kestra-api-client:1.3.2-cases-SNAPSHOT"
 }
 
 /**********************************************************************************************************************\
