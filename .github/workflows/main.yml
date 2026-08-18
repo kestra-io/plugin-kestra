@@ -41,9 +41,19 @@ permissions:
   packages: read
 
 jobs:
+  detect-version:
+    runs-on: ubuntu-latest
+    outputs:
+      kestra-version: ${{ steps.read.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: read
+        run: echo "version=$(grep '^kestraVersion=' gradle.properties | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+
   check:
+    needs: detect-version
     uses: kestra-io/actions/.github/workflows/plugins.yml@main
     with:
       skip-test: ${{ github.event.inputs.skip-test == 'true' }}
-      kestra-version: ${{ github.event.inputs.kestra-version }}
+      kestra-version: ${{ github.event.inputs.kestra-version != '' && github.event.inputs.kestra-version || needs.detect-version.outputs.kestra-version }}
     secrets: inherit
