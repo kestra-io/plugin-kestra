@@ -26,7 +26,7 @@ public abstract class AbstractKestraTask extends Task {
     @Schema(
         title = "Override Kestra API endpoint",
         description = """
-            URL used for calls to the Kestra API. When null, renders `{{ kestra.url }}` from configuration; if still empty, defaults to `http://localhost:8080`. Trailing slashes are stripped before use.
+            URL used for calls to the Kestra API. When null, falls back to the `url` configured alongside the default SDK authentication (Namespace or Tenant level, Enterprise edition), then renders `{{ kestra.url }}` from configuration; if still empty, defaults to `http://localhost:8080`. Trailing slashes are stripped before use.
             """
     )
     @PluginProperty(group = "connection")
@@ -45,7 +45,12 @@ public abstract class AbstractKestraTask extends Task {
     protected Property<String> tenantId;
 
     protected String resolveKestraUrl(RunContext runContext) throws IllegalVariableEvaluationException {
+        boolean useAutoAuth = auth == null || runContext.render(auth.auto).as(Boolean.class).orElse(Boolean.TRUE);
+
         String raw = runContext.render(kestraUrl).as(String.class)
+            .or(() -> useAutoAuth
+                ? runContext.sdk().defaultAuthentication().flatMap(SDK.Auth::url).filter(url -> !url.isBlank())
+                : Optional.empty())
             .orElseGet(() ->
             {
                 try {
@@ -134,7 +139,8 @@ public abstract class AbstractKestraTask extends Task {
                 The default configuration can be configured globally inside the Kestra configuration file:
                 - Set `kestra.tasks.sdk.authentication.api-token` to use an API token
                 - Set `kestra.tasks.sdk.authentication.username` and `kestra.tasks.sdk.authentication.password` for HTTP basic authentication
-                The Enterprise edition also provides setting a default configuration at the Namespace of Tenant level by an administrator."""
+                - Set `kestra.tasks.sdk.authentication.url` to also default the Kestra API endpoint (see `kestraUrl` above)
+                The Enterprise edition also provides setting a default configuration at the Namespace or Tenant level by an administrator. Set to false to also opt out of the default URL."""
         )
         @Builder.Default
         @PluginProperty(group = "advanced")
