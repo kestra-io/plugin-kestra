@@ -75,4 +75,44 @@ public class AbstractKestraTaskTest extends AbstractKestraOssContainerTest {
         String message = exception.getMessage().toLowerCase();
         assertThat(message.contains("localhost:8080") && message.contains("failed:"), is(true));
     }
+
+    @Test
+    @io.micronaut.context.annotation.Property(name = "kestra.tasks.sdk.authentication.url", value = "https://sdk-default.example.com")
+    public void resolveKestraUrlShouldUseDefaultCredUrlWhenNoExplicitKestraUrl() throws Exception {
+        RunContext runContext = runContextFactory.of();
+        List task = List.builder().build();
+
+        assertThat(task.resolveKestraUrl(runContext), is("https://sdk-default.example.com"));
+    }
+
+    @Test
+    @io.micronaut.context.annotation.Property(name = "kestra.tasks.sdk.authentication.url", value = "https://sdk-default.example.com")
+    public void resolveKestraUrlShouldPreferExplicitKestraUrlOverDefaultCredUrl() throws Exception {
+        RunContext runContext = runContextFactory.of();
+        List task = List.builder()
+            .kestraUrl(Property.ofValue("https://explicit.example.com"))
+            .build();
+
+        assertThat(task.resolveKestraUrl(runContext), is("https://explicit.example.com"));
+    }
+
+    @Test
+    @io.micronaut.context.annotation.Property(name = "kestra.tasks.sdk.authentication.url", value = "   ")
+    public void resolveKestraUrlShouldFallThroughWhenDefaultCredUrlIsBlank() throws Exception {
+        RunContext runContext = runContextFactory.of();
+        List task = List.builder().build();
+
+        assertThat(task.resolveKestraUrl(runContext), is("http://localhost:8080"));
+    }
+
+    @Test
+    @io.micronaut.context.annotation.Property(name = "kestra.tasks.sdk.authentication.url", value = "https://sdk-default.example.com")
+    public void resolveKestraUrlShouldIgnoreDefaultCredUrlWhenAutoIsFalse() throws Exception {
+        RunContext runContext = runContextFactory.of();
+        List task = List.builder()
+            .auth(AbstractKestraTask.Auth.builder().auto(Property.ofValue(false)).build())
+            .build();
+
+        assertThat(task.resolveKestraUrl(runContext), is("http://localhost:8080"));
+    }
 }
