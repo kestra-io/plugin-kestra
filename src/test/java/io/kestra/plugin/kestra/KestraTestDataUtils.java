@@ -206,9 +206,11 @@ public class KestraTestDataUtils {
         }
     }
 
+    private static final int MAX_PAGE_SIZE = 1000;
+
     public PagedResultsAssetsControllerApiAssetUsage getAssetUsagesForNamespace(String namespace) throws ApiException {
         return kestraClient.assets().searchAssetUsages(
-            tenantId, 1, Integer.MAX_VALUE, null, List.of(
+            tenantId, 1, MAX_PAGE_SIZE, null, List.of(
                 new QueryFilter()
                     .field(QueryFilterField.NAMESPACE)
                     .operation(QueryFilterOp.EQUALS)
@@ -219,7 +221,7 @@ public class KestraTestDataUtils {
 
     public PagedResultsAssetsControllerApiAssetLineageEvent getAssetLineagesForNamespace(String namespace) throws ApiException {
         return kestraClient.assets().searchAssetLineageEvents(
-            tenantId, 1, Integer.MAX_VALUE, null, List.of(
+            tenantId, 1, MAX_PAGE_SIZE, null, List.of(
                 new QueryFilter()
                     .field(QueryFilterField.NAMESPACE)
                     .operation(QueryFilterOp.EQUALS)
