@@ -61,3 +61,5 @@ Set `kestraUrl` to the target instance URL. Authenticate via `auth.apiToken` (Be
 `ee/tests.RunTests` runs all tests matching optional filters — set `namespace`, `flowId`, `includeChildNamespaces` (default `true`), and `failOnTestFailure` (default `false`).
 
 `ee/assets.FreshnessTrigger` monitors asset freshness — set `maxStaleness` (required). Filter by `assetId`, `namespace`, `assetType`, and `metadataQuery`. The polling `interval` defaults to 1 hour.
+
+`ee/cases.CreateCase` opens an incident-management Case, or attaches the current execution to an already-open matching one — set `title` (required unless `caseId` is set). Optionally set `severity`, `status` (default `OPEN`), `sla`, `assignees`, `watchers`, `assetIds`, `labels`, and `actions`. Set `linkMatchingExecutions: true` to attach to a case previously created by this same task instead of creating a new one.

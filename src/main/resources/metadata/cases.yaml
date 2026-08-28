@@ -1,0 +1,8 @@
+group: io.kestra.plugin.kestra.ee.cases
+name: "cases"
+title: "Kestra Cases"
+description: "Task to open or attach to Kestra EE incident-management Cases."
+body: "Use CreateCase from an errors: block to open an incident whenever a flow fails, or attach the triggering execution to an existing case."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
