@@ -98,7 +98,7 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
         var rPermissions = JacksonMapper.ofJson().convertValue(rPermissionsMap, IAMRoleControllerApiRoleCreateOrUpdateRequestPermissions.class);
 
         var existing = kestraClient.roles().searchRoles(
-            rTenant, 1, 100, null, null,
+            rTenant, 1, 100, null,
             List.of(new QueryFilter().field(QueryFilterField.NAME).operation(QueryFilterOp.EQUALS).value(rName))
         ).getResults();
 
