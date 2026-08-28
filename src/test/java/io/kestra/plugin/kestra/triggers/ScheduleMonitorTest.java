@@ -179,7 +179,8 @@ public class ScheduleMonitorTest extends AbstractKestraOssContainerTest {
                                 .field(QueryFilterField.NAMESPACE)
                                 .operation(QueryFilterOp.STARTS_WITH)
                                 .value(namespace)
-                        )
+                        ),
+                        null
                     );
                 return response.getTotal() >= flowCount ? response : null;
             },

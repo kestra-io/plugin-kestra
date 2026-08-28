@@ -6,59 +6,56 @@ import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
-import io.kestra.plugin.kestra.AbstractKestraEeContainerTest;
+import io.kestra.core.utils.IdUtils;
+import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 
 import jakarta.annotation.Nullable;
 import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 @KestraTest
-public class ListTest extends AbstractKestraEeContainerTest {
+public class ListTest extends AbstractKestraOssContainerTest {
 
     @Inject
     protected RunContextFactory runContextFactory;
 
-    protected static final String NAMESPACE = "kestra.tests.namespaces.list";
-
     @Test
-    public void shouldListNamespaces() throws Exception {
+    public void shouldFilterNamespacesByPrefix() throws Exception {
         RunContext runContext = runContextFactory.of();
+        String prefix = "kestra.tests.namespaces.list." + IdUtils.create().toLowerCase();
+        String matching = prefix + ".matching";
+        String nonMatching = "kestra.tests.namespaces.list.other." + IdUtils.create().toLowerCase();
 
-        String NAMESPACE_LOCAL = NAMESPACE + ".shouldlistnamespaces";
+        kestraTestDataUtils.createRandomizedFlow(matching);
+        kestraTestDataUtils.createRandomizedFlow(nonMatching);
 
-        List listNamespaces = listTask(NAMESPACE_LOCAL, null, 1);
+        List.Output output = listTask(prefix, null, null).run(runContext);
 
-        kestraTestDataUtils.createRandomizedNamespace(NAMESPACE_LOCAL);
-        kestraTestDataUtils.createRandomizedNamespace(NAMESPACE_LOCAL + ".sub");
-
-        List.Output listFlowsOutput = listNamespaces.run(runContext);
-
-        assertThat(listFlowsOutput.getNamespaces().size(), is(2));
+        assertThat(output.getNamespaces(), hasItem(matching));
+        assertThat(output.getNamespaces(), not(hasItem(nonMatching)));
     }
 
     @Test
     public void shouldListNamespacesWithPagination() throws Exception {
         RunContext runContext = runContextFactory.of();
-        // 20 generated namespace + queried namespace as it's a parent namespace of the generated ones
-        Integer NAMESPACE_COUNT = 21;
-        String NAMESPACE_LOCAL = NAMESPACE + ".withpagination";
-
-        List listNamespaces = listTask(NAMESPACE_LOCAL, null, null);
+        // 20 generated namespaces + the queried prefix itself, as it's a parent namespace of the generated ones
+        int namespaceCount = 21;
+        String prefix = "kestra.tests.namespaces.list.pagination." + IdUtils.create().toLowerCase();
 
         for (int i = 0; i < 20; i++) {
-            kestraTestDataUtils.createRandomizedFlow(NAMESPACE_LOCAL + ".namespace" + i);
+            kestraTestDataUtils.createRandomizedFlow(prefix + ".namespace" + i);
         }
-        List.Output listNamespacesOutput = listNamespaces.run(runContext);
 
-        assertThat(listNamespacesOutput.getNamespaces().size(), is(NAMESPACE_COUNT));
+        List.Output allPages = listTask(prefix, null, null).run(runContext);
+        assertThat(allPages.getNamespaces().size(), is(namespaceCount));
 
-        listNamespaces = listTask(NAMESPACE_LOCAL, 1, null);
-        listNamespacesOutput = listNamespaces.run(runContext);
-
-        assertThat(listNamespacesOutput.getNamespaces().size(), is(10));
+        List.Output firstPage = listTask(prefix, 1, null).run(runContext);
+        assertThat(firstPage.getNamespaces().size(), is(10));
     }
 
     /**
