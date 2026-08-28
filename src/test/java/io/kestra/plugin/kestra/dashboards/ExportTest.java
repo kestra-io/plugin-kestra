@@ -8,15 +8,12 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
-import io.kestra.plugin.kestra.AbstractKestraContainerTest;
+import io.kestra.plugin.kestra.AbstractKestraOssContainerTest;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.model.DashboardControllerDashboardResponse;
 
@@ -33,25 +30,9 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-@Testcontainers
 @Slf4j
 @Execution(ExecutionMode.SAME_THREAD)
-public class ExportTest extends AbstractKestraContainerTest {
-
-    /*
-     * TODO: "kestra:local-dashboards-export" is a placeholder tag for a locally-built OSS image that
-     * exposes the dashboard chart export route (POST /dashboards/{id}/charts/{chartId}/export). It does
-     * not exist yet: this route ships with Kestra 2.0. Build and tag such an image locally before running
-     * this test; until then this test class cannot execute.
-     */
-    @Container
-    protected static final GenericContainer<?> KESTRA_LOCAL_CONTAINER = new ExportTest() {
-    }.buildContainer("kestra:local-dashboards-export", false);
-
-    @Override
-    protected GenericContainer<?> getContainer() {
-        return KESTRA_LOCAL_CONTAINER;
-    }
+public class ExportTest extends AbstractKestraOssContainerTest {
 
     @Inject
     protected RunContextFactory runContextFactory;
