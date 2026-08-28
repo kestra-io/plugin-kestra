@@ -4,8 +4,10 @@ import org.junit.jupiter.api.Test;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.DefaultRunContext;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.runners.RunContextInitializer;
 import io.kestra.plugin.kestra.namespaces.List;
 
 import jakarta.inject.Inject;
@@ -14,11 +16,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@KestraTest
+@KestraTest(rebuildContext = true)
 public class AbstractKestraTaskTest extends AbstractKestraOssContainerTest {
 
     @Inject
     protected RunContextFactory runContextFactory;
+
+    @Inject
+    protected RunContextInitializer runContextInitializer;
 
     @Test
     public void KestraClientTest() throws Exception {
@@ -57,7 +62,7 @@ public class AbstractKestraTaskTest extends AbstractKestraOssContainerTest {
 
     @Test
     public void shouldFallbackToDefaultUrlAndFailConnection() throws Exception {
-        RunContext runContext = runContextFactory.of();
+        RunContext runContext = runContextInitializer.forExecutor((DefaultRunContext) runContextFactory.of());
 
         List task = List.builder()
             .tenantId(Property.ofValue(TENANT_ID))
@@ -79,7 +84,7 @@ public class AbstractKestraTaskTest extends AbstractKestraOssContainerTest {
     @Test
     @io.micronaut.context.annotation.Property(name = "kestra.tasks.sdk.authentication.url", value = "https://sdk-default.example.com")
     public void resolveKestraUrlShouldUseDefaultCredUrlWhenNoExplicitKestraUrl() throws Exception {
-        RunContext runContext = runContextFactory.of();
+        RunContext runContext = runContextInitializer.forExecutor((DefaultRunContext) runContextFactory.of());
         List task = List.builder().build();
 
         assertThat(task.resolveKestraUrl(runContext), is("https://sdk-default.example.com"));
@@ -99,7 +104,7 @@ public class AbstractKestraTaskTest extends AbstractKestraOssContainerTest {
     @Test
     @io.micronaut.context.annotation.Property(name = "kestra.tasks.sdk.authentication.url", value = "   ")
     public void resolveKestraUrlShouldFallThroughWhenDefaultCredUrlIsBlank() throws Exception {
-        RunContext runContext = runContextFactory.of();
+        RunContext runContext = runContextInitializer.forExecutor((DefaultRunContext) runContextFactory.of());
         List task = List.builder().build();
 
         assertThat(task.resolveKestraUrl(runContext), is("http://localhost:8080"));
