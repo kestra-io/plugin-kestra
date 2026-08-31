@@ -46,7 +46,7 @@ jobs:
     outputs:
       kestra-version: ${{ steps.read.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: read
         run: echo "version=$(grep '^kestraVersion=' gradle.properties | cut -d= -f2)" >> "$GITHUB_OUTPUT"
 
