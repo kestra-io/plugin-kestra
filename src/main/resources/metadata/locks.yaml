@@ -1,0 +1,8 @@
+group: io.kestra.plugin.kestra.ee.locks
+name: "locks"
+title: "Kestra Asset Locks"
+description: "Tasks to acquire and release execution-owned locks on Kestra EE data assets."
+body: "Set the Kestra API URL and auth token to acquire a time-bounded lock on an asset for the current execution, or release a lock this execution owns."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

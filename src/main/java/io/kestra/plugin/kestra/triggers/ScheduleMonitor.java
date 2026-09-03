@@ -116,8 +116,9 @@ public class ScheduleMonitor extends AbstractKestraTrigger implements TriggerOut
     }
 
     public Output runChecks(RunContext runContext) throws Exception {
-        var baseUrl = resolveKestraUrl(runContext);
-        var authHeader = resolveAuthorizationHeader(runContext);
+        var connection = resolveConnection(runContext);
+        var baseUrl = connection.baseUrl();
+        var authHeader = connection.authorizationHeader();
         var httpClient = HttpClient.newHttpClient();
 
         var tenantId = runContext.render(this.tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());

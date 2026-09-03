@@ -8,6 +8,10 @@ Set `kestraUrl` to the target instance URL. Authenticate via `auth.apiToken` (Be
 
 ## Tasks
 
+### Dashboards
+
+`dashboards.Export` exports a dashboard's chart data to file(s) — optionally set `dashboardId` (defaults to the tenant's default dashboard) and `chartId` (defaults to every non-Markdown chart). Set `format` (default `CSV`, also supports `ION`) and optionally override `startDate`/`endDate`. The output includes `files`, a map of chart id to exported file URI.
+
 ### Executions
 
 `executions.Count` counts executions matching optional filters — filter by `namespaces`, `flowId`, `states`, `startDate`, `endDate`, or `expression`. The output includes `count`.
@@ -61,3 +65,5 @@ Set `kestraUrl` to the target instance URL. Authenticate via `auth.apiToken` (Be
 `ee/tests.RunTests` runs all tests matching optional filters — set `namespace`, `flowId`, `includeChildNamespaces` (default `true`), and `failOnTestFailure` (default `false`).
 
 `ee/assets.FreshnessTrigger` monitors asset freshness — set `maxStaleness` (required). Filter by `assetId`, `namespace`, `assetType`, and `metadataQuery`. The polling `interval` defaults to 1 hour.
+
+`ee/cases.CreateCase` opens an incident-management Case, or attaches the current execution to an already-open matching one — set `title` (required unless `caseId` is set). Optionally set `severity`, `status` (default `OPEN`), `sla`, `assignees`, `watchers`, `assetIds`, `labels`, and `actions`. Set `linkMatchingExecutions: true` to attach to a case previously created by this same task instead of creating a new one.

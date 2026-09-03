@@ -26,6 +26,7 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 - `io.kestra.plugin.kestra.ee.assets.List`
 - `io.kestra.plugin.kestra.ee.assets.PurgeAssets`
 - `io.kestra.plugin.kestra.ee.assets.Set`
+- `io.kestra.plugin.kestra.ee.cases.CreateCase`
 - `io.kestra.plugin.kestra.ee.iam.bindings.Set`
 - `io.kestra.plugin.kestra.ee.iam.groups.AddMember`
 - `io.kestra.plugin.kestra.ee.iam.groups.Delete`

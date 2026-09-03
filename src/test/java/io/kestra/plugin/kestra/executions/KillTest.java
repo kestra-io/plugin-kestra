@@ -164,9 +164,12 @@ class KillTest extends AbstractKestraOssContainerTest {
 
         assertThat(output, is(nullValue()));
 
+        // Since kestra 2.0 the parent only leaves KILLING once all its task runs are terminal,
+        // so it stays KILLING while the non-propagated sub execution is still paused.
         Awaitility.await()
-            .atMost(Duration.ofSeconds(2))
-            .until(checkExecutionState(parentExecution.getId(), StateType.KILLED));
+            .atMost(Duration.ofSeconds(5))
+            .until(checkExecutionState(parentExecution.getId(), StateType.KILLING));
+        assertThat(kestraTestDataUtils.getExecution(subExecution.getId()).getState().getCurrent(), is(StateType.PAUSED));
 
         // With the propagateKill is false, after kill the parent execution the sub execution is still
         // paused and can be resumed to continue the execution.
@@ -178,6 +181,10 @@ class KillTest extends AbstractKestraOssContainerTest {
                 StateType state = kestraTestDataUtils.getExecution(subExecution.getId()).getState().getCurrent();
                 return state == StateType.RESTARTED || state == StateType.RUNNING || state == StateType.SUCCESS;
             });
+
+        Awaitility.await()
+            .atMost(Duration.ofSeconds(10))
+            .until(checkExecutionState(parentExecution.getId(), StateType.KILLED));
     }
 
     @Test
