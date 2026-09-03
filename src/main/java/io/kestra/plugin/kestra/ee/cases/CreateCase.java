@@ -279,9 +279,11 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
 
         List<io.kestra.sdk.model.Label> rendered = new ArrayList<>();
         for (Label label : labels) {
-            rendered.add(new io.kestra.sdk.model.Label()
-                .key(runContext.render(label.key()))
-                .value(runContext.render(label.value())));
+            rendered.add(
+                new io.kestra.sdk.model.Label()
+                    .key(runContext.render(label.key()))
+                    .value(runContext.render(label.value()))
+            );
         }
         return rendered;
     }
@@ -293,10 +295,12 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
 
         List<CaseAction> rendered = new ArrayList<>();
         for (CaseActionProperty action : actions) {
-            rendered.add(new CaseAction()
-                .label(runContext.render(action.getLabel()).as(String.class).orElse(null))
-                .namespace(runContext.render(action.getNamespace()).as(String.class).orElse(null))
-                .flowId(runContext.render(action.getFlowId()).as(String.class).orElse(null)));
+            rendered.add(
+                new CaseAction()
+                    .label(runContext.render(action.getLabel()).as(String.class).orElse(null))
+                    .namespace(runContext.render(action.getNamespace()).as(String.class).orElse(null))
+                    .flowId(runContext.render(action.getFlowId()).as(String.class).orElse(null))
+            );
         }
         return rendered;
     }

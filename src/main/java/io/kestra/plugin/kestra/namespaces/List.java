@@ -118,12 +118,13 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
 
         KestraClient kestraClient = kestraClient(runContext);
         java.util.List<String> allNamespaces = new ArrayList<String>();
-        java.util.List<QueryFilter> filters = ns.isEmpty() ? null : java.util.List.of(
-            new QueryFilter()
-                .field(QueryFilterField.NAMESPACE)
-                .operation(QueryFilterOp.PREFIX)
-                .value(ns)
-        );
+        java.util.List<QueryFilter> filters = ns.isEmpty() ? null
+            : java.util.List.of(
+                new QueryFilter()
+                    .field(QueryFilterField.NAMESPACE)
+                    .operation(QueryFilterOp.PREFIX)
+                    .value(ns)
+            );
 
         // If page is provided, fetch only that specific page
         if (rPage != null) {

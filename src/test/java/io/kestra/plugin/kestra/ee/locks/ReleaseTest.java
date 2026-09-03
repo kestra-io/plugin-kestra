@@ -140,8 +140,10 @@ class ReleaseTest extends AbstractKestraEeContainerTest {
         RunContext runContext = realRunContext(release, Map.of("assetId", assetId));
         String executionId = runContext.render("{{ execution.id }}");
 
-        kestraTestDataUtils.getKestraClient().assets().lockAsset(assetId, TENANT_ID,
-            new AssetsControllerAssetLockRequest().ttl("PT5M").executionId(executionId));
+        kestraTestDataUtils.getKestraClient().assets().lockAsset(
+            assetId, TENANT_ID,
+            new AssetsControllerAssetLockRequest().ttl("PT5M").executionId(executionId)
+        );
 
         assertThatCode(() -> release.run(runContext)).doesNotThrowAnyException();
 

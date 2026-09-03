@@ -157,8 +157,10 @@ class AcquireTest extends AbstractKestraEeContainerTest {
         kestraTestDataUtils.createAsset(assetId, "TABLE");
         acquire(assetId);
 
-        assertThatThrownBy(() -> kestraTestDataUtils.getKestraClient().assets()
-            .lockAsset(assetId, TENANT_ID, new AssetsControllerAssetLockRequest().ttl("PT5M")))
+        assertThatThrownBy(
+            () -> kestraTestDataUtils.getKestraClient().assets()
+                .lockAsset(assetId, TENANT_ID, new AssetsControllerAssetLockRequest().ttl("PT5M"))
+        )
             .isInstanceOf(ApiException.class);
     }
 }
