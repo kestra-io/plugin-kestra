@@ -70,10 +70,12 @@ public class Acquire extends AbstractKestraTask implements RunnableTask<Acquire.
 
     @Schema(
         title = "How long the lock is held before it expires",
-        description = "An ISO-8601 duration (e.g. `PT1H`). When unset, the server default TTL applies."
+        description = "An ISO-8601 duration (e.g. `PT1H`).",
+        defaultValue = "PT5M"
     )
+    @Builder.Default
     @PluginProperty(group = "main")
-    private Property<Duration> ttl;
+    private Property<Duration> ttl = Property.ofValue(Duration.ofMinutes(5));
 
     @Override
     public AcquireOutput run(RunContext runContext) throws Exception {
