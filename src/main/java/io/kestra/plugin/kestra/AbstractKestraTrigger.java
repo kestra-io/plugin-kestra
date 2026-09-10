@@ -96,7 +96,7 @@ public abstract class AbstractKestraTrigger extends AbstractTrigger {
             if (runContext.render(auth.auto).as(Boolean.class).orElse(Boolean.TRUE)) {
                 return sdkAuthToHeader(defaultAuth);
             }
-            throw new IllegalArgumentException("No authentication method provided");
+            return null;
         }
         return sdkAuthToHeader(defaultAuth);
     }
@@ -157,7 +157,11 @@ public abstract class AbstractKestraTrigger extends AbstractTrigger {
                 }
             }
 
-            throw new IllegalArgumentException("No authentication method provided");
+            if (runContext.render(auth.auto).as(Boolean.class).orElse(Boolean.TRUE)) {
+                throw new IllegalArgumentException("No authentication method provided. Set 'auth.auto' to false to call a Kestra API that requires no authentication.");
+            }
+
+            return builder.noAuth().build();
         } else {
             // try automatic authentication
             Optional<SDK.Auth> autoAuth = defaultAuth.get();
@@ -195,7 +199,7 @@ public abstract class AbstractKestraTrigger extends AbstractTrigger {
                 - Set `kestra.tasks.sdk.authentication.api-token` to use an API token
                 - Set `kestra.tasks.sdk.authentication.username` and `kestra.tasks.sdk.authentication.password` for HTTP basic authentication
                 - Set `kestra.tasks.sdk.authentication.url` to also default the Kestra API endpoint (see `kestraUrl` above)
-                The Enterprise edition also provides setting a default configuration at the Namespace or Tenant level by an administrator. Set to false to also opt out of the default URL."""
+                The Enterprise edition also provides setting a default configuration at the Namespace or Tenant level by an administrator. Set to false to also opt out of the default URL, and to call a Kestra API that requires no authentication when no credentials are set either."""
         )
         @Builder.Default
         @PluginProperty(group = "advanced")
