@@ -1,5 +1,7 @@
 package io.kestra.plugin.kestra.executions;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -92,5 +94,37 @@ public class QueryTest extends AbstractKestraOssContainerTest {
 
         assertThat(nonMatchingOutput, is(notNullValue()));
         assertThat(nonMatchingOutput.getSize(), is(0L));
+    }
+
+    @Test
+    public void shouldSearchExecutionsByDateRange() throws Exception {
+        RunContext runContext = runContextFactory.of();
+
+        FlowWithSource flow = kestraTestDataUtils.createRandomizedFlow(NAMESPACE);
+        kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
+
+        Query base = Query.builder()
+            .kestraUrl(Property.ofValue(KESTRA_URL))
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
+            .tenantId(Property.ofValue(TENANT_ID))
+            .namespace(Property.ofValue(NAMESPACE))
+            .flowId(Property.ofValue(flow.getId()))
+            .size(Property.ofValue(10))
+            .fetchType(Property.ofValue(io.kestra.core.models.tasks.common.FetchType.FETCH))
+            .build();
+
+        FetchOutput inTimeRange = base.toBuilder().timeRange(Property.ofValue(Duration.ofHours(1))).build().run(runContext);
+        assertThat(inTimeRange.getSize(), is(1L));
+
+        FetchOutput afterStartDate = base.toBuilder().startDate(Property.ofValue(ZonedDateTime.now().minusHours(1))).build().run(runContext);
+        assertThat(afterStartDate.getSize(), is(1L));
+
+        FetchOutput beforeEndDate = base.toBuilder().endDate(Property.ofValue(ZonedDateTime.now().minusHours(1))).build().run(runContext);
+        assertThat(beforeEndDate.getSize(), is(0L));
     }
 }
