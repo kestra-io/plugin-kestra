@@ -234,7 +234,7 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
                 rNamespace != null ? new QueryFilter().field(QueryFilterField.NAMESPACE).operation(QueryFilterOp.EQUALS).value(rNamespace) : null,
                 rFlowId != null ? new QueryFilter().field(QueryFilterField.FLOW_ID).operation(QueryFilterOp.EQUALS).value(rFlowId) : null,
                 rStartDate != null ? new QueryFilter().field(QueryFilterField.START_DATE).operation(QueryFilterOp.GREATER_THAN_OR_EQUAL_TO).value(rStartDate) : null,
-                rEndDate != null ? new QueryFilter().field(QueryFilterField.START_DATE).operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO).value(rEndDate) : null,
+                rEndDate != null ? new QueryFilter().field(QueryFilterField.END_DATE).operation(QueryFilterOp.LESS_THAN_OR_EQUAL_TO).value(rEndDate) : null,
                 rTriggerExecutionId != null ? new QueryFilter().field(QueryFilterField.TRIGGER_EXECUTION_ID).operation(QueryFilterOp.EQUALS).value(rTriggerExecutionId) : null,
                 rChildFilter != null ? new QueryFilter().field(QueryFilterField.CHILD_FILTER).operation(QueryFilterOp.EQUALS).value(rChildFilter) : null
             ).filter(Objects::nonNull).toList()
