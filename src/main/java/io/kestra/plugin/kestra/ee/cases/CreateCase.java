@@ -48,7 +48,10 @@ import lombok.experimental.SuperBuilder;
 
         When `linkMatchingExecutions` is `true`, the task first looks for an active (non-resolved, non-cancelled) \
         case previously created by this same task (same flow + task id); if one is found, the triggering execution \
-        is attached to it instead of creating a new case."""
+        is attached to it instead of creating a new case.
+
+        The task's `url` output is the case's link in the Kestra UI, ready to use in a notification without \
+        assembling it by hand."""
 )
 @Plugin(
     examples = {
@@ -227,6 +230,10 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
             throw new IllegalStateException("createFromTask returned no result");
         }
 
+        return toOutput(result);
+    }
+
+    static Output toOutput(Map<String, Object> result) {
         Object caseIdValue = result.get("caseId");
         if (!(caseIdValue instanceof String resultCaseId)) {
             throw new IllegalStateException("createFromTask response is missing a string 'caseId' field, got: " + caseIdValue);
@@ -235,10 +242,12 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
         if (!(createdValue instanceof Boolean resultCreated)) {
             throw new IllegalStateException("createFromTask response is missing a boolean 'created' field, got: " + createdValue);
         }
+        Object urlValue = result.get("url");
 
         return Output.builder()
             .caseId(resultCaseId)
             .created(resultCreated)
+            .url(urlValue instanceof String resultUrl ? resultUrl : null)
             .build();
     }
 
@@ -372,5 +381,8 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
 
         @Schema(title = "Whether a new case was created", description = "`false` if the triggering execution was attached to an existing matching case instead.")
         private Boolean created;
+
+        @Schema(title = "Link to the case in the Kestra UI", description = "`null` when the instance has no `kestra.url` configured.")
+        private String url;
     }
 }
