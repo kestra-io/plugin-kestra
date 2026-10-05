@@ -47,8 +47,8 @@ import lombok.experimental.SuperBuilder;
         is opened whenever a flow fails. The execution that triggered the task is automatically linked to the case.
 
         When `linkMatchingExecutions` is `true`, the task first looks for an active (non-resolved, non-cancelled) \
-        case previously created by this same task (same flow + task id); if one is found, the triggering execution \
-        is attached to it instead of creating a new case."""
+        case previously created by this same task (same flow + task id), or with the same `deduplicationKey` when \
+        one is set; if one is found, the triggering execution is attached to it instead of creating a new case."""
 )
 @Plugin(
     examples = {
@@ -79,6 +79,30 @@ import lombok.experimental.SuperBuilder;
                         - a@b.c
                       groups:
                         - Admins
+                """
+        ),
+        @Example(
+            title = "Open one case per failing flow from a system flow, grouping executions on a deduplication key.",
+            full = true,
+            code = """
+                id: open_case_on_failure
+                namespace: system
+
+                triggers:
+                  - id: on_failure
+                    type: io.kestra.plugin.core.trigger.Flow
+                    dependsOn:
+                      - states: [FAILED]
+                        namespace: company.team
+
+                tasks:
+                  - id: open_case
+                    type: io.kestra.plugin.kestra.ee.cases.CreateCase
+                    title: "{{ trigger.namespace }}.{{ trigger.flowId }} failed"
+                    namespace: "{{ trigger.namespace }}"
+                    linkMatchingExecutions: true
+                    deduplicationKey: "{{ trigger.namespace }}.{{ trigger.flowId }}"
+                    executionId: "{{ trigger.executionId }}"
                 """
         )
     }
@@ -115,11 +139,22 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
 
     @Schema(
         title = "Attach to a matching open case instead of creating a new one",
-        description = "When `true`, looks for an active (non-resolved, non-cancelled) case previously created by this same task and attaches the triggering execution to it instead of creating a new case."
+        description = "When `true`, looks for an active (non-resolved, non-cancelled) case previously created by this same task, or with the same `deduplicationKey` when one is set, and attaches the triggering execution to it instead of creating a new case."
     )
     @Builder.Default
     @PluginProperty(group = "reliability")
     private Property<Boolean> linkMatchingExecutions = Property.ofValue(false);
+
+    @Schema(
+        title = "Key identifying which executions belong to the same case",
+        description = """
+            Only used with `linkMatchingExecutions`. Executions of the tenant that render the same key are attached \
+            to the same active case, whatever flow or task they come from, so include a namespace in the key if you \
+            want one. Without a key, executions are grouped by the flow and task id of this task, which is only \
+            meaningful from an `errors` block. Fails when the key renders blank."""
+    )
+    @PluginProperty(group = "reliability")
+    private Property<String> deduplicationKey;
 
     @Schema(
         title = "Attach to an existing case instead of creating one",
@@ -184,6 +219,7 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
         CaseSeverity rSeverity = runContext.render(severity).as(CaseSeverity.class).orElse(null);
         CaseStatus rStatus = runContext.render(status).as(CaseStatus.class).orElse(CaseStatus.OPEN);
         boolean rLinkMatchingExecutions = runContext.render(linkMatchingExecutions).as(Boolean.class).orElse(false);
+        String rDeduplicationKey = renderDeduplicationKey(runContext, flowInfo);
         SlaConfig rSla = renderSla(runContext);
         Subjects rAssignees = renderSubjects(runContext, assignees);
         Subjects rWatchers = renderSubjects(runContext, watchers);
@@ -220,7 +256,8 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
             .taskId(this.id)
             .executionId(rExecutionId)
             .executionState(executionState)
-            .caseId(rCaseId);
+            .caseId(rCaseId)
+            .deduplicationKey(rDeduplicationKey);
 
         Map<String, Object> result = kestraClient(runContext).cases().createFromTask(rTenantId, request);
         if (result == null) {
@@ -240,6 +277,20 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
             .caseId(resultCaseId)
             .created(resultCreated)
             .build();
+    }
+
+    private String renderDeduplicationKey(RunContext runContext, RunContext.FlowInfo flowInfo) throws Exception {
+        if (deduplicationKey == null) {
+            return null;
+        }
+
+        String rendered = runContext.render(deduplicationKey).as(String.class).orElse(null);
+        if (rendered == null || rendered.isBlank()) {
+            throw new IllegalArgumentException(
+                "The deduplicationKey of task '%s' in flow '%s.%s' rendered blank, so its cases cannot be grouped. Set a non-blank key or remove the property.".formatted(this.id, flowInfo.namespace(), flowInfo.id())
+            );
+        }
+        return rendered;
     }
 
     private SlaConfig renderSla(RunContext runContext) throws Exception {
