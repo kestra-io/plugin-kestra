@@ -155,7 +155,7 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
         // Create two assets with different types, then generate usage/lineage via execution.
         kestraTestDataUtils.createAsset(namespace, inputAssetId, "TABLE", Map.of("env", "test"));
         kestraTestDataUtils.createAsset(namespace, outputAssetId, "TOPIC", Map.of("env", "test"));
-        createExecutionProducingUsageAndLineage(namespace, inputAssetId, outputAssetId, "TABLE");
+        createExecutionProducingUsageAndLineage(namespace, inputAssetId, outputAssetId, "TOPIC");
 
         RunContext runContext = runContextFactory.of();
 
