@@ -222,4 +222,51 @@ class CreateCaseTest extends AbstractKestraEeContainerTest {
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("executionId resolved to blank");
     }
+
+    @Test
+    void groupsExecutionsOfDifferentTasksOnSameDeduplicationKey() throws Exception {
+        String key = "customer-" + IdUtils.create();
+
+        CreateCase first = deduplicatedCase("open_alpha_" + IdUtils.create(), key);
+        CreateCase second = deduplicatedCase("open_beta_" + IdUtils.create(), key);
+
+        CreateCase.Output firstOutput = first.run(TestsUtils.mockRunContext(this.runContextFactory, first, java.util.Map.of()));
+        CreateCase.Output secondOutput = second.run(TestsUtils.mockRunContext(this.runContextFactory, second, java.util.Map.of()));
+
+        assertThat(firstOutput.getCreated()).isTrue();
+        assertThat(secondOutput.getCreated()).isFalse();
+        assertThat(secondOutput.getCaseId()).isEqualTo(firstOutput.getCaseId());
+    }
+
+    @Test
+    void throwsWhenDeduplicationKeyRendersBlank() {
+        CreateCase createCase = deduplicatedCase("open_incident_" + IdUtils.create(), "  ");
+
+        RunContext runContext = TestsUtils.mockRunContext(this.runContextFactory, createCase, java.util.Map.of());
+
+        assertThatThrownBy(() -> createCase.run(runContext))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("deduplicationKey")
+            .hasMessageContaining(createCase.getId());
+    }
+
+    private CreateCase deduplicatedCase(String taskId, String key) {
+        return CreateCase.builder()
+            .id(taskId)
+            .type(CreateCase.class.getName())
+            .kestraUrl(Property.ofValue(KESTRA_URL))
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
+            .tenantId(Property.ofValue(TENANT_ID))
+            .namespace(Property.ofValue(NAMESPACE))
+            .title(Property.ofValue("Grouped incident " + IdUtils.create()))
+            .severity(Property.ofValue(CaseSeverity.CRITICAL))
+            .linkMatchingExecutions(Property.ofValue(true))
+            .deduplicationKey(Property.ofValue(key))
+            .build();
+    }
 }
