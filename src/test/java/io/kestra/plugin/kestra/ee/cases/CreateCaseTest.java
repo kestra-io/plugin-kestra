@@ -171,11 +171,9 @@ class CreateCaseTest extends AbstractKestraEeContainerTest {
     }
 
     @Test
-    void throwsWhenTitleMissingAndNotAttaching() {
-        String taskId = "open_incident_" + IdUtils.create();
-
+    void createsCaseFromDefaultTemplateWhenTitleMissing() throws Exception {
         CreateCase createCase = CreateCase.builder()
-            .id(taskId)
+            .id("open_incident_" + IdUtils.create())
             .type(CreateCase.class.getName())
             .kestraUrl(Property.ofValue(KESTRA_URL))
             .auth(
@@ -186,13 +184,32 @@ class CreateCaseTest extends AbstractKestraEeContainerTest {
             )
             .tenantId(Property.ofValue(TENANT_ID))
             .namespace(Property.ofValue(NAMESPACE))
+            .resolutionReasons(Property.ofValue(java.util.List.of("Rolled back")))
+            .build();
+
+        CreateCase.Output output = createCase.run(TestsUtils.mockRunContext(this.runContextFactory, createCase, java.util.Map.of()));
+
+        assertThat(output.getCaseId()).isNotBlank();
+        assertThat(output.getCreated()).isTrue();
+    }
+
+    @Test
+    void throwsWhenResolutionReasonsEmpty() {
+        CreateCase createCase = CreateCase.builder()
+            .id("open_incident_" + IdUtils.create())
+            .type(CreateCase.class.getName())
+            .kestraUrl(Property.ofValue(KESTRA_URL))
+            .tenantId(Property.ofValue(TENANT_ID))
+            .title(Property.ofValue("Health check failed"))
+            .resolutionReasons(Property.ofValue(java.util.List.of()))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(this.runContextFactory, createCase, java.util.Map.of());
 
         assertThatThrownBy(() -> createCase.run(runContext))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("title is required");
+            .hasMessageContaining("resolutionReasons")
+            .hasMessageContaining(createCase.getId());
     }
 
     @Test
