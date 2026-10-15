@@ -87,7 +87,7 @@ import lombok.experimental.SuperBuilder;
                 """
         ),
         @Example(
-            title = "Open a case from a case template, restricting the reasons it can be resolved with.",
+            title = "Open a case from a case template, restricting the reasons it can be resolved with and requiring a note.",
             full = true,
             code = """
                 id: payments_sync
@@ -106,6 +106,7 @@ import lombok.experimental.SuperBuilder;
                       - Provider outage
                       - Data fixed
                       - False alarm
+                    requireResolutionNote: true
                 """
         ),
         @Example(
@@ -214,6 +215,13 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
     @PluginProperty(group = "main")
     private Property<List<String>> resolutionReasons;
 
+    @Schema(
+        title = "Whether resolving the case requires a note",
+        description = "Defaults to the applied case template's setting."
+    )
+    @PluginProperty(group = "main")
+    private Property<Boolean> requireResolutionNote;
+
     @Schema(title = "Assignees", description = "Defaults to the applied case template's assignees.")
     @PluginProperty(group = "advanced")
     private SubjectsProperty assignees;
@@ -259,6 +267,7 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
         String rCaseId = runContext.render(caseId).as(String.class).orElse(null);
         String rTemplateId = runContext.render(templateId).as(String.class).orElse(null);
         List<String> rResolutionReasons = renderResolutionReasons(runContext, flowInfo);
+        Boolean rRequireResolutionNote = runContext.render(requireResolutionNote).as(Boolean.class).orElse(null);
         CaseSeverity rSeverity = runContext.render(severity).as(CaseSeverity.class).orElse(null);
         CaseStatus rStatus = runContext.render(status).as(CaseStatus.class).orElse(CaseStatus.OPEN);
         boolean rLinkMatchingExecutions = runContext.render(linkMatchingExecutions).as(Boolean.class).orElse(false);
@@ -302,7 +311,8 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
             .caseId(rCaseId)
             .deduplicationKey(rDeduplicationKey)
             .templateId(rTemplateId)
-            .resolutionReasons(rResolutionReasons);
+            .resolutionReasons(rResolutionReasons)
+            .requireResolutionNote(rRequireResolutionNote);
 
         Map<String, Object> result = kestraClient(runContext).cases().createFromTask(rTenantId, request);
         if (result == null) {
