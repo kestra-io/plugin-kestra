@@ -46,6 +46,11 @@ import lombok.experimental.SuperBuilder;
         Creates a new Case in Kestra's incident-management feature, typically from an `errors:` task so an incident \
         is opened whenever a flow fails. The execution that triggered the task is automatically linked to the case.
 
+        The case is pre-filled from the case template referenced by `templateId`, or from the tenant's default template \
+        when unset: severity, assignees, watchers, SLA, description, title pattern, actions and custom fields. Properties \
+        set on the task take precedence. The case keeps a link to the template, so the template's resolution rules apply \
+        when it is resolved.
+
         When `linkMatchingExecutions` is `true`, the task first looks for an active (non-resolved, non-cancelled) \
         case previously created by this same task (same flow + task id), or with the same `deduplicationKey` when \
         one is set; if one is found, the triggering execution is attached to it instead of creating a new case."""
@@ -79,6 +84,28 @@ import lombok.experimental.SuperBuilder;
                         - a@b.c
                       groups:
                         - Admins
+                """
+        ),
+        @Example(
+            title = "Open a case from a case template, restricting the reasons it can be resolved with.",
+            full = true,
+            code = """
+                id: payments_sync
+                namespace: company.team
+
+                tasks:
+                  - id: sync
+                    type: io.kestra.plugin.core.http.Request
+                    uri: https://example.com/payments/sync
+
+                errors:
+                  - id: open_incident
+                    type: io.kestra.plugin.kestra.ee.cases.CreateCase
+                    templateId: payments_incident
+                    resolutionReasons:
+                      - Provider outage
+                      - Data fixed
+                      - False alarm
                 """
         ),
         @Example(
@@ -116,15 +143,18 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
     @PluginProperty(group = "source")
     private Property<String> namespace;
 
-    @Schema(title = "Case title", description = "Required unless `caseId` is set (attaching to an existing case doesn't need a new title).")
+    @Schema(
+        title = "Case title",
+        description = "Defaults to the applied case template's title pattern, rendered against the triggering execution. Required when that template has no title pattern, unless `caseId` is set."
+    )
     @PluginProperty(group = "main")
     private Property<String> title;
 
-    @Schema(title = "Case description", description = "Supports Markdown.")
+    @Schema(title = "Case description", description = "Supports Markdown. Defaults to the applied case template's description.")
     @PluginProperty(group = "main")
     private Property<String> caseDescription;
 
-    @Schema(title = "Case severity", description = "Defaults to `MEDIUM` if not set.")
+    @Schema(title = "Case severity", description = "Defaults to the applied case template's severity, otherwise `MEDIUM`.")
     @PluginProperty(group = "main")
     private Property<CaseSeverity> severity;
 
@@ -133,7 +163,7 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
     @PluginProperty(group = "main")
     private Property<CaseStatus> status = Property.ofValue(CaseStatus.OPEN);
 
-    @Schema(title = "SLA targets for the case")
+    @Schema(title = "SLA targets for the case", description = "Defaults to the applied case template's SLA.")
     @PluginProperty(group = "reliability")
     private SlaProperty sla;
 
@@ -170,11 +200,25 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
     @PluginProperty(group = "source")
     private Property<String> executionId;
 
-    @Schema(title = "Assignees")
+    @Schema(
+        title = "ID of the case template to pre-fill the case from",
+        description = "Defaults to the tenant's default case template. Properties set on the task take precedence over the template."
+    )
+    @PluginProperty(group = "main")
+    private Property<String> templateId;
+
+    @Schema(
+        title = "Resolution reasons accepted for the case",
+        description = "The reasons offered when resolving the case, and the only ones accepted. Defaults to the applied case template's reasons. Must contain at least one reason when set."
+    )
+    @PluginProperty(group = "main")
+    private Property<List<String>> resolutionReasons;
+
+    @Schema(title = "Assignees", description = "Defaults to the applied case template's assignees.")
     @PluginProperty(group = "advanced")
     private SubjectsProperty assignees;
 
-    @Schema(title = "Watchers")
+    @Schema(title = "Watchers", description = "Defaults to the applied case template's watchers.")
     @PluginProperty(group = "advanced")
     private SubjectsProperty watchers;
 
@@ -198,7 +242,7 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
 
     @Schema(
         title = "Actions attached to the case",
-        description = "System flows runnable directly from the case's detail page."
+        description = "System flows runnable directly from the case's detail page. Defaults to the applied case template's actions."
     )
     @PluginProperty(group = "advanced")
     private List<CaseActionProperty> actions;
@@ -213,9 +257,8 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
         String rTitle = runContext.render(title).as(String.class).orElse(null);
         String rDescription = runContext.render(caseDescription).as(String.class).orElse(null);
         String rCaseId = runContext.render(caseId).as(String.class).orElse(null);
-        if (rCaseId == null && (rTitle == null || rTitle.isBlank())) {
-            throw new IllegalArgumentException("title is required when creating a new case (omit it only when caseId is set to attach to an existing case)");
-        }
+        String rTemplateId = runContext.render(templateId).as(String.class).orElse(null);
+        List<String> rResolutionReasons = renderResolutionReasons(runContext, flowInfo);
         CaseSeverity rSeverity = runContext.render(severity).as(CaseSeverity.class).orElse(null);
         CaseStatus rStatus = runContext.render(status).as(CaseStatus.class).orElse(CaseStatus.OPEN);
         boolean rLinkMatchingExecutions = runContext.render(linkMatchingExecutions).as(Boolean.class).orElse(false);
@@ -257,7 +300,9 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
             .executionId(rExecutionId)
             .executionState(executionState)
             .caseId(rCaseId)
-            .deduplicationKey(rDeduplicationKey);
+            .deduplicationKey(rDeduplicationKey)
+            .templateId(rTemplateId)
+            .resolutionReasons(rResolutionReasons);
 
         Map<String, Object> result = kestraClient(runContext).cases().createFromTask(rTenantId, request);
         if (result == null) {
@@ -288,6 +333,20 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
         if (rendered == null || rendered.isBlank()) {
             throw new IllegalArgumentException(
                 "The deduplicationKey of task '%s' in flow '%s.%s' rendered blank, so its cases cannot be grouped. Set a non-blank key or remove the property.".formatted(this.id, flowInfo.namespace(), flowInfo.id())
+            );
+        }
+        return rendered;
+    }
+
+    private List<String> renderResolutionReasons(RunContext runContext, RunContext.FlowInfo flowInfo) throws Exception {
+        if (resolutionReasons == null) {
+            return null;
+        }
+
+        List<String> rendered = runContext.render(resolutionReasons).asList(String.class);
+        if (rendered.isEmpty() || rendered.stream().anyMatch(reason -> reason == null || reason.isBlank())) {
+            throw new IllegalArgumentException(
+                "The resolutionReasons of task '%s' in flow '%s.%s' must contain at least one non-blank reason. Set at least one reason or remove the property.".formatted(this.id, flowInfo.namespace(), flowInfo.id())
             );
         }
         return rendered;
