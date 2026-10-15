@@ -101,7 +101,7 @@ import lombok.experimental.SuperBuilder;
                 errors:
                   - id: open_incident
                     type: io.kestra.plugin.kestra.ee.cases.CreateCase
-                    templateId: payments_incident
+                    templateId: 5mSfVmh4GwLKO1nQ0qCRu8
                     resolutionReasons:
                       - Provider outage
                       - Data fixed
@@ -145,7 +145,7 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
 
     @Schema(
         title = "Case title",
-        description = "Defaults to the applied case template's title pattern, rendered against the triggering execution. Required when that template has no title pattern, unless `caseId` is set."
+        description = "Defaults to the applied case template's title pattern, rendered against the triggering execution when the task's credentials can view it. Required when that template has no title pattern, unless `caseId` is set."
     )
     @PluginProperty(group = "main")
     private Property<String> title;
@@ -202,7 +202,7 @@ public class CreateCase extends AbstractKestraTask implements RunnableTask<Creat
 
     @Schema(
         title = "ID of the case template to pre-fill the case from",
-        description = "Defaults to the tenant's default case template. Properties set on the task take precedence over the template."
+        description = "The template ID is shown in Cases > Settings. Defaults to the tenant's default case template. Properties set on the task take precedence over the template."
     )
     @PluginProperty(group = "main")
     private Property<String> templateId;
