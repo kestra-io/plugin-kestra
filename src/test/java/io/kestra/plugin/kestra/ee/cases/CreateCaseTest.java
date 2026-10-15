@@ -185,6 +185,7 @@ class CreateCaseTest extends AbstractKestraEeContainerTest {
             .tenantId(Property.ofValue(TENANT_ID))
             .namespace(Property.ofValue(NAMESPACE))
             .resolutionReasons(Property.ofValue(java.util.List.of("Rolled back")))
+            .requireResolutionNote(Property.ofValue(true))
             .build();
 
         CreateCase.Output output = createCase.run(TestsUtils.mockRunContext(this.runContextFactory, createCase, java.util.Map.of()));
