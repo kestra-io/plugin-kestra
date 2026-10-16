@@ -170,12 +170,14 @@ public class Query extends AbstractKestraTask implements RunnableTask<FetchOutpu
             total = results.getTotal();
         } else {
             int currentPage = 1;
+            List<ApiLightExecution> pageResults;
             do {
                 PagedResultsApiLightExecution results = executeSearch(runContext, kestraClient, currentPage, rSize);
-                executions.addAll(results.getResults());
+                pageResults = results.getResults();
+                executions.addAll(pageResults);
                 total = results.getTotal();
                 currentPage++;
-            } while ((long) currentPage * rSize < total);
+            } while (!pageResults.isEmpty() && executions.size() < total);
         }
 
         output.size(total);
