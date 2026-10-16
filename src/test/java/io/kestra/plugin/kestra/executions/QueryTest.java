@@ -127,4 +127,40 @@ public class QueryTest extends AbstractKestraOssContainerTest {
         FetchOutput beforeEndDate = base.toBuilder().endDate(Property.ofValue(ZonedDateTime.now().minusHours(1))).build().run(runContext);
         assertThat(beforeEndDate.getSize(), is(0L));
     }
+
+    @Test
+    public void shouldFetchAllPagesWhenPageIsNotSet() throws Exception {
+        RunContext runContext = runContextFactory.of();
+
+        String namespace = NAMESPACE + ".paging";
+        FlowWithSource flow = kestraTestDataUtils.createRandomizedFlow(namespace);
+        for (int i = 0; i < 3; i++) {
+            kestraTestDataUtils.createRandomizedExecution(flow.getId(), flow.getNamespace());
+        }
+
+        Query allPages = Query.builder()
+            .kestraUrl(Property.ofValue(KESTRA_URL))
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
+            .tenantId(Property.ofValue(TENANT_ID))
+            .namespace(Property.ofValue(namespace))
+            .flowId(Property.ofValue(flow.getId()))
+            .size(Property.ofValue(2))
+            .fetchType(Property.ofValue(io.kestra.core.models.tasks.common.FetchType.FETCH))
+            .build();
+
+        FetchOutput allPagesOutput = allPages.run(runContext);
+
+        assertThat(allPagesOutput.getSize(), is(3L));
+        assertThat((List<?>) allPagesOutput.getRows().getFirst(), hasSize(3));
+
+        FetchOutput firstPageOutput = allPages.toBuilder().page(Property.ofValue(1)).build().run(runContext);
+
+        assertThat(firstPageOutput.getSize(), is(3L));
+        assertThat((List<?>) firstPageOutput.getRows().getFirst(), hasSize(2));
+    }
 }
