@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class AbstractKestraOssContainerTest extends AbstractKestraContainerTest {
     @Container
     protected static final GenericContainer<?> KESTRA_OSS_CONTAINER = new AbstractKestraOssContainerTest() {
-    }.buildContainer("kestra/kestra:v" + System.getProperty("kestraImageVersion") + "-slim", false);
+    }.buildContainer("kestra/kestra:" + System.getProperty("kestraImageTag") + "-slim", false);
 
     @Override
     protected GenericContainer<?> getContainer() {
