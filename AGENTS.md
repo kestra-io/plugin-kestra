@@ -70,6 +70,12 @@ plugin-kestra/
 └── README.md
 ```
 
+### Targeting an unreleased Kestra
+
+- Work needing an unreleased Kestra: set `kestraVersion=<next>-SNAPSHOT` in `gradle.properties`; tests then run against the `develop` images and `kestraImageVersion` is ignored.
+- Patches for the current Kestra meanwhile go through the release workflow's hotfix mode (`commitsList` cherry-picked on the last tag).
+- Once that Kestra version is released, set both `kestraVersion` and `kestraImageVersion` to it.
+
 ## References
 
 - https://kestra.io/docs/plugin-developer-guide
