@@ -48,7 +48,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: read
-        run: echo "version=$(grep '^kestraVersion=' gradle.properties | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+        run: |
+          version=$(grep '^kestraVersion=' gradle.properties | cut -d= -f2)
+          if [[ "$GITHUB_REF" == refs/tags/v* && "$version" == *-SNAPSHOT ]]; then
+            echo "::error::Cannot release against a SNAPSHOT Kestra core (kestraVersion=$version)"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
   check:
     needs: detect-version

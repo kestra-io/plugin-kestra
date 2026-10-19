@@ -13,11 +13,12 @@ plugins {
 }
 
 def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
+def isKestraSnapshot = kestraVersion.toString().endsWith("-SNAPSHOT")
 
 repositories {
     mavenLocal()
     mavenCentral()
-    if (isBuildSnapshot) {
+    if (isBuildSnapshot || isKestraSnapshot) {
         maven { url "https://central.sonatype.com/repository/maven-snapshots/" }
     }
 }
@@ -60,7 +61,8 @@ dependencies {
  **********************************************************************************************************************/
 test {
     useJUnitPlatform()
-    systemProperty "kestraImageVersion", kestraImageVersion
+    // a SNAPSHOT core targets an unreleased Kestra, so test against the develop images
+    systemProperty "kestraImageTag", isKestraSnapshot ? "develop" : "v" + kestraImageVersion
 }
 
 dependencies {
