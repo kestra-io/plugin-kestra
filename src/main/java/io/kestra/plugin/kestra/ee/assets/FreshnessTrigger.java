@@ -57,7 +57,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                     assetId: trips
                     namespace: company.team
                     maxStaleness: PT26H  # Allow 2 extra hours buffer
-                    checkInterval: PT1H
+                    interval: PT1H
 
                 tasks:
                   - id: send_alert
@@ -86,7 +86,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                         type: EQUAL_TO
                         value: mart
                     maxStaleness: PT4H
-                    checkInterval: PT30M
+                    interval: PT30M
 
                 tasks:
                   - id: trigger_refresh
@@ -109,7 +109,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                    type: io.kestra.plugin.kestra.ee.assets.FreshnessTrigger
                    assetType: io.kestra.plugin.ee.assets.Table
                    maxStaleness: PT12H
-                   checkInterval: PT1H
+                   interval: PT1H
                    metadataQuery:
                      - field: environment
                        type: EQUAL_TO
