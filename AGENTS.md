@@ -70,11 +70,11 @@ plugin-kestra/
 └── README.md
 ```
 
-### Targeting an unreleased Kestra
+### Branches and Kestra versions
 
-- Work needing an unreleased Kestra: set `kestraVersion=<next>-SNAPSHOT` in `gradle.properties`; tests then run against the `develop` images and `kestraImageVersion` is ignored.
-- Patches for the current Kestra meanwhile go through the release workflow's hotfix mode (`commitsList` cherry-picked on the last tag).
-- Once that Kestra version is released, set both `kestraVersion` and `kestraImageVersion` to it.
+- `main` targets the upcoming Kestra (`kestraVersion=<next>-SNAPSHOT`, tests on the `develop` images, `kestraImageVersion` ignored).
+- `releases/v<X.Y>.x` targets the released Kestra X.Y; fixes for it go there (PR or cherry-pick from `main`) and its releases are cut from it.
+- Once Kestra `<next>` is released: cut `releases/v<next>.x` from `main` with `kestraVersion` and `kestraImageVersion` set to it, then bump `main` to the following SNAPSHOT and move the Dependabot `target-branch`.
 
 ## References
 

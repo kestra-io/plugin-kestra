@@ -25,3 +25,26 @@ updates:
       kestra-gradle-plugins:
         patterns:
           - "io.kestra.gradle.*"
+
+  # Same updates for the line that targets the current Kestra release (see AGENTS.md)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "releases/v2.0.x"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependency-upgrade"
+    open-pull-requests-limit: 50
+
+  - package-ecosystem: "gradle"
+    directory: "/"
+    target-branch: "releases/v2.0.x"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependency-upgrade"
+    open-pull-requests-limit: 50
+    groups:
+      kestra-gradle-plugins:
+        patterns:
+          - "io.kestra.gradle.*"

@@ -186,7 +186,7 @@ release {
     tagTemplate = 'v${version}'
     buildTasks = ['classes']
     git {
-        requireBranch.set('main')
+        requireBranch.set('main|releases/.*')
     }
 }
 
