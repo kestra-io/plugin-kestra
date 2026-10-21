@@ -35,7 +35,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 @NoArgsConstructor
 @Schema(
     title = "Purges assets from the catalog based on retention policies",
-    description = "By default, the task purges assets, asset usage events (execution view), and asset lineage events (for asset exporters) matching the filters. You can configure it to only purge specific types of records. Asset lineage event purging currently does not support filtering by asset ID, type or metadata. Asset usage event purging currently does not support filtering by asset type or metadata."
+    description = "By default, the task purges assets and asset usage events (execution view) matching the filters. You can configure it to only purge specific types of records. Asset lineage is deleted along with the purged assets directly. Asset usage event purging currently does not support filtering by asset type or metadata."
 )
 @Plugin(
     examples = {
@@ -131,37 +131,13 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
     @PluginProperty(group = "main")
     private Property<Boolean> purgeAssetUsages = Property.ofValue(true);
 
-    @NotNull
-    @Schema(
-        title = "Whether to purge asset lineage events (for asset exporters) matching the filters"
-    )
-    @Builder.Default
-    @PluginProperty(group = "main")
-    private Property<Boolean> purgeAssetLineages = Property.ofValue(true);
-
     @Override
     public PurgeOutput run(RunContext runContext) throws Exception {
-        Boolean rPurgeAssetLineages = runContext.render(purgeAssetLineages).as(Boolean.class).orElse(true);
         Boolean rPurgeAssetUsages = runContext.render(purgeAssetUsages).as(Boolean.class).orElse(true);
 
         String rAssetId = runContext.render(assetId).as(String.class).orElse(null);
         List<String> rAssetType = runContext.render(assetType).asList(String.class);
         List<FieldQuery> rMetadataQuery = runContext.render(metadataQuery).asList(FieldQuery.class);
-
-        // TODO Remove once asset lineage events support filtering by asset ID, type and metadata (https://github.com/kestra-io/kestra-ee/issues/6851)
-        if (rPurgeAssetLineages) {
-            if (rAssetId != null) {
-                throw new NotImplementedException("Asset ID filtering is not yet implemented for lineage events");
-            }
-
-            if (!rAssetType.isEmpty()) {
-                throw new NotImplementedException("Asset type filtering is not yet implemented for lineage events");
-            }
-
-            if (!rMetadataQuery.isEmpty()) {
-                throw new NotImplementedException("Asset metadata filtering is not yet implemented for lineage events");
-            }
-        }
 
         // TODO Remove once asset usage events support filtering by type and metadata (https://github.com/kestra-io/kestra-ee/issues/6851)
         if (rPurgeAssetUsages) {
@@ -201,23 +177,6 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
         if (rPurgeAssetUsages) {
             outputBuilder.purgedAssetUsagesCount(
                 kestraClient.assets().deleteAssetUsagesByQuery(
-                    rTenantForPurge,
-                    this.toQueryFilters(
-                        rAssetId,
-                        rNamespace,
-                        rAssetType,
-                        rMetadataQuery,
-                        rEndDate,
-                        QueryFilterField.ASSET_ID,
-                        QueryFilterField.CREATED
-                    )
-                ).getCount()
-            );
-        }
-
-        if (rPurgeAssetLineages) {
-            outputBuilder.purgedAssetLineagesCount(
-                kestraClient.assets().deleteAssetLineageEventsByQuery(
                     rTenantForPurge,
                     this.toQueryFilters(
                         rAssetId,
@@ -318,11 +277,5 @@ public class PurgeAssets extends AbstractKestraTask implements RunnableTask<Purg
         )
         @PluginProperty(group = "advanced")
         private Integer purgedAssetUsagesCount;
-
-        @Schema(
-            title = "Number of asset lineages purged"
-        )
-        @PluginProperty(group = "advanced")
-        private Integer purgedAssetLineagesCount;
     }
 }
