@@ -73,8 +73,8 @@ plugin-kestra/
 ### Targeting an unreleased Kestra
 
 - `main` targets the released Kestra and is the only branch releases are cut from.
-- Work needing an unreleased Kestra goes to `next/<X.Y>` (e.g. `next/2.1`), which sets `kestraVersion=<X.Y>.0-SNAPSHOT`; tests there run on the `develop` images and `kestraImageVersion` is ignored. Merge `main` into it regularly.
-- Once Kestra X.Y is released: merge `next/<X.Y>` into `main`, set `kestraVersion` and `kestraImageVersion` to the release, then delete the branch.
+- Work needing an unreleased Kestra goes to `next/v<X.Y>` (e.g. `next/v2.1`), which sets `kestraVersion=<X.Y>.0-SNAPSHOT`; tests there run on the `develop` images and `kestraImageVersion` is ignored. Merge `main` into it regularly.
+- Once Kestra X.Y is released: merge `next/v<X.Y>` into `main`, set `kestraVersion` and `kestraImageVersion` to the release, then delete the branch.
 
 ## References
 
