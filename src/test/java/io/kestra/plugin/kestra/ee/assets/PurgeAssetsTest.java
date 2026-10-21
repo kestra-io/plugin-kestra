@@ -42,53 +42,44 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
     void purgeCombinationsShouldReturnExpectedCounts() throws Exception {
         for (boolean purgeAssets : List.of(false, true)) {
             for (boolean purgeUsages : List.of(false, true)) {
-                for (boolean purgeLineages : List.of(false, true)) {
-                    // Produces: 2 assets, 2 asset usages, 1 lineage event
-                    TestData data = createAssetsAndExecutionData(NAMESPACE + ".matrix", Map.of("env", "test"));
+                // Produces: 2 assets, 2 asset usages
+                TestData data = createAssetsAndExecutionData(NAMESPACE + ".matrix", Map.of("env", "test"));
 
-                    RunContext runContext = runContextFactory.of();
+                RunContext runContext = runContextFactory.of();
 
-                    PurgeAssets task = baseTaskBuilder()
-                        .namespace(Property.ofValue(data.namespace()))
-                        .endDate(Property.ofValue(Instant.now().plus(Duration.ofDays(1))))
-                        .purgeAssets(Property.ofValue(purgeAssets))
-                        .purgeAssetUsages(Property.ofValue(purgeUsages))
-                        .purgeAssetLineages(Property.ofValue(purgeLineages))
-                        .build();
+                PurgeAssets task = baseTaskBuilder()
+                    .namespace(Property.ofValue(data.namespace()))
+                    .endDate(Property.ofValue(Instant.now().plus(Duration.ofDays(1))))
+                    .purgeAssets(Property.ofValue(purgeAssets))
+                    .purgeAssetUsages(Property.ofValue(purgeUsages))
+                    .build();
 
-                    PurgeAssets.PurgeOutput output = task.run(runContext);
+                PurgeAssets.PurgeOutput output = task.run(runContext);
 
-                    assertThat(output, is(notNullValue()));
-                    if (purgeAssets) {
-                        assertThat(output.getPurgedAssetsCount(), is(2));
-                    } else {
-                        assertThat(output.getPurgedAssetsCount(), nullValue());
-                    }
-
-                    if (purgeUsages) {
-                        assertThat(output.getPurgedAssetUsagesCount(), is(2));
-                    } else {
-                        assertThat(output.getPurgedAssetUsagesCount(), nullValue());
-                    }
-
-                    if (purgeLineages) {
-                        assertThat(output.getPurgedAssetLineagesCount(), is(1));
-                    } else {
-                        assertThat(output.getPurgedAssetLineagesCount(), nullValue());
-                    }
-
-                    // Validate side-effect for assets only (usages/lineage list APIs might not be exposed in SDK).
-                    if (purgeAssets) {
-                        assertThat("Input asset should be deleted", kestraTestDataUtils.assetExists(data.inputAssetId()), is(false));
-                        assertThat("Output asset should be deleted", kestraTestDataUtils.assetExists(data.outputAssetId()), is(false));
-                    } else {
-                        assertThat("Input asset should still exist", kestraTestDataUtils.assetExists(data.inputAssetId()), is(true));
-                        assertThat("Output asset should still exist", kestraTestDataUtils.assetExists(data.outputAssetId()), is(true));
-                    }
-
-                    // Clean up remaining assets between combinations (avoid cross-run coupling).
-                    purgeAllAssetsInNamespace(data.namespace());
+                assertThat(output, is(notNullValue()));
+                if (purgeAssets) {
+                    assertThat(output.getPurgedAssetsCount(), is(2));
+                } else {
+                    assertThat(output.getPurgedAssetsCount(), nullValue());
                 }
+
+                if (purgeUsages) {
+                    assertThat(output.getPurgedAssetUsagesCount(), is(2));
+                } else {
+                    assertThat(output.getPurgedAssetUsagesCount(), nullValue());
+                }
+
+                // Validate side-effect for assets only (usages/lineage list APIs might not be exposed in SDK).
+                if (purgeAssets) {
+                    assertThat("Input asset should be deleted", kestraTestDataUtils.assetExists(data.inputAssetId()), is(false));
+                    assertThat("Output asset should be deleted", kestraTestDataUtils.assetExists(data.outputAssetId()), is(false));
+                } else {
+                    assertThat("Input asset should still exist", kestraTestDataUtils.assetExists(data.inputAssetId()), is(true));
+                    assertThat("Output asset should still exist", kestraTestDataUtils.assetExists(data.outputAssetId()), is(true));
+                }
+
+                // Clean up remaining assets between combinations (avoid cross-run coupling).
+                purgeAllAssetsInNamespace(data.namespace());
             }
         }
     }
@@ -105,7 +96,6 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
             .endDate(Property.ofValue(Instant.now().plus(Duration.ofDays(1))))
             .purgeAssets(Property.ofValue(true))
             .purgeAssetUsages(Property.ofValue(true))
-            .purgeAssetLineages(Property.ofValue(false))
             .build();
 
         PurgeAssets.PurgeOutput output = task.run(runContext);
@@ -123,6 +113,8 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
     @Test
     void shouldFilterByAssetIdForAssetsAndUsages() throws Exception {
         TestData data = createAssetsAndExecutionData(NAMESPACE + ".assetid", Map.of("env", "test"));
+        Awaitility.await().until(() -> kestraTestDataUtils.countAssetRelations(data.inputAssetId()) > 0 && kestraTestDataUtils.countAssetRelations(data.outputAssetId()) > 0);
+        long outputRelationsBefore = kestraTestDataUtils.countAssetRelations(data.outputAssetId());
 
         RunContext runContext = runContextFactory.of();
 
@@ -132,7 +124,6 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
             .endDate(Property.ofValue(Instant.now().plus(Duration.ofDays(1))))
             .purgeAssets(Property.ofValue(true))
             .purgeAssetUsages(Property.ofValue(true))
-            .purgeAssetLineages(Property.ofValue(false))
             .build();
 
         PurgeAssets.PurgeOutput output = task.run(runContext);
@@ -141,6 +132,9 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
 
         assertThat(kestraTestDataUtils.assetExists(data.inputAssetId()), is(false));
         assertThat(kestraTestDataUtils.assetExists(data.outputAssetId()), is(true));
+        // the purged asset's relations, lineage included, go with it
+        assertThat(kestraTestDataUtils.countAssetRelations(data.inputAssetId()), is(0L));
+        assertThat(kestraTestDataUtils.countAssetRelations(data.outputAssetId()), lessThan(outputRelationsBefore));
 
         purgeAllAssetsInNamespace(data.namespace());
     }
@@ -165,13 +159,11 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
             .endDate(Property.ofValue(Instant.now().plus(Duration.ofDays(1))))
             .purgeAssets(Property.ofValue(true))
             .purgeAssetUsages(Property.ofValue(false))
-            .purgeAssetLineages(Property.ofValue(false))
             .build();
 
         PurgeAssets.PurgeOutput output = task.run(runContext);
         assertThat(output.getPurgedAssetsCount(), is(1));
         assertThat(output.getPurgedAssetUsagesCount(), nullValue());
-        assertThat(output.getPurgedAssetLineagesCount(), nullValue());
 
         assertThat(kestraTestDataUtils.assetExists(inputAssetId), is(false));
         assertThat(kestraTestDataUtils.assetExists(outputAssetId), is(true));
@@ -206,13 +198,11 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
             .endDate(Property.ofValue(Instant.now().plus(Duration.ofDays(1))))
             .purgeAssets(Property.ofValue(true))
             .purgeAssetUsages(Property.ofValue(false))
-            .purgeAssetLineages(Property.ofValue(false))
             .build();
 
         PurgeAssets.PurgeOutput output = task.run(runContext);
         assertThat(output.getPurgedAssetsCount(), is(1));
         assertThat(output.getPurgedAssetUsagesCount(), nullValue());
-        assertThat(output.getPurgedAssetLineagesCount(), nullValue());
 
         assertThat(kestraTestDataUtils.assetExists(matchingId), is(false));
         assertThat(kestraTestDataUtils.assetExists(nonMatchingId), is(true));
@@ -231,52 +221,16 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
             .endDate(Property.ofValue(Instant.now().minus(Duration.ofDays(1))))
             .purgeAssets(Property.ofValue(true))
             .purgeAssetUsages(Property.ofValue(true))
-            .purgeAssetLineages(Property.ofValue(true))
             .build();
 
         PurgeAssets.PurgeOutput output = task.run(runContext);
         assertThat(output.getPurgedAssetsCount(), is(0));
         assertThat(output.getPurgedAssetUsagesCount(), is(0));
-        assertThat(output.getPurgedAssetLineagesCount(), is(0));
 
         assertThat(kestraTestDataUtils.assetExists(data.inputAssetId()), is(true));
         assertThat(kestraTestDataUtils.assetExists(data.outputAssetId()), is(true));
 
         purgeAllAssetsInNamespace(data.namespace());
-    }
-
-    @Test
-    void lineageFilteringAssetIdOrTypeOrMetadataShouldThrowNotImplemented() {
-        RunContext runContext = runContextFactory.of();
-
-        PurgeAssets base = baseTaskBuilder()
-            .namespace(Property.ofValue(NAMESPACE + ".lineage.notimpl"))
-            .endDate(Property.ofValue(Instant.now()))
-            .purgeAssets(Property.ofValue(false))
-            .purgeAssetUsages(Property.ofValue(false))
-            .purgeAssetLineages(Property.ofValue(true))
-            .build();
-
-        assertThrows(
-            NotImplementedException.class, () -> base.toBuilder()
-                .assetId(Property.ofValue("asset"))
-                .build()
-                .run(runContext)
-        );
-
-        assertThrows(
-            NotImplementedException.class, () -> base.toBuilder()
-                .assetType(Property.ofValue(List.of("TABLE")))
-                .build()
-                .run(runContext)
-        );
-
-        assertThrows(
-            NotImplementedException.class, () -> base.toBuilder()
-                .metadataQuery(Property.ofValue(java.util.List.of(new FieldQuery("k", QueryType.EQUAL_TO, "v"))))
-                .build()
-                .run(runContext)
-        );
     }
 
     @Test
@@ -288,7 +242,6 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
             .endDate(Property.ofValue(Instant.now()))
             .purgeAssets(Property.ofValue(false))
             .purgeAssetUsages(Property.ofValue(true))
-            .purgeAssetLineages(Property.ofValue(false))
             .build();
 
         assertThrows(
@@ -324,7 +277,6 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
             .endDate(Property.ofValue(Instant.now().plus(Duration.ofDays(1))))
             .purgeAssets(Property.ofValue(true))
             .purgeAssetUsages(Property.ofValue(true))
-            .purgeAssetLineages(Property.ofValue(false))
             .build();
 
         PurgeAssets.PurgeOutput output = task.run(runContext);
@@ -363,7 +315,6 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
             .endDate(Property.ofValue(Instant.now().plus(Duration.ofDays(1))))
             .purgeAssets(Property.ofValue(true))
             .purgeAssetUsages(Property.ofValue(true))
-            .purgeAssetLineages(Property.ofValue(true))
             .build();
 
         task.run(runContext);
@@ -403,7 +354,6 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
             """.formatted(flowId, namespace, inputAssetId, outputAssetId, namespace, outputType);
 
         int assetUsagesBeforeExecution = kestraTestDataUtils.getAssetUsagesForNamespace(namespace).getTotal().intValue();
-        int assetLineagesBeforeExecution = kestraTestDataUtils.getAssetLineagesForNamespace(namespace).getTotal().intValue();
 
         FlowWithSource created = kestraTestDataUtils.getKestraClient().flows().createFlow(TENANT_ID, flow);
         kestraTestDataUtils.createRandomizedExecution(created.getId(), created.getNamespace());
@@ -416,16 +366,6 @@ public class PurgeAssetsTest extends AbstractKestraEeContainerTest {
             try {
                 // One for input & one for output
                 return kestraTestDataUtils.getAssetUsagesForNamespace(namespace).getTotal().equals(assetUsagesBeforeExecution + 2L);
-            } catch (ApiException ignored) {
-                // Not present yet
-                return false;
-            }
-        });
-        Awaitility.await().until(() ->
-        {
-            try {
-                // One lineage event for the execution (covers both input & output assets)
-                return kestraTestDataUtils.getAssetLineagesForNamespace(namespace).getTotal().equals(assetLineagesBeforeExecution + 1L);
             } catch (ApiException ignored) {
                 // Not present yet
                 return false;

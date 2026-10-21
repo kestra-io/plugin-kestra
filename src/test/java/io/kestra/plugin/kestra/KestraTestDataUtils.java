@@ -1,11 +1,19 @@
 package io.kestra.plugin.kestra;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.sdk.KestraClient;
 import io.kestra.sdk.internal.ApiException;
 import io.kestra.sdk.model.*;
@@ -23,12 +31,16 @@ import lombok.extern.slf4j.Slf4j;
 public class KestraTestDataUtils {
     private final String defaultNameSpace = "default";
     private final String tenantId;
+    private final String kestraUrl;
+    private final String basicAuth;
     @Getter
     private final KestraClient kestraClient;
     private static final Random random = new Random();
 
     public KestraTestDataUtils(String kestraUrl, String username, String password, String tenantId) {
         this.tenantId = tenantId;
+        this.kestraUrl = kestraUrl;
+        this.basicAuth = "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
 
         var builder = KestraClient.builder();
         builder.url(kestraUrl);
@@ -219,15 +231,25 @@ public class KestraTestDataUtils {
         );
     }
 
-    public PagedResultsAssetsControllerApiAssetLineageEvent getAssetLineagesForNamespace(String namespace) throws ApiException {
-        return kestraClient.assets().searchAssetLineageEvents(
-            tenantId, 1, MAX_PAGE_SIZE, null, List.of(
-                new QueryFilter()
-                    .field(QueryFilterField.NAMESPACE)
-                    .operation(QueryFilterOp.EQUALS)
-                    .value(namespace)
-            )
-        );
+    // The relation endpoints are not in the API client yet
+    public long countAssetRelations(String assetId) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(URI.create("%s/api/v1/%s/assets/%s/relations/summary".formatted(kestraUrl, tenantId, assetId)))
+            .header("Authorization", basicAuth)
+            .GET()
+            .build();
+        HttpResponse<String> response;
+        try (HttpClient httpClient = HttpClient.newHttpClient()) {
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        }
+        if (response.statusCode() != 200) {
+            throw new IllegalStateException("Asset relations summary returned HTTP " + response.statusCode() + ": " + response.body());
+        }
+
+        long total = 0;
+        for (var group : JacksonMapper.ofJson().readTree(response.body()).path("groups")) {
+            total += group.path("total").asLong();
+        }
+        return total;
     }
 
     public AssetsControllerApiAsset getAsset(String assetId) throws ApiException {

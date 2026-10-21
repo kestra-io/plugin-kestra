@@ -227,13 +227,13 @@ class KillTest extends AbstractKestraOssContainerTest {
 
         assertThat(output, is(nullValue()));
 
-        // After kill the sub execution, the parent execution is killed too.
         Awaitility.await()
             .during(Duration.ofSeconds(2))
             .until(checkExecutionState(subExecution.getId(), StateType.KILLED));
-        var afterParentExecution = kestraTestDataUtils.getExecution(parentExecution.getId());
-
-        assertThat(afterParentExecution.getState().getCurrent(), is(StateType.KILLED));
+        // Killing only the subflow execution is a failure transmitted to the parent, which nobody killed (kestra-io/kestra#21395)
+        Awaitility.await()
+            .atMost(Duration.ofSeconds(10))
+            .until(checkExecutionState(parentExecution.getId(), StateType.FAILED));
     }
 
     private ApiLightExecution queryExecution(String flowId) throws Exception {
