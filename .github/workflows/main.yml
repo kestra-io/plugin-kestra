@@ -8,6 +8,7 @@ on:
       - master
       - main
       - releases/*
+      - next/*
     tags:
       - v*
 
@@ -16,6 +17,7 @@ on:
       - master
       - main
       - releases/*
+      - next/*
 
   workflow_dispatch:
     inputs:

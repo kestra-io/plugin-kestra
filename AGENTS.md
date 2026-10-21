@@ -72,9 +72,9 @@ plugin-kestra/
 
 ### Targeting an unreleased Kestra
 
-- Work needing an unreleased Kestra: set `kestraVersion=<next>-SNAPSHOT` in `gradle.properties`; tests then run against the `develop` images and `kestraImageVersion` is ignored.
-- Patches for the current Kestra meanwhile go through the release workflow's hotfix mode (`commitsList` cherry-picked on the last tag).
-- Once that Kestra version is released, set both `kestraVersion` and `kestraImageVersion` to it.
+- `main` targets the released Kestra and is the only branch releases are cut from.
+- Work needing an unreleased Kestra goes to `next/<X.Y>` (e.g. `next/2.1`), which sets `kestraVersion=<X.Y>.0-SNAPSHOT`; tests there run on the `develop` images and `kestraImageVersion` is ignored. Merge `main` into it regularly.
+- Once Kestra X.Y is released: merge `next/<X.Y>` into `main`, set `kestraVersion` and `kestraImageVersion` to the release, then delete the branch.
 
 ## References
 
