@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - releases/*
+      - next/*
     tags:
       - v*
 
@@ -12,6 +13,7 @@ on:
     branches:
       - main
       - releases/*
+      - next/*
 
   workflow_dispatch:
     inputs:
