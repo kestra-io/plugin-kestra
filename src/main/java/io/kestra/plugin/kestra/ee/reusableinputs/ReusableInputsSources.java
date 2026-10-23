@@ -150,7 +150,7 @@ final class ReusableInputsSources {
         }
     }
 
-    /** An exact id wins, since an input id may itself contain dots, before {@code form.child} is tried. */
+    /** An exact id wins, since an input id may itself contain dots, before {@code form.child} is tried at each dot. */
     @Nullable
     private static Map<String, Object> find(List<Map<String, Object>> inputs, String key) {
         for (Map<String, Object> input : inputs) {
@@ -158,12 +158,14 @@ final class ReusableInputsSources {
                 return input;
             }
         }
-        int dot = key.indexOf('.');
-        if (dot < 0) {
-            return null;
+        for (int dot = key.indexOf('.'); dot >= 0; dot = key.indexOf('.', dot + 1)) {
+            Map<String, Object> form = find(inputs, key.substring(0, dot));
+            Map<String, Object> child = form == null ? null : find(inputsOf(form), key.substring(dot + 1));
+            if (child != null) {
+                return child;
+            }
         }
-        Map<String, Object> form = find(inputs, key.substring(0, dot));
-        return form == null ? null : find(inputsOf(form), key.substring(dot + 1));
+        return null;
     }
 
     private static List<Map<String, Object>> inputsOf(Map<String, Object> parent) {

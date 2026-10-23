@@ -4,9 +4,11 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -39,7 +41,7 @@ import lombok.experimental.SuperBuilder;
         such as the output of `CsvToIon`: each text cell is converted to the type of its column, and an empty cell is left empty.
 
         The task edits the revision executions use. With `draft`, it saves a draft instead, which executions skip and which may be invalid, \
-        and edits the latest revision, drafts included.
+        and edits the latest revision, drafts included. The source is rewritten from its content, so comments in it are not kept.
 
         The set is validated the same way as a save from the editor, and the task fails on an invalid set with the same message. \
         The new revision appears in Revisions and in audit logs under the user or service account the task is authenticated with.
@@ -134,14 +136,19 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
 
     @Schema(
         title = "Inputs of the set",
-        description = "Each entry is an input declaration, as in a flow. When set, every input of the set is replaced. Required to create a set."
+        description = """
+            Each entry is an input declaration, as in a flow. When set, every input of the set is replaced. Required to create a set.
+            The declarations are saved as written: an expression in them, such as a `SELECT` `expression` or a `defaults` with `{{ now() }}`, \
+            is evaluated by the executions using the set, not by this task. A single expression returning the whole list is evaluated."""
     )
     @PluginProperty(group = "main")
     private Property<List<Map<String, Object>>> inputs;
 
     @Schema(
         title = "Defaults to change, keyed by input id",
-        description = "Only the defaults of existing inputs are changed; use `form.child` for an input of a `FORM`. The task fails on an id the set doesn't have."
+        description = """
+            Only the defaults of existing inputs are changed; use `form.child` for an input of a `FORM`. The task fails on an id the set doesn't have.
+            Values are evaluated by this task, so that they can come from outputs; to save an expression as the default, wrap it in `{% raw %}`."""
     )
     @PluginProperty(group = "main")
     private Property<Map<String, Object>> defaults;
@@ -159,8 +166,7 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
         String rTenant = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         String rNamespace = runContext.render(namespace).as(String.class).orElseGet(() -> runContext.flowInfo().namespace());
         String rId = runContext.render(reusableInputsId).as(String.class).orElseThrow();
-        @SuppressWarnings({ "unchecked", "rawtypes" })
-        List<Map<String, Object>> rInputs = inputs == null ? null : (List) runContext.render(inputs).asList(Map.class);
+        List<Map<String, Object>> rInputs = inputs == null ? null : declarations(runContext);
         Map<String, Object> rDefaults = defaults == null ? null : runContext.render(defaults).asMap(String.class, Object.class);
         boolean rDraft = runContext.render(draft).as(Boolean.class).orElse(false);
 
@@ -199,12 +205,18 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
             .build();
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private List<Map<String, Object>> declarations(RunContext runContext) throws IllegalVariableEvaluationException {
+        Optional<List<Map>> asWritten = Property.asStaticList((Property) inputs, Map.class);
+        return asWritten.isPresent() ? (List) asWritten.get() : (List) runContext.render(inputs).asList(Map.class);
+    }
+
     /**
      * A set inherited from a parent namespace is not edited from here: the task works on the exact namespace.
      * A set that only has drafts has no revision executions use, so its latest draft is edited.
      */
     @Nullable
-    private static String currentSource(ReusableInputsApi api, String tenant, String namespace, String id, boolean draft) throws ApiException {
+    private static String currentSource(ReusableInputsApi api, String tenant, String namespace, String id, boolean draft) {
         try {
             ReusableInputsWithSource latest = api.reusableInputs(namespace, id, tenant, null, draft);
             return namespace.equals(latest.getNamespace()) ? latest.getSource() : null;
@@ -215,7 +227,10 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
             if (e.getCode() == 422 && !draft) {
                 return currentSource(api, tenant, namespace, id, true);
             }
-            throw e;
+            throw new IllegalArgumentException(
+                "Reusable inputs '%s' could not be read in namespace '%s': %s".formatted(id, namespace, ReusableInputsSources.errorMessage(e)),
+                e
+            );
         }
     }
 

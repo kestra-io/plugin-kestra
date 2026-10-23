@@ -1,5 +1,8 @@
 package io.kestra.plugin.kestra.ee.reusableinputs;
 
+import java.io.File;
+import java.net.URI;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 
@@ -104,5 +107,61 @@ class SetTest extends AbstractKestraEeContainerTest {
         assertThat(published.getRevision()).isEqualTo(2);
         assertThat(published.getDraft()).isFalse();
         assertThat(kestraTestDataUtils.getReusableInputs(namespace, "bom").getSource()).contains("defaults: eu");
+    }
+
+    @Test
+    void shouldSaveTheExpressionsOfTheInputsAsWritten() throws Exception {
+        String namespace = "kestra.tests.reusableinputs." + IdUtils.create().toLowerCase();
+
+        run(
+            set(namespace)
+                .inputs(
+                    Property.ofValue(
+                        List.of(
+                            Map.of("id", "region", "type", "SELECT", "expression", "{{ ['eu', 'us'] }}"),
+                            Map.of("id", "started", "type", "DATETIME", "defaults", "{{ now() }}")
+                        )
+                    )
+                )
+                .build()
+        );
+
+        assertThat(kestraTestDataUtils.getReusableInputs(namespace, "bom").getSource())
+            .contains("{{ ['eu', 'us'] }}")
+            .contains("{{ now() }}");
+    }
+
+    @Test
+    void shouldReplaceTheRowsOfATableWithTheRowsOfAFile() throws Exception {
+        String namespace = "kestra.tests.reusableinputs." + IdUtils.create().toLowerCase();
+        kestraTestDataUtils.createReusableInputs(
+            namespace, "bom", "inputs:\n  - id: servers\n    type: TABLE\n    columns:\n      - id: name\n        type: STRING\n      - id: cpus\n        type: INT\n"
+        );
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, set(namespace).build(), Map.of());
+        File rows = runContext.workingDir().createTempFile(".ion").toFile();
+        Files.writeString(rows.toPath(), "{name:\"web\",cpus:\"2\"}\n{name:\"pg\",cpus:\"4\"}\n");
+        URI uri = runContext.storage().putFile(rows);
+
+        set(namespace).defaults(Property.ofValue(Map.of("servers", uri.toString()))).build().run(runContext);
+
+        assertThat(kestraTestDataUtils.getReusableInputs(namespace, "bom").getSource())
+            .contains("name: web")
+            .contains("cpus: 4")
+            .doesNotContain("\"4\"");
+    }
+
+    @Test
+    void shouldCreateTheSetInTheNamespaceInsteadOfEditingTheOneInheritedFromItsParent() throws Exception {
+        String parent = "kestra.tests.reusableinputs." + IdUtils.create().toLowerCase();
+        String child = parent + ".team";
+        kestraTestDataUtils.createReusableInputs(parent, "bom", "inputs:\n  - id: region\n    type: STRING\n    defaults: us\n");
+
+        assertThatThrownBy(() -> run(set(child).defaults(Property.ofValue(Map.of("region", "eu"))).build()))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("`inputs` must be set to create them");
+        run(set(child).inputs(Property.ofValue(List.of(Map.of("id", "region", "type", "STRING", "defaults", "eu")))).build());
+
+        assertThat(kestraTestDataUtils.getReusableInputs(child, "bom").getNamespace()).isEqualTo(child);
+        assertThat(kestraTestDataUtils.getReusableInputs(parent, "bom").getSource()).contains("defaults: us");
     }
 }

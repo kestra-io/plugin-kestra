@@ -143,6 +143,24 @@ class ReusableInputsSourcesTest {
         assertThat(inputsOf(parse(source)).getFirst()).containsEntry("defaults", "kestra:///env.txt");
     }
 
+    @Test
+    void shouldFindTheChildOfAFormWhoseIdContainsADot() throws Exception {
+        String source = """
+            id: bom
+            namespace: company.team
+            inputs:
+              - id: app.sizing
+                type: FORM
+                inputs:
+                  - id: cpu.count
+                    type: INT
+            """;
+
+        String updated = ReusableInputsSources.apply(source, "company.team", "bom", null, null, Map.of("app.sizing.cpu.count", 4), NO_FILE);
+
+        assertThat(inputsOf(inputsOf(parse(updated)).getFirst()).getFirst()).containsEntry("defaults", 4);
+    }
+
     @SuppressWarnings("unchecked")
     private static List<Map<String, Object>> inputsOf(Map<String, Object> set) {
         return (List<Map<String, Object>>) set.get("inputs");
