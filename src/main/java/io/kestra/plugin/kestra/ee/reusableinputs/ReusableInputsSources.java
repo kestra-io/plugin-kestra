@@ -1,6 +1,7 @@
 package io.kestra.plugin.kestra.ee.reusableinputs;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,10 +26,16 @@ final class ReusableInputsSources {
     private ReusableInputsSources() {
     }
 
+    @FunctionalInterface
+    interface RowsReader {
+        List<Map<String, Object>> read(URI uri) throws IOException;
+    }
+
     /**
      * @param currentSource the source of the latest revision in the exact namespace, or null when the set doesn't exist there
      * @param inputs when set, replaces every input of the set
      * @param defaults when set, changes only the defaults of existing inputs, keyed by input id ({@code form.child} for a FORM child)
+     * @param rowsReader reads the rows of a TABLE whose default is a {@code kestra://} URI
      * @throws IllegalArgumentException when creating a set without inputs, or when a default targets an input the set doesn't have
      */
     static String apply(
@@ -37,7 +44,8 @@ final class ReusableInputsSources {
         String id,
         @Nullable String description,
         @Nullable List<Map<String, Object>> inputs,
-        @Nullable Map<String, Object> defaults) throws IOException {
+        @Nullable Map<String, Object> defaults,
+        RowsReader rowsReader) throws IOException {
         if (currentSource == null && inputs == null) {
             throw new IllegalArgumentException(
                 "Reusable inputs '%s' don't exist in namespace '%s', so `inputs` must be set to create them.".formatted(id, namespace)
@@ -65,7 +73,9 @@ final class ReusableInputsSources {
             }));
         }
         if (defaults != null) {
-            defaults.forEach((key, value) -> setDefault(id, inputsOf(set), key, value));
+            for (Map.Entry<String, Object> entry : defaults.entrySet()) {
+                setDefault(id, inputsOf(set), entry.getKey(), entry.getValue(), rowsReader);
+            }
         }
 
         return YAML_MAPPER.writeValueAsString(set);
@@ -84,15 +94,59 @@ final class ReusableInputsSources {
         return e.getMessage();
     }
 
-    private static void setDefault(String setId, List<Map<String, Object>> inputs, String key, @Nullable Object value) {
+    private static void setDefault(String setId, List<Map<String, Object>> inputs, String key, @Nullable Object value, RowsReader rowsReader)
+        throws IOException {
         Map<String, Object> input = find(inputs, key);
         if (input == null) {
             throw new IllegalArgumentException("`%s` is not an input of reusable inputs '%s'.".formatted(key, setId));
         }
         if (value == null) {
             input.remove("defaults");
+        } else if ("TABLE".equals(input.get("type"))) {
+            input.put("defaults", tableRows(input, value, rowsReader));
         } else {
             input.put("defaults", value);
+        }
+    }
+
+    /** Rows read from a file, e.g. a CSV turned into ION, hold text: each cell is typed after its column, and an empty one is left out. */
+    private static Object tableRows(Map<String, Object> table, Object value, RowsReader rowsReader) throws IOException {
+        Object rows = value instanceof String uri && uri.startsWith("kestra://") ? rowsReader.read(URI.create(uri)) : value;
+        if (!(rows instanceof List<?> list)) {
+            return rows;
+        }
+        Map<String, Object> columnTypes = new LinkedHashMap<>();
+        inputsOf(table, "columns").forEach(column -> columnTypes.put(String.valueOf(column.get("id")), column.get("type")));
+        return list.stream()
+            .map(row -> row instanceof Map<?, ?> cells ? typedRow(cells, columnTypes) : row)
+            .toList();
+    }
+
+    private static Map<Object, Object> typedRow(Map<?, ?> cells, Map<String, Object> columnTypes) {
+        Map<Object, Object> row = new LinkedHashMap<>();
+        cells.forEach((column, cell) -> row.put(column, cell instanceof String text ? typedCell(text, columnTypes.get(String.valueOf(column))) : cell));
+        return row;
+    }
+
+    @Nullable
+    private static Object typedCell(String text, @Nullable Object type) {
+        if (text.isBlank()) {
+            return null;
+        }
+        String trimmed = text.trim();
+        try {
+            return switch (String.valueOf(type)) {
+                case "INT" -> Long.parseLong(trimmed);
+                case "FLOAT" -> Double.parseDouble(trimmed);
+                case "BOOL", "BOOLEAN" -> switch (trimmed.toLowerCase()) {
+                    case "true" -> true;
+                    case "false" -> false;
+                    default -> text;
+                };
+                default -> text;
+            };
+        } catch (NumberFormatException e) {
+            return text;
         }
     }
 
@@ -112,8 +166,12 @@ final class ReusableInputsSources {
         return form == null ? null : find(inputsOf(form), key.substring(dot + 1));
     }
 
-    @SuppressWarnings("unchecked")
     private static List<Map<String, Object>> inputsOf(Map<String, Object> parent) {
-        return parent.get("inputs") instanceof List<?> list ? (List<Map<String, Object>>) list : List.of();
+        return inputsOf(parent, "inputs");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> inputsOf(Map<String, Object> parent, String key) {
+        return parent.get(key) instanceof List<?> list ? (List<Map<String, Object>>) list : List.of();
     }
 }

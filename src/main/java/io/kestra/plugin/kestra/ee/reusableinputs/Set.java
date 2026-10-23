@@ -1,7 +1,11 @@
 package io.kestra.plugin.kestra.ee.reusableinputs;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -9,6 +13,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.api.ReusableInputsApi;
 import io.kestra.sdk.internal.ApiException;
@@ -30,7 +35,11 @@ import lombok.experimental.SuperBuilder;
     description = """
         Creates a set of reusable inputs, or saves a new revision of an existing one. With `inputs`, every input of the set is replaced. \
         With `defaults`, only the defaults of existing inputs are changed, keyed by input id (`form.child` for an input of a `FORM`), \
-        and everything else in the set is kept.
+        and everything else in the set is kept. The default of a `TABLE` input can be the URI of an ION file holding its rows, \
+        such as the output of `CsvToIon`: each text cell is converted to the type of its column, and an empty cell is left empty.
+
+        The task edits the revision executions use. With `draft`, it saves a draft instead, which executions skip and which may be invalid, \
+        and edits the latest revision, drafts included.
 
         The set is validated the same way as a save from the editor, and the task fails on an invalid set with the same message. \
         The new revision appears in Revisions and in audit logs under the user or service account the task is authenticated with.
@@ -76,6 +85,29 @@ import lombok.experimental.SuperBuilder;
                       environment: prod
                       cpus: 4
                 """
+        ),
+        @Example(
+            title = "Replace the rows of a TABLE input with the rows of a CSV file.",
+            full = true,
+            code = """
+                id: reusable_inputs_import_csv
+                namespace: company.team
+
+                inputs:
+                  - id: servers
+                    type: FILE
+
+                tasks:
+                  - id: to_ion
+                    type: io.kestra.plugin.serdes.csv.CsvToIon
+                    from: "{{ inputs.servers }}"
+
+                  - id: set_servers
+                    type: io.kestra.plugin.kestra.ee.reusableinputs.Set
+                    reusableInputsId: bom
+                    defaults:
+                      servers: "{{ outputs.to_ion.uri }}"
+                """
         )
     }
 )
@@ -114,6 +146,14 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
     @PluginProperty(group = "main")
     private Property<Map<String, Object>> defaults;
 
+    @Schema(
+        title = "Save the revision as a draft",
+        description = "A draft is skipped by executions and may be invalid."
+    )
+    @Builder.Default
+    @PluginProperty(group = "advanced")
+    private Property<Boolean> draft = Property.ofValue(false);
+
     @Override
     public Output run(RunContext runContext) throws Exception {
         String rTenant = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
@@ -122,20 +162,28 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
         @SuppressWarnings({ "unchecked", "rawtypes" })
         List<Map<String, Object>> rInputs = inputs == null ? null : (List) runContext.render(inputs).asList(Map.class);
         Map<String, Object> rDefaults = defaults == null ? null : runContext.render(defaults).asMap(String.class, Object.class);
+        boolean rDraft = runContext.render(draft).as(Boolean.class).orElse(false);
 
         ReusableInputsApi api = kestraClient(runContext).reusableInputs();
         String source = ReusableInputsSources.apply(
-            currentSource(api, rTenant, rNamespace, rId),
+            currentSource(api, rTenant, rNamespace, rId, rDraft),
             rNamespace,
             rId,
             runContext.render(reusableInputsDescription).as(String.class).orElse(null),
             rInputs,
-            rDefaults
+            rDefaults,
+            uri ->
+            {
+                try (var reader = new BufferedReader(new InputStreamReader(runContext.storage().getFile(uri)), FileSerde.BUFFER_SIZE)) {
+                    return FileSerde.readAll(reader, new TypeReference<Map<String, Object>>() {
+                    }).collectList().block();
+                }
+            }
         );
 
         ReusableInputsWithSource saved;
         try {
-            saved = api.createOrUpdateReusableInputs(rNamespace, rId, rTenant, source, false);
+            saved = api.createOrUpdateReusableInputs(rNamespace, rId, rTenant, source, false, rDraft);
         } catch (ApiException e) {
             throw new IllegalArgumentException(
                 "Reusable inputs '%s' could not be saved in namespace '%s': %s".formatted(rId, rNamespace, ReusableInputsSources.errorMessage(e)),
@@ -147,18 +195,25 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
             .namespace(saved.getNamespace())
             .id(saved.getId())
             .revision(saved.getRevision())
+            .draft(Boolean.TRUE.equals(saved.getDraft()))
             .build();
     }
 
-    /** A set inherited from a parent namespace is not edited from here: the task works on the exact namespace. */
+    /**
+     * A set inherited from a parent namespace is not edited from here: the task works on the exact namespace.
+     * A set that only has drafts has no revision executions use, so its latest draft is edited.
+     */
     @Nullable
-    private static String currentSource(ReusableInputsApi api, String tenant, String namespace, String id) {
+    private static String currentSource(ReusableInputsApi api, String tenant, String namespace, String id, boolean draft) throws ApiException {
         try {
-            ReusableInputsWithSource latest = api.reusableInputs(namespace, id, tenant, null);
+            ReusableInputsWithSource latest = api.reusableInputs(namespace, id, tenant, null, draft);
             return namespace.equals(latest.getNamespace()) ? latest.getSource() : null;
         } catch (ApiException e) {
             if (e.getCode() == 404) {
                 return null;
+            }
+            if (e.getCode() == 422 && !draft) {
+                return currentSource(api, tenant, namespace, id, true);
             }
             throw e;
         }
@@ -175,5 +230,8 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
 
         @Schema(title = "Revision saved by the task")
         private final Integer revision;
+
+        @Schema(title = "Whether the revision was saved as a draft")
+        private final Boolean draft;
     }
 }

@@ -23,6 +23,21 @@ class ListTest extends AbstractKestraEeContainerTest {
     @Inject
     TestRunContextFactory runContextFactory;
 
+    private List.ListBuilder<?, ?> list(String namespace) {
+        return List.builder()
+            .id(List.class.getSimpleName())
+            .type(List.class.getName())
+            .kestraUrl(Property.ofValue(KESTRA_URL))
+            .auth(AbstractKestraTask.Auth.builder().username(Property.ofValue(USERNAME)).password(Property.ofValue(PASSWORD)).build())
+            .tenantId(Property.ofValue(TENANT_ID))
+            .namespace(Property.ofValue(namespace))
+            .fetchType(Property.ofValue(FetchType.FETCH));
+    }
+
+    private List.Output run(List list) throws Exception {
+        return list.run(TestsUtils.mockRunContext(runContextFactory, list, Map.of()));
+    }
+
     @Test
     void shouldListTheSetsOfTheNamespaceAndTheInheritedOnes() throws Exception {
         String parent = "kestra.tests.reusableinputs." + IdUtils.create().toLowerCase();
@@ -31,21 +46,29 @@ class ListTest extends AbstractKestraEeContainerTest {
         kestraTestDataUtils.createReusableInputs(child, "bom", "inputs:\n  - id: cpus\n    type: INT\n");
         kestraTestDataUtils.createReusableInputs(child, "bom", "inputs:\n  - id: cpus\n    type: INT\n    defaults: 2\n");
 
-        List list = List.builder()
-            .id(List.class.getSimpleName())
-            .type(List.class.getName())
-            .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(AbstractKestraTask.Auth.builder().username(Property.ofValue(USERNAME)).password(Property.ofValue(PASSWORD)).build())
-            .tenantId(Property.ofValue(TENANT_ID))
-            .namespace(Property.ofValue(child))
-            .size(Property.ofValue(1))
-            .fetchType(Property.ofValue(FetchType.FETCH))
-            .build();
-        List.Output output = list.run(TestsUtils.mockRunContext(runContextFactory, list, Map.of()));
+        List.Output output = run(list(child).size(Property.ofValue(1)).build());
 
         assertThat(output.getSize()).isEqualTo(2L);
         assertThat(output.getReusableInputs())
             .extracting(List.Summary::id, List.Summary::namespace, List.Summary::revision)
             .containsExactlyInAnyOrder(tuple("bom", child, 2), tuple("shared", parent, 1));
+    }
+
+    @Test
+    void shouldListEachSetAsTheRevisionExecutionsUseAndDraftsOnlyWithAllowDraft() throws Exception {
+        String namespace = "kestra.tests.reusableinputs." + IdUtils.create().toLowerCase();
+        kestraTestDataUtils.createReusableInputs(namespace, "bom", "inputs:\n  - id: cpus\n    type: INT\n");
+        kestraTestDataUtils.createDraftReusableInputs(namespace, "bom", "inputs:\n  - id: cpus\n    type: INT\n    defaults: 2\n");
+        kestraTestDataUtils.createDraftReusableInputs(namespace, "wip", "inputs:\n  - id: region\n    type: STRING\n");
+
+        List.Output executable = run(list(namespace).build());
+        List.Output withDrafts = run(list(namespace).allowDraft(Property.ofValue(true)).build());
+
+        assertThat(executable.getReusableInputs())
+            .extracting(List.Summary::id, List.Summary::revision, List.Summary::draft)
+            .containsExactly(tuple("bom", 1, false));
+        assertThat(withDrafts.getReusableInputs())
+            .extracting(List.Summary::id, List.Summary::revision, List.Summary::draft)
+            .containsExactlyInAnyOrder(tuple("bom", 2, true), tuple("wip", 1, true));
     }
 }

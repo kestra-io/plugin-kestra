@@ -40,7 +40,8 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
     title = "List reusable inputs",
     description = """
         Lists the sets of reusable inputs visible from a namespace, including the ones inherited from its parent namespaces, \
-        with their id, namespace, description and latest revision. Fetches every page unless `page` is set.
+        with their id, namespace, description and revision. Each set is listed as the revision executions use, \
+        and a set that only has drafts is left out, unless `allowDraft` is set. Fetches every page unless `page` is set.
         Enterprise Edition only."""
 )
 @Plugin(
@@ -86,6 +87,14 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
     private Property<Integer> size = Property.ofValue(100);
 
     @Schema(
+        title = "Include draft revisions",
+        description = "Each set is then listed as its latest revision, which may be a draft."
+    )
+    @Builder.Default
+    @PluginProperty(group = "advanced")
+    private Property<Boolean> allowDraft = Property.ofValue(false);
+
+    @Schema(
         title = "Output fetch type",
         description = "Defines how results are returned: `FETCH` for direct output, `STORE` to persist as an ION file."
     )
@@ -100,18 +109,19 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         var rSize = runContext.render(this.size).as(Integer.class).orElse(100);
         var rTenant = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         var rNamespace = runContext.render(namespace).as(String.class).orElseGet(() -> runContext.flowInfo().namespace());
+        var rAllowDraft = runContext.render(this.allowDraft).as(Boolean.class).orElse(false);
 
         ReusableInputsApi api = kestraClient(runContext).reusableInputs();
 
         java.util.List<ReusableInputsWithSource> fetched;
         if (rPage != null) {
-            fetched = api.listReusableInputs(rNamespace, rTenant, rPage, rSize).getResults();
+            fetched = api.listReusableInputs(rNamespace, rTenant, rPage, rSize, rAllowDraft).getResults();
         } else {
             fetched = new ArrayList<>();
             int currentPage = 1;
             long total;
             do {
-                PagedResultsReusableInputsWithSource results = api.listReusableInputs(rNamespace, rTenant, currentPage, rSize);
+                PagedResultsReusableInputsWithSource results = api.listReusableInputs(rNamespace, rTenant, currentPage, rSize, rAllowDraft);
                 fetched.addAll(results.getResults());
                 total = results.getTotal();
             } while ((long) currentPage++ * rSize < total);
@@ -145,9 +155,10 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         @Schema(title = "ID of the reusable inputs") String id,
         @Schema(title = "Namespace the set is defined in, a parent namespace when it is inherited") String namespace,
         @Schema(title = "Description of the reusable inputs") String description,
-        @Schema(title = "Latest revision") Integer revision) {
+        @Schema(title = "Revision listed: the one executions use, or the latest with `allowDraft`") Integer revision,
+        @Schema(title = "Whether the revision listed is a draft") boolean draft) {
         static Summary of(ReusableInputsWithSource set) {
-            return new Summary(set.getId(), set.getNamespace(), set.getDescription(), set.getRevision());
+            return new Summary(set.getId(), set.getNamespace(), set.getDescription(), set.getRevision(), Boolean.TRUE.equals(set.getDraft()));
         }
     }
 

@@ -268,6 +268,10 @@ public class KestraTestDataUtils {
         return kestraClient.reusableInputs().createOrUpdateReusableInputs(namespace, id, tenantId, source, false);
     }
 
+    public ReusableInputsWithSource createDraftReusableInputs(String namespace, String id, String source) throws ApiException {
+        return kestraClient.reusableInputs().createOrUpdateReusableInputs(namespace, id, tenantId, source, false, true);
+    }
+
     public ReusableInputsWithSource getReusableInputs(String namespace, String id) throws ApiException {
         return kestraClient.reusableInputs().reusableInputs(namespace, id, tenantId, null);
     }

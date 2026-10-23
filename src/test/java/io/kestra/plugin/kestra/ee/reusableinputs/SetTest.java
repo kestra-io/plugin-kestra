@@ -78,4 +78,31 @@ class SetTest extends AbstractKestraEeContainerTest {
             .hasMessageContaining("could not be saved")
             .hasMessageContaining("cpus: Invalid default");
     }
+
+    @Test
+    void shouldSaveAnInvalidDraftThatExecutionsSkipThenEditTheRevisionTheyUse() throws Exception {
+        String namespace = "kestra.tests.reusableinputs." + IdUtils.create().toLowerCase();
+        kestraTestDataUtils.createReusableInputs(namespace, "bom", "inputs:\n  - id: cpus\n    type: INT\n    min: 1\n    defaults: 2\n  - id: region\n    type: STRING\n");
+
+        Set.Output draft = run(set(namespace).defaults(Property.ofValue(Map.of("cpus", 0))).draft(Property.ofValue(true)).build());
+        Set.Output published = run(set(namespace).defaults(Property.ofValue(Map.of("region", "eu"))).build());
+
+        ReusableInputsWithSource saved = kestraTestDataUtils.getReusableInputs(namespace, "bom");
+        assertThat(draft.getDraft()).isTrue();
+        assertThat(published.getDraft()).isFalse();
+        assertThat(saved.getRevision()).isEqualTo(published.getRevision());
+        assertThat(saved.getSource()).contains("defaults: 2").contains("defaults: eu").doesNotContain("defaults: 0");
+    }
+
+    @Test
+    void shouldPublishASetThatOnlyHasDrafts() throws Exception {
+        String namespace = "kestra.tests.reusableinputs." + IdUtils.create().toLowerCase();
+        kestraTestDataUtils.createDraftReusableInputs(namespace, "bom", "inputs:\n  - id: region\n    type: STRING\n");
+
+        Set.Output published = run(set(namespace).defaults(Property.ofValue(Map.of("region", "eu"))).build());
+
+        assertThat(published.getRevision()).isEqualTo(2);
+        assertThat(published.getDraft()).isFalse();
+        assertThat(kestraTestDataUtils.getReusableInputs(namespace, "bom").getSource()).contains("defaults: eu");
+    }
 }
