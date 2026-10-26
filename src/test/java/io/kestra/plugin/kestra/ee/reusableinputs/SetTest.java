@@ -132,14 +132,14 @@ class SetTest extends AbstractKestraEeContainerTest {
     }
 
     @Test
-    void shouldReplaceTheRowsOfATableWithTheRowsOfAFile() throws Exception {
+    void shouldReplaceTheRowsOfATableWithTheRowsOfACsvFile() throws Exception {
         String namespace = "kestra.tests.reusableinputs." + IdUtils.create().toLowerCase();
         kestraTestDataUtils.createReusableInputs(
             namespace, "bom", "inputs:\n  - id: servers\n    type: TABLE\n    columns:\n      - id: name\n        type: STRING\n      - id: cpus\n        type: INT\n"
         );
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, set(namespace).build(), Map.of());
-        File rows = runContext.workingDir().createTempFile(".ion").toFile();
-        Files.writeString(rows.toPath(), "{name:\"web\",cpus:\"2\"}\n{name:\"pg\",cpus:\"4\"}\n");
+        File rows = runContext.workingDir().createTempFile(".csv").toFile();
+        Files.writeString(rows.toPath(), "name,cpus\nweb,2\npg,4\n");
         URI uri = runContext.storage().putFile(rows);
 
         set(namespace).defaults(Property.ofValue(Map.of("servers", uri.toString()))).build().run(runContext);

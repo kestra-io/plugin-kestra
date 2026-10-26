@@ -1,18 +1,25 @@
 package io.kestra.plugin.kestra.ee.reusableinputs;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.sdk.internal.ApiException;
 
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
 import jakarta.annotation.Nullable;
 
 /**
@@ -27,16 +34,17 @@ final class ReusableInputsSources {
     }
 
     @FunctionalInterface
-    interface RowsReader {
-        List<Map<String, Object>> read(URI uri) throws IOException;
+    interface FileOpener {
+        InputStream open(URI uri) throws IOException;
     }
 
     /**
      * @param currentSource the source of the latest revision in the exact namespace, or null when the set doesn't exist there
      * @param inputs when set, replaces every input of the set
      * @param defaults when set, changes only the defaults of existing inputs, keyed by input id ({@code form.child} for a FORM child)
-     * @param rowsReader reads the rows of a TABLE whose default is a {@code kestra://} URI
-     * @throws IllegalArgumentException when creating a set without inputs, or when a default targets an input the set doesn't have
+     * @param files opens the CSV or ION file of a TABLE whose default is a {@code kestra://} URI
+     * @throws IllegalArgumentException when creating a set without inputs, when a default targets an input the set doesn't have,
+     *         or when a row of a TABLE has a cell that isn't one of its columns
      */
     static String apply(
         @Nullable String currentSource,
@@ -45,7 +53,7 @@ final class ReusableInputsSources {
         @Nullable String description,
         @Nullable List<Map<String, Object>> inputs,
         @Nullable Map<String, Object> defaults,
-        RowsReader rowsReader) throws IOException {
+        FileOpener files) throws IOException {
         if (currentSource == null && inputs == null) {
             throw new IllegalArgumentException(
                 "Reusable inputs '%s' don't exist in namespace '%s', so `inputs` must be set to create them.".formatted(id, namespace)
@@ -74,7 +82,7 @@ final class ReusableInputsSources {
         }
         if (defaults != null) {
             for (Map.Entry<String, Object> entry : defaults.entrySet()) {
-                setDefault(id, inputsOf(set), entry.getKey(), entry.getValue(), rowsReader);
+                setDefault(id, inputsOf(set), entry.getKey(), entry.getValue(), files);
             }
         }
 
@@ -94,7 +102,7 @@ final class ReusableInputsSources {
         return e.getMessage();
     }
 
-    private static void setDefault(String setId, List<Map<String, Object>> inputs, String key, @Nullable Object value, RowsReader rowsReader)
+    private static void setDefault(String setId, List<Map<String, Object>> inputs, String key, @Nullable Object value, FileOpener files)
         throws IOException {
         Map<String, Object> input = find(inputs, key);
         if (input == null) {
@@ -103,23 +111,87 @@ final class ReusableInputsSources {
         if (value == null) {
             input.remove("defaults");
         } else if ("TABLE".equals(input.get("type"))) {
-            input.put("defaults", tableRows(input, value, rowsReader));
+            input.put("defaults", tableRows(setId, key, input, value, files));
         } else {
             input.put("defaults", value);
         }
     }
 
-    /** Rows read from a file, e.g. a CSV turned into ION, hold text: each cell is typed after its column, and an empty one is left out. */
-    private static Object tableRows(Map<String, Object> table, Object value, RowsReader rowsReader) throws IOException {
-        Object rows = value instanceof String uri && uri.startsWith("kestra://") ? rowsReader.read(URI.create(uri)) : value;
+    /** Rows read from a file hold text: each cell is typed after its column, and an empty one is left out. */
+    private static Object tableRows(String setId, String tableId, Map<String, Object> table, Object value, FileOpener files) throws IOException {
+        Object rows = value instanceof String uri && uri.startsWith("kestra://") ? readRows(setId, tableId, URI.create(uri), files) : value;
         if (!(rows instanceof List<?> list)) {
             return rows;
         }
         Map<String, Object> columnTypes = new LinkedHashMap<>();
         inputsOf(table, "columns").forEach(column -> columnTypes.put(String.valueOf(column.get("id")), column.get("type")));
+        list.stream()
+            .filter(Map.class::isInstance)
+            .flatMap(row -> ((Map<?, ?>) row).keySet().stream())
+            .map(String::valueOf)
+            .filter(column -> !columnTypes.containsKey(column))
+            .findFirst()
+            .ifPresent(column ->
+            {
+                throw new IllegalArgumentException(
+                    "`%s` is not a column of `%s` in reusable inputs '%s'. Its columns are: %s."
+                        .formatted(column, tableId, setId, String.join(", ", columnTypes.keySet()))
+                );
+            });
         return list.stream()
             .map(row -> row instanceof Map<?, ?> cells ? typedRow(cells, columnTypes) : row)
             .toList();
+    }
+
+    private static List<Map<String, Object>> readRows(String setId, String tableId, URI uri, FileOpener files) throws IOException {
+        try (InputStream in = files.open(uri)) {
+            if (uri.getPath().toLowerCase(Locale.ROOT).endsWith(".csv")) {
+                try {
+                    return csvRows(new String(in.readAllBytes(), StandardCharsets.UTF_8));
+                } catch (RuntimeException e) {
+                    throw new IllegalArgumentException(
+                        "The CSV file of `%s` in reusable inputs '%s' can't be read: %s".formatted(tableId, setId, e.getMessage()),
+                        e
+                    );
+                }
+            }
+            return FileSerde.readAll(in, new TypeReference<Map<String, Object>>() {
+            }).collectList().block();
+        }
+    }
+
+    /** The separator is the one the header uses most among comma, semicolon (a French Excel export) and tab. */
+    private static List<Map<String, Object>> csvRows(String text) throws IOException {
+        String csv = text.startsWith("\uFEFF") ? text.substring(1) : text;
+        String header = csv.lines().findFirst().orElse("");
+        char separator = Stream.of(',', ';', '\t')
+            .max((a, b) -> Long.compare(header.chars().filter(c -> c == a).count(), header.chars().filter(c -> c == b).count()))
+            .orElse(',');
+        try (CsvReader<CsvRecord> reader = CsvReader.builder().fieldSeparator(separator).skipEmptyLines(true).ofCsvRecord(csv)) {
+            List<List<String>> records = reader.stream().map(CsvRecord::getFields).toList();
+            if (records.isEmpty()) {
+                return List.of();
+            }
+            List<String> columns = records.getFirst().stream().map(String::trim).toList();
+            columns.stream()
+                .filter(column -> columns.indexOf(column) != columns.lastIndexOf(column))
+                .findFirst()
+                .ifPresent(column ->
+                {
+                    throw new IllegalArgumentException("`%s` appears more than once in the header".formatted(column));
+                });
+            return records.stream()
+                .skip(1)
+                .map(fields ->
+                {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    for (int i = 0; i < columns.size(); i++) {
+                        row.put(columns.get(i), fields.get(i));
+                    }
+                    return row;
+                })
+                .toList();
+        }
     }
 
     private static Map<Object, Object> typedRow(Map<?, ?> cells, Map<String, Object> columnTypes) {

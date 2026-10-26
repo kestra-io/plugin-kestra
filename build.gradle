@@ -54,6 +54,9 @@ dependencies {
 
     // kestra API client
     implementation "io.kestra:kestra-api-client:2.0.2"
+
+    // CSV rows of a TABLE input
+    implementation "de.siegmar:fastcsv"
 }
 
 /**********************************************************************************************************************\

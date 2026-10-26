@@ -1,6 +1,9 @@
 package io.kestra.plugin.kestra.ee.reusableinputs;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +36,7 @@ class ReusableInputsSourcesTest {
                 defaults: 2
         """;
 
-    private static final ReusableInputsSources.RowsReader NO_FILE = uri ->
+    private static final ReusableInputsSources.FileOpener NO_FILE = uri ->
     {
         throw new AssertionError("no file expected, got " + uri);
     };
@@ -118,20 +121,71 @@ class ReusableInputsSourcesTest {
     @Test
     void shouldReadTheRowsOfATableFromAFileTypingEachTextCellAfterItsColumnAndDroppingEmptyOnes() throws Exception {
         URI file = URI.create("kestra:///company/team/servers.ion");
-        List<Map<String, Object>> rows = List.of(
-            Map.of("name", "web", "cpus", "2", "ratio", "0.5", "managed", "TRUE"),
-            Map.of("name", "", "cpus", "abc", "ratio", "", "managed", "maybe")
-        );
+        String rows = "{name:\"web\",cpus:\"2\",ratio:\"0.5\",managed:\"TRUE\"}\n{name:\"\",cpus:\"abc\",ratio:\"\",managed:\"maybe\"}\n";
 
         String source = ReusableInputsSources.apply(SERVERS, "company.team", "bom", null, null, Map.of("servers", file.toString()), uri ->
         {
             assertThat(uri).isEqualTo(file);
-            return rows;
+            return stream(rows);
         });
 
         assertThat(inputsOf(parse(source)).getFirst().get("defaults")).isEqualTo(
             List.of(Map.of("name", "web", "cpus", 2, "ratio", 0.5, "managed", true), Map.of("cpus", "abc", "managed", "maybe"))
         );
+    }
+
+    @Test
+    void shouldReadTheRowsOfATableFromACsvFileByItsHeader() throws Exception {
+        String csv = "managed,name,cpus\ntrue,web,2\n,pg,4\n";
+
+        String source = ReusableInputsSources.apply(SERVERS, "company.team", "bom", null, null, Map.of("servers", "kestra:///servers.csv"), uri -> stream(csv));
+
+        assertThat(inputsOf(parse(source)).getFirst().get("defaults")).isEqualTo(
+            List.of(Map.of("managed", true, "name", "web", "cpus", 2), Map.of("name", "pg", "cpus", 4))
+        );
+    }
+
+    @Test
+    void shouldReadACsvFileExportedByAFrenchExcelWithItsByteOrderMarkAndSemicolons() throws Exception {
+        String csv = "\uFEFFname;cpus\r\n\"web, front\";2\r\n";
+
+        String source = ReusableInputsSources.apply(SERVERS, "company.team", "bom", null, null, Map.of("servers", "kestra:///servers.csv"), uri -> stream(csv));
+
+        assertThat(inputsOf(parse(source)).getFirst().get("defaults")).isEqualTo(List.of(Map.of("name", "web, front", "cpus", 2)));
+    }
+
+    @Test
+    void shouldFailOnAHeaderThatIsNotAColumnOfTheTable() {
+        String csv = "name,memory\nweb,8\n";
+
+        assertThatThrownBy(() -> ReusableInputsSources.apply(SERVERS, "company.team", "bom", null, null, Map.of("servers", "kestra:///servers.csv"), uri -> stream(csv)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("`memory` is not a column of `servers` in reusable inputs 'bom'. Its columns are: name, cpus, ratio, managed.");
+    }
+
+    @Test
+    void shouldFailOnACsvRowWithMoreCellsThanTheHeaderInsteadOfDroppingTheExtraOnes() {
+        String csv = "name,cpus\nweb, front,2\n";
+
+        assertThatThrownBy(() -> ReusableInputsSources.apply(SERVERS, "company.team", "bom", null, null, Map.of("servers", "kestra:///servers.csv"), uri -> stream(csv)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageStartingWith("The CSV file of `servers` in reusable inputs 'bom' can't be read: ");
+    }
+
+    @Test
+    void shouldFailOnACsvHeaderNamingAColumnTwice() {
+        String csv = "name,cpus,name\nweb,2,api\n";
+
+        assertThatThrownBy(() -> ReusableInputsSources.apply(SERVERS, "company.team", "bom", null, null, Map.of("servers", "kestra:///servers.csv"), uri -> stream(csv)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("The CSV file of `servers` in reusable inputs 'bom' can't be read: `name` appears more than once in the header");
+    }
+
+    @Test
+    void shouldFailOnAKeyThatIsNotAColumnOfTheTableInRowsWrittenInTheTask() {
+        assertThatThrownBy(() -> ReusableInputsSources.apply(SERVERS, "company.team", "bom", null, null, Map.of("servers", List.of(Map.of("name", "web", "memory", 8))), NO_FILE))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageStartingWith("`memory` is not a column of `servers`");
     }
 
     @Test
@@ -159,6 +213,10 @@ class ReusableInputsSourcesTest {
         String updated = ReusableInputsSources.apply(source, "company.team", "bom", null, null, Map.of("app.sizing.cpu.count", 4), NO_FILE);
 
         assertThat(inputsOf(inputsOf(parse(updated)).getFirst()).getFirst()).containsEntry("defaults", 4);
+    }
+
+    private static InputStream stream(String text) {
+        return new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
     }
 
     @SuppressWarnings("unchecked")

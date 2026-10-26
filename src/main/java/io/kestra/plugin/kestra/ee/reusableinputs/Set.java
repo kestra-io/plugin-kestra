@@ -1,12 +1,8 @@
 package io.kestra.plugin.kestra.ee.reusableinputs;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import com.fasterxml.jackson.core.type.TypeReference;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
@@ -15,7 +11,6 @@ import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.api.ReusableInputsApi;
 import io.kestra.sdk.internal.ApiException;
@@ -37,8 +32,9 @@ import lombok.experimental.SuperBuilder;
     description = """
         Creates a set of reusable inputs, or saves a new revision of an existing one. With `inputs`, every input of the set is replaced. \
         With `defaults`, only the defaults of existing inputs are changed, keyed by input id (`form.child` for an input of a `FORM`), \
-        and everything else in the set is kept. The default of a `TABLE` input can be the URI of an ION file holding its rows, \
-        such as the output of `CsvToIon`: each text cell is converted to the type of its column, and an empty cell is left empty.
+        and everything else in the set is kept. The default of a `TABLE` input can be its rows, or the URI of a CSV or ION file holding them, \
+        e.g. a `FILE` input: a CSV is read by its header, with one cell per header on every row, separated by commas, semicolons or tabs. \
+        Each text cell is converted to the type of its column, and an empty cell is left empty. The task fails on a header or key that isn't a column.
 
         The task edits the revision executions use. With `draft`, it saves a draft instead, which executions skip and which may be invalid, \
         and edits the latest revision, drafts included. The source is rewritten from its content, so comments in it are not kept.
@@ -100,15 +96,11 @@ import lombok.experimental.SuperBuilder;
                     type: FILE
 
                 tasks:
-                  - id: to_ion
-                    type: io.kestra.plugin.serdes.csv.CsvToIon
-                    from: "{{ inputs.servers }}"
-
                   - id: set_servers
                     type: io.kestra.plugin.kestra.ee.reusableinputs.Set
                     reusableInputsId: bom
                     defaults:
-                      servers: "{{ outputs.to_ion.uri }}"
+                      servers: "{{ inputs.servers }}"
                 """
         )
     }
@@ -178,13 +170,7 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
             runContext.render(reusableInputsDescription).as(String.class).orElse(null),
             rInputs,
             rDefaults,
-            uri ->
-            {
-                try (var reader = new BufferedReader(new InputStreamReader(runContext.storage().getFile(uri)), FileSerde.BUFFER_SIZE)) {
-                    return FileSerde.readAll(reader, new TypeReference<Map<String, Object>>() {
-                    }).collectList().block();
-                }
-            }
+            runContext.storage()::getFile
         );
 
         ReusableInputsWithSource saved;
