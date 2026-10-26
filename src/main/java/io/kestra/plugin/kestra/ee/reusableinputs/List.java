@@ -40,8 +40,8 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
     title = "List reusable inputs",
     description = """
         Lists the sets of reusable inputs visible from a namespace, including the ones inherited from its parent namespaces, \
-        with their id, namespace, description and revision. Each set is listed as the revision executions use, \
-        and a set that only has drafts is left out, unless `allowDraft` is set. Fetches every page unless `page` is set.
+        with their id, namespace, description, latest revision and whether it is a draft. With `allowDraft: false`, each set is \
+        listed as the revision executions use instead, and a set that only has drafts is left out. Fetches every page unless `page` is set.
         Enterprise Edition only."""
 )
 @Plugin(
@@ -88,11 +88,11 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
 
     @Schema(
         title = "Include draft revisions",
-        description = "Each set is then listed as its latest revision, which may be a draft."
+        description = "When `false`, each set is listed as the revision executions use, and a set that only has drafts is left out."
     )
     @Builder.Default
     @PluginProperty(group = "advanced")
-    private Property<Boolean> allowDraft = Property.ofValue(false);
+    private Property<Boolean> allowDraft = Property.ofValue(true);
 
     @Schema(
         title = "Output fetch type",
@@ -109,7 +109,7 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         var rSize = runContext.render(this.size).as(Integer.class).orElse(100);
         var rTenant = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         var rNamespace = runContext.render(namespace).as(String.class).orElseGet(() -> runContext.flowInfo().namespace());
-        var rAllowDraft = runContext.render(this.allowDraft).as(Boolean.class).orElse(false);
+        var rAllowDraft = runContext.render(this.allowDraft).as(Boolean.class).orElse(true);
 
         ReusableInputsApi api = kestraClient(runContext).reusableInputs();
 
@@ -155,7 +155,7 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
         @Schema(title = "ID of the reusable inputs") String id,
         @Schema(title = "Namespace the set is defined in, a parent namespace when it is inherited") String namespace,
         @Schema(title = "Description of the reusable inputs") String description,
-        @Schema(title = "Revision listed: the one executions use, or the latest with `allowDraft`") Integer revision,
+        @Schema(title = "Revision listed: the latest, or the one executions use with `allowDraft: false`") Integer revision,
         @Schema(title = "Whether the revision listed is a draft") boolean draft) {
         static Summary of(ReusableInputsWithSource set) {
             return new Summary(set.getId(), set.getNamespace(), set.getDescription(), set.getRevision(), Boolean.TRUE.equals(set.getDraft()));

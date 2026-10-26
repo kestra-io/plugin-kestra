@@ -3,13 +3,19 @@ package io.kestra.plugin.kestra.ee.reusableinputs;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -147,7 +153,7 @@ final class ReusableInputsSources {
         try (InputStream in = files.open(uri)) {
             if (uri.getPath().toLowerCase(Locale.ROOT).endsWith(".csv")) {
                 try {
-                    return csvRows(new String(in.readAllBytes(), StandardCharsets.UTF_8));
+                    return csvRows(decoded(in.readAllBytes()));
                 } catch (RuntimeException e) {
                     throw new IllegalArgumentException(
                         "The CSV file of `%s` in reusable inputs '%s' can't be read: %s".formatted(tableId, setId, e.getMessage()),
@@ -157,6 +163,19 @@ final class ReusableInputsSources {
             }
             return FileSerde.readAll(in, new TypeReference<Map<String, Object>>() {
             }).collectList().block();
+        }
+    }
+
+    /** UTF-8, or windows-1252 when the bytes aren't UTF-8, as Excel writes a "CSV (comma delimited)" file on Windows. */
+    private static String decoded(byte[] bytes) {
+        try {
+            return StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(ByteBuffer.wrap(bytes))
+                .toString();
+        } catch (CharacterCodingException e) {
+            return new String(bytes, Charset.forName("windows-1252"));
         }
     }
 
@@ -170,11 +189,11 @@ final class ReusableInputsSources {
         try (CsvReader<CsvRecord> reader = CsvReader.builder().fieldSeparator(separator).skipEmptyLines(true).ofCsvRecord(csv)) {
             List<List<String>> records = reader.stream().map(CsvRecord::getFields).toList();
             if (records.isEmpty()) {
-                return List.of();
+                throw new IllegalArgumentException("the file has no header line");
             }
             List<String> columns = records.getFirst().stream().map(String::trim).toList();
             columns.stream()
-                .filter(column -> columns.indexOf(column) != columns.lastIndexOf(column))
+                .filter(column -> !column.isEmpty() && columns.indexOf(column) != columns.lastIndexOf(column))
                 .findFirst()
                 .ifPresent(column ->
                 {
@@ -186,7 +205,9 @@ final class ReusableInputsSources {
                 {
                     Map<String, Object> row = new LinkedHashMap<>();
                     for (int i = 0; i < columns.size(); i++) {
-                        row.put(columns.get(i), fields.get(i));
+                        if (!columns.get(i).isEmpty()) {
+                            row.put(columns.get(i), fields.get(i));
+                        }
                     }
                     return row;
                 })
@@ -209,15 +230,19 @@ final class ReusableInputsSources {
         try {
             return switch (String.valueOf(type)) {
                 case "INT" -> Long.parseLong(trimmed);
-                case "FLOAT" -> Double.parseDouble(trimmed);
+                case "FLOAT" -> Double.parseDouble(trimmed.matches("-?\\d+,\\d+") ? trimmed.replace(',', '.') : trimmed);
                 case "BOOL", "BOOLEAN" -> switch (trimmed.toLowerCase()) {
                     case "true" -> true;
                     case "false" -> false;
                     default -> text;
                 };
+                case "MULTISELECT" -> trimmed.startsWith("[")
+                    ? JSON_MAPPER.readValue(trimmed, new TypeReference<List<Object>>() {
+                    })
+                    : Arrays.stream(trimmed.split(",")).map(String::trim).filter(value -> !value.isEmpty()).toList();
                 default -> text;
             };
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException | JsonProcessingException e) {
             return text;
         }
     }

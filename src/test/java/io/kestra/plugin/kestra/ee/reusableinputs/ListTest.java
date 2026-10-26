@@ -55,14 +55,14 @@ class ListTest extends AbstractKestraEeContainerTest {
     }
 
     @Test
-    void shouldListEachSetAsTheRevisionExecutionsUseAndDraftsOnlyWithAllowDraft() throws Exception {
+    void shouldListEachSetAsItsLatestRevisionOrAsTheRevisionExecutionsUseWithoutAllowDraft() throws Exception {
         String namespace = "kestra.tests.reusableinputs." + IdUtils.create().toLowerCase();
         kestraTestDataUtils.createReusableInputs(namespace, "bom", "inputs:\n  - id: cpus\n    type: INT\n");
         kestraTestDataUtils.createDraftReusableInputs(namespace, "bom", "inputs:\n  - id: cpus\n    type: INT\n    defaults: 2\n");
         kestraTestDataUtils.createDraftReusableInputs(namespace, "wip", "inputs:\n  - id: region\n    type: STRING\n");
 
-        List.Output executable = run(list(namespace).build());
-        List.Output withDrafts = run(list(namespace).allowDraft(Property.ofValue(true)).build());
+        List.Output withDrafts = run(list(namespace).build());
+        List.Output executable = run(list(namespace).allowDraft(Property.ofValue(false)).build());
 
         assertThat(executable.getReusableInputs())
             .extracting(List.Summary::id, List.Summary::revision, List.Summary::draft)

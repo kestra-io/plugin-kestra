@@ -3,6 +3,7 @@ package io.kestra.plugin.kestra.ee.reusableinputs;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -152,6 +153,55 @@ class ReusableInputsSourcesTest {
         String source = ReusableInputsSources.apply(SERVERS, "company.team", "bom", null, null, Map.of("servers", "kestra:///servers.csv"), uri -> stream(csv));
 
         assertThat(inputsOf(parse(source)).getFirst().get("defaults")).isEqualTo(List.of(Map.of("name", "web, front", "cpus", 2)));
+    }
+
+    @Test
+    void shouldReadAMultiselectCellAsAListOfValues() throws Exception {
+        String tags = """
+            id: bom
+            namespace: company.team
+            inputs:
+              - id: servers
+                type: TABLE
+                columns:
+                  - id: name
+                    type: STRING
+                  - id: tags
+                    type: MULTISELECT
+                    values: [web, db]
+            """;
+        String csv = "name,tags\nfront,\"web, db\"\nback,\"[\"\"db\"\"]\"\n";
+
+        String source = ReusableInputsSources.apply(tags, "company.team", "bom", null, null, Map.of("servers", "kestra:///servers.csv"), uri -> stream(csv));
+
+        assertThat(inputsOf(parse(source)).getFirst().get("defaults")).isEqualTo(
+            List.of(Map.of("name", "front", "tags", List.of("web", "db")), Map.of("name", "back", "tags", List.of("db")))
+        );
+    }
+
+    @Test
+    void shouldReadACsvFileExcelWroteInWindows1252() throws Exception {
+        byte[] csv = "name,cpus\nCafé,2\n".getBytes(Charset.forName("windows-1252"));
+
+        String source = ReusableInputsSources.apply(SERVERS, "company.team", "bom", null, null, Map.of("servers", "kestra:///servers.csv"), uri -> new ByteArrayInputStream(csv));
+
+        assertThat(inputsOf(parse(source)).getFirst().get("defaults")).isEqualTo(List.of(Map.of("name", "Café", "cpus", 2)));
+    }
+
+    @Test
+    void shouldReadADecimalCommaAndIgnoreAnEmptyHeaderCell() throws Exception {
+        String csv = "name;ratio;\nweb;0,5;\n";
+
+        String source = ReusableInputsSources.apply(SERVERS, "company.team", "bom", null, null, Map.of("servers", "kestra:///servers.csv"), uri -> stream(csv));
+
+        assertThat(inputsOf(parse(source)).getFirst().get("defaults")).isEqualTo(List.of(Map.of("name", "web", "ratio", 0.5)));
+    }
+
+    @Test
+    void shouldFailOnAnEmptyFileInsteadOfEmptyingTheTable() {
+        assertThatThrownBy(() -> ReusableInputsSources.apply(SERVERS, "company.team", "bom", null, null, Map.of("servers", "kestra:///servers.csv"), uri -> stream("")))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("The CSV file of `servers` in reusable inputs 'bom' can't be read: the file has no header line");
     }
 
     @Test
