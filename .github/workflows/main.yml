@@ -42,6 +42,11 @@ permissions:
   pull-requests: write
   packages: read
 
+# Serializes next/* runs per branch so two close pushes can't publish their snapshots out of order; other refs keep one group per run.
+concurrency:
+  group: ${{ github.workflow }}-${{ startsWith(github.ref, 'refs/heads/next/') && github.ref || github.run_id }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/heads/next/') }}
+
 jobs:
   detect-version:
     runs-on: ubuntu-latest
@@ -65,3 +70,41 @@ jobs:
       skip-test: ${{ github.event.inputs.skip-test == 'true' }}
       kestra-version: ${{ github.event.inputs.kestra-version != '' && github.event.inputs.kestra-version || needs.detect-version.outputs.kestra-version }}
     secrets: inherit
+
+  publish-snapshot:
+    name: Publish next snapshot
+    needs: check
+    # next/* publishes <kestraVersion>-next-SNAPSHOT (the targeted Kestra core version) to the Central Portal snapshots repository; main never produces a -next qualifier
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/next/') && github.repository == 'kestra-io/plugin-kestra'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve snapshot version
+        run: |
+          version=$(grep '^kestraVersion=' gradle.properties | cut -d= -f2)
+          echo "ORG_GRADLE_PROJECT_version=${version%-SNAPSHOT}-next-SNAPSHOT" >> "$GITHUB_ENV"
+
+      - name: Setup - Build
+        uses: kestra-io/actions/composite/setup-build@main
+        with:
+          java-enabled: true
+          java-version: '25'
+
+      - name: Publish - Snapshot to Maven Central
+        uses: kestra-io/actions/composite/publish-java@main
+        with:
+          is-private: 'false'
+          sonatype-user: ${{ secrets.SONATYPE_USER }}
+          sonatype-password: ${{ secrets.SONATYPE_PASSWORD }}
+          sonatype-gpg-keyid: ${{ secrets.SONATYPE_GPG_KEYID }}
+          sonatype-gpg-password: ${{ secrets.SONATYPE_GPG_PASSWORD }}
+          sonatype-gpg-file: ${{ secrets.SONATYPE_GPG_FILE }}
+
+      - name: Slack - Notify snapshot failure
+        if: failure()
+        uses: kestra-io/actions/composite/slack-status@main
+        with:
+          channel: 'C09FE0QCN2E'
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          suffix: next snapshot

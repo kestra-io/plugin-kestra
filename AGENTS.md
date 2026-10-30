@@ -74,6 +74,7 @@ plugin-kestra/
 
 - `main` targets the released Kestra and is the only branch releases are cut from.
 - Work needing an unreleased Kestra goes to `next/v<X.Y>` (e.g. `next/v2.1`), which sets `kestraVersion=<X.Y>.0-SNAPSHOT`; tests there run on the `develop` images and `kestraImageVersion` is ignored. Merge `main` into it regularly.
+- Each push to `next/v<X.Y>` publishes `io.kestra.plugin:plugin-kestra:<X.Y>.0-next-SNAPSHOT` (the `kestraVersion` core version with `-next` before `-SNAPSHOT`) to `https://central.sonatype.com/repository/maven-snapshots/`, for develop and RC instances: `kestra plugins install io.kestra.plugin:plugin-kestra:<X.Y>.0-next-SNAPSHOT --repositories=https://central.sonatype.com/repository/maven-snapshots/`. EE resolves the highest installed version by default, so pin `version: <X.Y>.0-next-SNAPSHOT` on the tasks when a released `plugin-kestra` is also installed.
 - Once Kestra X.Y is released: merge `next/v<X.Y>` into `main`, set `kestraVersion` and `kestraImageVersion` to the release, then delete the branch.
 
 ## References
