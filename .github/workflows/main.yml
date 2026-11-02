@@ -77,8 +77,12 @@ jobs:
     # next/* publishes <kestraVersion>-next-SNAPSHOT (the targeted Kestra core version) to the Central Portal snapshots repository; main never produces a -next qualifier
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/next/') && github.repository == 'kestra-io/plugin-kestra'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Resolve snapshot version
         run: |
