@@ -219,15 +219,10 @@ public class KestraTestDataUtils {
         );
     }
 
-    public PagedResultsAssetsControllerApiAssetLineageEvent getAssetLineagesForNamespace(String namespace) throws ApiException {
-        return kestraClient.assets().searchAssetLineageEvents(
-            tenantId, 1, MAX_PAGE_SIZE, null, List.of(
-                new QueryFilter()
-                    .field(QueryFilterField.NAMESPACE)
-                    .operation(QueryFilterOp.EQUALS)
-                    .value(namespace)
-            )
-        );
+    public long countAssetRelations(String assetId) throws ApiException {
+        return kestraClient.assets().assetRelationSummary(assetId, tenantId, null).getGroups().stream()
+            .mapToLong(AssetsControllerApiRelationGroup::getTotal)
+            .sum();
     }
 
     public AssetsControllerApiAsset getAsset(String assetId) throws ApiException {
