@@ -1,0 +1,14 @@
+<svg width="600" height="601" viewBox="0 0 600 601" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_reusableinputs_1)">
+<path d="M0 68.0229C0 30.9784 30.0305 0.947876 67.075 0.947876H532.925C569.97 0.947876 600 30.9784 600 68.0229V533.873C600 570.917 569.969 600.948 532.925 600.948H67.075C30.0305 600.948 0 570.917 0 533.873V68.0229Z" fill="#2C0059"/>
+<rect x="120" y="130.948" width="360" height="80" rx="24" stroke="#A950FF" stroke-width="32"/>
+<rect x="120" y="260.948" width="360" height="80" rx="24" stroke="#A950FF" stroke-width="32"/>
+<rect x="120" y="390.948" width="360" height="80" rx="24" fill="#A950FF"/>
+<rect x="160" y="415.948" width="140" height="30" rx="15" fill="#E9C1FF"/>
+</g>
+<defs>
+<clipPath id="clip0_reusableinputs_1">
+<rect width="600" height="600" fill="white" transform="translate(0 0.947876)"/>
+</clipPath>
+</defs>
+</svg>
