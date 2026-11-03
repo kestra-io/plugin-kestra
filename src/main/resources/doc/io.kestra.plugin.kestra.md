@@ -67,3 +67,9 @@ Set `kestraUrl` to the target instance URL. Authenticate via `auth.apiToken` (Be
 `ee/assets.FreshnessTrigger` monitors asset freshness — set `maxStaleness` (required). Filter by `assetId`, `namespace`, `assetType`, and `metadataQuery`. The polling `interval` defaults to 1 hour.
 
 `ee/cases.CreateCase` opens an incident-management Case, or attaches the current execution to an already-open matching one — set `title` (required unless `caseId` is set). Optionally set `severity`, `status` (default `OPEN`), `sla`, `assignees`, `watchers`, `assetIds`, `labels`, and `actions`. Set `linkMatchingExecutions: true` to attach to a case previously created by this same task instead of creating a new one.
+
+`ee/reusableinputs.Set` creates reusable inputs or saves a new revision — set `reusableInputsId` (required). Set `inputs` to replace every input, or `defaults` to change only the defaults of existing inputs; the default of a `TABLE` input can be the URI of a CSV or ION file. Set `draft: true` to save a draft.
+
+`ee/reusableinputs.List` lists the reusable inputs visible from a `namespace`, inherited ones included. Set `allowDraft` (default `true`) and `fetchType` (default `STORE`). The output includes `reusableInputs`, `uri`, and `size`.
+
+`ee/reusableinputs.Delete` deletes reusable inputs by `reusableInputsId` (required) from the exact `namespace`.

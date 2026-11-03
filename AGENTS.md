@@ -44,6 +44,9 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 - `io.kestra.plugin.kestra.ee.iam.serviceAccounts.Set`
 - `io.kestra.plugin.kestra.ee.iam.tenantAccess.Delete`
 - `io.kestra.plugin.kestra.ee.iam.tenantAccess.Set`
+- `io.kestra.plugin.kestra.ee.reusableinputs.Delete`
+- `io.kestra.plugin.kestra.ee.reusableinputs.List`
+- `io.kestra.plugin.kestra.ee.reusableinputs.Set`
 - `io.kestra.plugin.kestra.ee.tests.RunTest`
 - `io.kestra.plugin.kestra.ee.tests.RunTests`
 - `io.kestra.plugin.kestra.executions.Count`

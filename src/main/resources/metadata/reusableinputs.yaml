@@ -1,0 +1,8 @@
+group: io.kestra.plugin.kestra.ee.reusableinputs
+name: "reusableinputs"
+title: "Kestra Reusable Inputs"
+description: "Tasks to create, update, list and delete Kestra EE reusable inputs."
+body: "Set the Kestra API URL and auth token to save a new revision or a draft of a reusable inputs set, update the defaults of its inputs (including the rows of a TABLE input from a CSV or ION file), list the sets visible from a namespace, or delete one."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
