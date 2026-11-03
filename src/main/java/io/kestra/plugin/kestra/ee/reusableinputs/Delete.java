@@ -8,14 +8,19 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.VoidOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.kestra.AbstractKestraTask;
+import io.kestra.sdk.internal.ApiException;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
+@ToString
+@EqualsAndHashCode
 @Getter
 @NoArgsConstructor
 @Schema(
@@ -58,14 +63,19 @@ public class Delete extends AbstractKestraTask implements RunnableTask<VoidOutpu
 
     @Override
     public VoidOutput run(RunContext runContext) throws Exception {
-        String rTenant = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
-        String rNamespace = runContext.render(namespace).as(String.class).orElseGet(() -> runContext.flowInfo().namespace());
+        var rTenant = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
+        var rNamespace = runContext.render(namespace).as(String.class).orElseGet(() -> runContext.flowInfo().namespace());
+        var rId = runContext.render(reusableInputsId).as(String.class)
+            .orElseThrow(() -> new IllegalArgumentException("`reusableInputsId` must be set to the ID of the reusable inputs to delete."));
 
-        kestraClient(runContext).reusableInputs().deleteReusableInputs(
-            rNamespace,
-            runContext.render(reusableInputsId).as(String.class).orElseThrow(),
-            rTenant
-        );
+        try {
+            kestraClient(runContext).reusableInputs().deleteReusableInputs(rNamespace, rId, rTenant);
+        } catch (ApiException e) {
+            throw new IllegalArgumentException(
+                "Reusable inputs '%s' could not be deleted in namespace '%s': %s".formatted(rId, rNamespace, ReusableInputsSources.errorMessage(e)),
+                e
+            );
+        }
 
         return null;
     }

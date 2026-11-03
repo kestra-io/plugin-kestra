@@ -30,7 +30,7 @@ class SetTest extends AbstractKestraEeContainerTest {
 
     private Set.SetBuilder<?, ?> set(String namespace) {
         return Set.builder()
-            .id(Set.class.getSimpleName())
+            .id(IdUtils.create())
             .type(Set.class.getName())
             .kestraUrl(Property.ofValue(KESTRA_URL))
             .auth(AbstractKestraTask.Auth.builder().username(Property.ofValue(USERNAME)).password(Property.ofValue(PASSWORD)).build())

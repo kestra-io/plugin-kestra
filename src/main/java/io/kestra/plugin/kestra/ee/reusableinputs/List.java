@@ -1,7 +1,6 @@
 package io.kestra.plugin.kestra.ee.reusableinputs;
 
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileWriter;
 import java.net.URI;
 import java.util.ArrayList;
@@ -16,8 +15,6 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.plugin.kestra.AbstractKestraTask;
-import io.kestra.sdk.api.ReusableInputsApi;
-import io.kestra.sdk.model.PagedResultsReusableInputsWithSource;
 import io.kestra.sdk.model.ReusableInputsWithSource;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -104,36 +101,41 @@ public class List extends AbstractKestraTask implements RunnableTask<List.Output
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        var rFetchType = runContext.render(this.fetchType).as(FetchType.class).orElseThrow();
+        var rFetchType = runContext.render(this.fetchType).as(FetchType.class).orElse(FetchType.STORE);
         var rPage = runContext.render(this.page).as(Integer.class).orElse(null);
         var rSize = runContext.render(this.size).as(Integer.class).orElse(100);
         var rTenant = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
         var rNamespace = runContext.render(namespace).as(String.class).orElseGet(() -> runContext.flowInfo().namespace());
         var rAllowDraft = runContext.render(this.allowDraft).as(Boolean.class).orElse(true);
+        if (rSize < 1 || (rPage != null && rPage < 1)) {
+            throw new IllegalArgumentException("`page` and `size` must be 1 or higher, got page %s and size %d.".formatted(rPage, rSize));
+        }
 
-        ReusableInputsApi api = kestraClient(runContext).reusableInputs();
+        var api = kestraClient(runContext).reusableInputs();
 
         java.util.List<ReusableInputsWithSource> fetched;
         if (rPage != null) {
             fetched = api.listReusableInputs(rNamespace, rTenant, rPage, rSize, rAllowDraft).getResults();
+        } else if (rFetchType == FetchType.FETCH_ONE) {
+            fetched = api.listReusableInputs(rNamespace, rTenant, 1, 1, rAllowDraft).getResults();
         } else {
             fetched = new ArrayList<>();
-            int currentPage = 1;
+            var currentPage = 1;
             long total;
             do {
-                PagedResultsReusableInputsWithSource results = api.listReusableInputs(rNamespace, rTenant, currentPage, rSize, rAllowDraft);
+                var results = api.listReusableInputs(rNamespace, rTenant, currentPage, rSize, rAllowDraft);
                 fetched.addAll(results.getResults());
                 total = results.getTotal();
             } while ((long) currentPage++ * rSize < total);
         }
-        java.util.List<Summary> summaries = fetched.stream().map(Summary::of).toList();
+        var summaries = fetched.stream().map(Summary::of).toList();
 
         var outputBuilder = Output.builder();
         switch (rFetchType) {
             case FETCH_ONE -> outputBuilder.reusableInputs(summaries.isEmpty() ? java.util.List.of() : java.util.List.of(summaries.getFirst()))
                 .size(summaries.isEmpty() ? 0L : 1L);
             case STORE -> {
-                File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
+                var tempFile = runContext.workingDir().createTempFile(".ion").toFile();
                 try (var fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
                     summaries.forEach(throwConsumer(summary ->
                     {

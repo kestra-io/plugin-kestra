@@ -2,7 +2,6 @@ package io.kestra.plugin.kestra.ee.reusableinputs;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
@@ -20,11 +19,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
+@ToString
+@EqualsAndHashCode
 @Getter
 @NoArgsConstructor
 @Schema(
@@ -34,13 +37,15 @@ import lombok.experimental.SuperBuilder;
         With `defaults`, only the defaults of existing inputs are changed, keyed by input id (`form.child` for an input of a `FORM`), \
         and everything else in the set is kept. The default of a `TABLE` input can be its rows, or the URI of a CSV or ION file holding them, \
         e.g. a `FILE` input: a CSV is read by its header, with one cell per header on every row, separated by commas, semicolons or tabs. \
-        Each text cell is converted to the type of its column, and an empty cell is left empty. The task fails on a header or key that isn't a column.
+        Each text cell is converted to the type of its column, and an empty cell is left empty. The task fails on a header or key that isn't a column, \
+        and on a cell holding an expression, which every execution using the set would otherwise evaluate.
 
         The task edits the revision executions use. With `draft`, it saves a draft instead, which executions skip and which may be invalid, \
         and edits the latest revision, drafts included. The source is rewritten from its content, so comments in it are not kept.
 
         The set is validated the same way as a save from the editor, and the task fails on an invalid set with the same message. \
-        The new revision appears in Revisions and in audit logs under the user or service account the task is authenticated with.
+        The new revision appears in Revisions and in audit logs under the user or service account the task is authenticated with. \
+        The task reads the set and saves it back without checking that no other revision was saved in between, so the last save wins.
         Enterprise Edition only."""
 )
 @Plugin(
@@ -140,7 +145,9 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
         title = "Defaults to change, keyed by input id",
         description = """
             Only the defaults of existing inputs are changed; use `form.child` for an input of a `FORM`. The task fails on an id the set doesn't have.
-            Values are evaluated by this task, so that they can come from outputs; to save an expression as the default, wrap it in `{% raw %}`."""
+            Values are evaluated by this task, so that they can come from outputs; to save an expression as the default, wrap it in `{% raw %}`.
+            A value that comes out of this evaluation holding an expression is saved as is, and every execution using the set evaluates it \
+            with the privileges of its flow: don't feed it text an untrusted user can write, such as a `STRING` input."""
     )
     @PluginProperty(group = "main")
     private Property<Map<String, Object>> defaults;
@@ -155,15 +162,16 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        String rTenant = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
-        String rNamespace = runContext.render(namespace).as(String.class).orElseGet(() -> runContext.flowInfo().namespace());
-        String rId = runContext.render(reusableInputsId).as(String.class).orElseThrow();
-        List<Map<String, Object>> rInputs = inputs == null ? null : declarations(runContext);
-        Map<String, Object> rDefaults = defaults == null ? null : runContext.render(defaults).asMap(String.class, Object.class);
-        boolean rDraft = runContext.render(draft).as(Boolean.class).orElse(false);
+        var rTenant = runContext.render(tenantId).as(String.class).orElse(runContext.flowInfo().tenantId());
+        var rNamespace = runContext.render(namespace).as(String.class).orElseGet(() -> runContext.flowInfo().namespace());
+        var rId = runContext.render(reusableInputsId).as(String.class)
+            .orElseThrow(() -> new IllegalArgumentException("`reusableInputsId` must be set to the ID of the reusable inputs."));
+        var rInputs = inputs == null ? null : declarations(runContext);
+        var rDefaults = defaults == null ? null : runContext.render(defaults).asMap(String.class, Object.class);
+        var rDraft = runContext.render(draft).as(Boolean.class).orElse(false);
 
-        ReusableInputsApi api = kestraClient(runContext).reusableInputs();
-        String source = ReusableInputsSources.apply(
+        var api = kestraClient(runContext).reusableInputs();
+        var source = ReusableInputsSources.apply(
             currentSource(api, rTenant, rNamespace, rId, rDraft),
             rNamespace,
             rId,
@@ -193,18 +201,15 @@ public class Set extends AbstractKestraTask implements RunnableTask<Set.Output> 
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private List<Map<String, Object>> declarations(RunContext runContext) throws IllegalVariableEvaluationException {
-        Optional<List<Map>> asWritten = Property.asStaticList((Property) inputs, Map.class);
+        var asWritten = Property.asStaticList((Property) inputs, Map.class);
         return asWritten.isPresent() ? (List) asWritten.get() : (List) runContext.render(inputs).asList(Map.class);
     }
 
-    /**
-     * A set inherited from a parent namespace is not edited from here: the task works on the exact namespace.
-     * A set that only has drafts has no revision executions use, so its latest draft is edited.
-     */
+    /** Only a set of the exact namespace is edited, and its latest draft when it only has drafts. */
     @Nullable
     private static String currentSource(ReusableInputsApi api, String tenant, String namespace, String id, boolean draft) {
         try {
-            ReusableInputsWithSource latest = api.reusableInputs(namespace, id, tenant, null, draft);
+            var latest = api.reusableInputs(namespace, id, tenant, null, draft);
             return namespace.equals(latest.getNamespace()) ? latest.getSource() : null;
         } catch (ApiException e) {
             if (e.getCode() == 404) {

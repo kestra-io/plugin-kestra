@@ -13,28 +13,27 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
+import io.kestra.core.utils.PebbleUtil;
 import io.kestra.sdk.internal.ApiException;
 
 import de.siegmar.fastcsv.reader.CsvReader;
 import de.siegmar.fastcsv.reader.CsvRecord;
 import jakarta.annotation.Nullable;
 
-/**
- * Edits the YAML source of a set of reusable inputs the way the {@link Set} task describes it, so that the server
- * validates the result exactly as it validates a save from the editor.
- */
+/** Edits the YAML source of a set the way the {@link Set} task describes it, so that the server validates it like a save from the editor. */
 final class ReusableInputsSources {
     private static final ObjectMapper YAML_MAPPER = JacksonMapper.ofYaml();
     private static final ObjectMapper JSON_MAPPER = JacksonMapper.ofJson();
+    private static final Pattern DECIMAL_COMMA = Pattern.compile("-?\\d+,\\d+");
 
     private ReusableInputsSources() {
     }
@@ -50,7 +49,7 @@ final class ReusableInputsSources {
      * @param defaults when set, changes only the defaults of existing inputs, keyed by input id ({@code form.child} for a FORM child)
      * @param files opens the CSV or ION file of a TABLE whose default is a {@code kestra://} URI
      * @throws IllegalArgumentException when creating a set without inputs, when a default targets an input the set doesn't have,
-     *         or when a row of a TABLE has a cell that isn't one of its columns
+     *         when a row of a TABLE has a cell that isn't one of its columns, or when a file holds an expression
      */
     static String apply(
         @Nullable String currentSource,
@@ -66,11 +65,11 @@ final class ReusableInputsSources {
             );
         }
 
-        Map<String, Object> set = new LinkedHashMap<>();
+        var set = new LinkedHashMap<String, Object>();
         set.put("id", id);
         set.put("namespace", namespace);
         if (currentSource != null) {
-            Map<String, Object> current = YAML_MAPPER.readValue(currentSource, new TypeReference<LinkedHashMap<String, Object>>() {
+            var current = YAML_MAPPER.readValue(currentSource, new TypeReference<LinkedHashMap<String, Object>>() {
             });
             if (current != null) {
                 set.putAll(current);
@@ -87,7 +86,7 @@ final class ReusableInputsSources {
             }));
         }
         if (defaults != null) {
-            for (Map.Entry<String, Object> entry : defaults.entrySet()) {
+            for (var entry : defaults.entrySet()) {
                 setDefault(id, inputsOf(set), entry.getKey(), entry.getValue(), files);
             }
         }
@@ -98,7 +97,7 @@ final class ReusableInputsSources {
     /** The problem detail the API rejected a request with, which carries the same message as the editor. */
     static String errorMessage(ApiException e) {
         try {
-            JsonNode detail = JSON_MAPPER.readTree(e.getResponseBody()).get("detail");
+            var detail = JSON_MAPPER.readTree(e.getResponseBody()).get("detail");
             if (detail != null && detail.isTextual()) {
                 return detail.asText();
             }
@@ -110,7 +109,7 @@ final class ReusableInputsSources {
 
     private static void setDefault(String setId, List<Map<String, Object>> inputs, String key, @Nullable Object value, FileOpener files)
         throws IOException {
-        Map<String, Object> input = find(inputs, key);
+        var input = find(inputs, key);
         if (input == null) {
             throw new IllegalArgumentException("`%s` is not an input of reusable inputs '%s'.".formatted(key, setId));
         }
@@ -125,11 +124,11 @@ final class ReusableInputsSources {
 
     /** Rows read from a file hold text: each cell is typed after its column, and an empty one is left out. */
     private static Object tableRows(String setId, String tableId, Map<String, Object> table, Object value, FileOpener files) throws IOException {
-        Object rows = value instanceof String uri && uri.startsWith("kestra://") ? readRows(setId, tableId, URI.create(uri), files) : value;
+        var rows = value instanceof String uri && uri.startsWith("kestra://") ? readRows(setId, tableId, URI.create(uri), files) : value;
         if (!(rows instanceof List<?> list)) {
             return rows;
         }
-        Map<String, Object> columnTypes = new LinkedHashMap<>();
+        var columnTypes = new LinkedHashMap<String, Object>();
         inputsOf(table, "columns").forEach(column -> columnTypes.put(String.valueOf(column.get("id")), column.get("type")));
         list.stream()
             .filter(Map.class::isInstance)
@@ -150,20 +149,57 @@ final class ReusableInputsSources {
     }
 
     private static List<Map<String, Object>> readRows(String setId, String tableId, URI uri, FileOpener files) throws IOException {
-        try (InputStream in = files.open(uri)) {
+        List<Map<String, Object>> rows;
+        try (var in = files.open(uri)) {
             if (uri.getPath().toLowerCase(Locale.ROOT).endsWith(".csv")) {
                 try {
-                    return csvRows(decoded(in.readAllBytes()));
+                    rows = csvRows(decoded(in.readAllBytes()));
                 } catch (RuntimeException e) {
                     throw new IllegalArgumentException(
                         "The CSV file of `%s` in reusable inputs '%s' can't be read: %s".formatted(tableId, setId, e.getMessage()),
                         e
                     );
                 }
+            } else {
+                try {
+                    rows = FileSerde.readAll(in, new TypeReference<Map<String, Object>>() {
+                    }).collectList().block();
+                } catch (RuntimeException e) {
+                    throw new IllegalArgumentException(
+                        "The file of `%s` in reusable inputs '%s' can't be read: it must be a CSV file, with a `.csv` extension, or an ION file."
+                            .formatted(tableId, setId),
+                        e
+                    );
+                }
             }
-            return FileSerde.readAll(in, new TypeReference<Map<String, Object>>() {
-            }).collectList().block();
         }
+        for (var i = 0; i < rows.size(); i++) {
+            for (var cell : rows.get(i).entrySet()) {
+                if (holdsExpression(cell.getValue())) {
+                    throw new IllegalArgumentException(
+                        "Row %d of the file of `%s` in reusable inputs '%s' holds an expression in `%s`. Expressions aren't read from files, since every execution using the set would evaluate them."
+                            .formatted(i + 1, tableId, setId, cell.getKey())
+                    );
+                }
+            }
+        }
+        return rows;
+    }
+
+    private static boolean holdsExpression(@Nullable Object value) {
+        return switch (value) {
+            case String text -> PebbleUtil.containsOpeningBlockDelimiter(text);
+            case Map<?, ?> map -> map.values().stream().anyMatch(ReusableInputsSources::holdsExpression);
+            case Iterable<?> items -> {
+                for (var item : items) {
+                    if (holdsExpression(item)) {
+                        yield true;
+                    }
+                }
+                yield false;
+            }
+            case null, default -> false;
+        };
     }
 
     /** UTF-8, or windows-1252 when the bytes aren't UTF-8, as Excel writes a "CSV (comma delimited)" file on Windows. */
@@ -181,17 +217,17 @@ final class ReusableInputsSources {
 
     /** The separator is the one the header uses most among comma, semicolon (a French Excel export) and tab. */
     private static List<Map<String, Object>> csvRows(String text) throws IOException {
-        String csv = text.startsWith("\uFEFF") ? text.substring(1) : text;
-        String header = csv.lines().findFirst().orElse("");
+        var csv = text.startsWith("\uFEFF") ? text.substring(1) : text;
+        var header = csv.lines().findFirst().orElse("");
         char separator = Stream.of(',', ';', '\t')
             .max((a, b) -> Long.compare(header.chars().filter(c -> c == a).count(), header.chars().filter(c -> c == b).count()))
             .orElse(',');
         try (CsvReader<CsvRecord> reader = CsvReader.builder().fieldSeparator(separator).skipEmptyLines(true).ofCsvRecord(csv)) {
-            List<List<String>> records = reader.stream().map(CsvRecord::getFields).toList();
+            var records = reader.stream().map(CsvRecord::getFields).toList();
             if (records.isEmpty()) {
                 throw new IllegalArgumentException("the file has no header line");
             }
-            List<String> columns = records.getFirst().stream().map(String::trim).toList();
+            var columns = records.getFirst().stream().map(String::trim).toList();
             columns.stream()
                 .filter(column -> !column.isEmpty() && columns.indexOf(column) != columns.lastIndexOf(column))
                 .findFirst()
@@ -204,7 +240,7 @@ final class ReusableInputsSources {
                 .map(fields ->
                 {
                     Map<String, Object> row = new LinkedHashMap<>();
-                    for (int i = 0; i < columns.size(); i++) {
+                    for (var i = 0; i < columns.size(); i++) {
                         if (!columns.get(i).isEmpty()) {
                             row.put(columns.get(i), fields.get(i));
                         }
@@ -216,7 +252,7 @@ final class ReusableInputsSources {
     }
 
     private static Map<Object, Object> typedRow(Map<?, ?> cells, Map<String, Object> columnTypes) {
-        Map<Object, Object> row = new LinkedHashMap<>();
+        var row = new LinkedHashMap<Object, Object>();
         cells.forEach((column, cell) -> row.put(column, cell instanceof String text ? typedCell(text, columnTypes.get(String.valueOf(column))) : cell));
         return row;
     }
@@ -226,11 +262,11 @@ final class ReusableInputsSources {
         if (text.isBlank()) {
             return null;
         }
-        String trimmed = text.trim();
+        var trimmed = text.trim();
         try {
             return switch (String.valueOf(type)) {
                 case "INT" -> Long.parseLong(trimmed);
-                case "FLOAT" -> Double.parseDouble(trimmed.matches("-?\\d+,\\d+") ? trimmed.replace(',', '.') : trimmed);
+                case "FLOAT" -> Double.parseDouble(DECIMAL_COMMA.matcher(trimmed).matches() ? trimmed.replace(',', '.') : trimmed);
                 case "BOOL", "BOOLEAN" -> switch (trimmed.toLowerCase()) {
                     case "true" -> true;
                     case "false" -> false;
@@ -250,14 +286,14 @@ final class ReusableInputsSources {
     /** An exact id wins, since an input id may itself contain dots, before {@code form.child} is tried at each dot. */
     @Nullable
     private static Map<String, Object> find(List<Map<String, Object>> inputs, String key) {
-        for (Map<String, Object> input : inputs) {
+        for (var input : inputs) {
             if (key.equals(input.get("id"))) {
                 return input;
             }
         }
-        for (int dot = key.indexOf('.'); dot >= 0; dot = key.indexOf('.', dot + 1)) {
-            Map<String, Object> form = find(inputs, key.substring(0, dot));
-            Map<String, Object> child = form == null ? null : find(inputsOf(form), key.substring(dot + 1));
+        for (var dot = key.indexOf('.'); dot >= 0; dot = key.indexOf('.', dot + 1)) {
+            var form = find(inputs, key.substring(0, dot));
+            var child = form == null ? null : find(inputsOf(form), key.substring(dot + 1));
             if (child != null) {
                 return child;
             }

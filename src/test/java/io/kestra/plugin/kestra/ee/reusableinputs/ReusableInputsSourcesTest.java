@@ -239,6 +239,40 @@ class ReusableInputsSourcesTest {
     }
 
     @Test
+    void shouldFailOnAFileCellHoldingAnExpressionSinceExecutionsWouldEvaluateIt() {
+        String csv = "name,cpus\nweb,2\n\"{{ secret('DB_PASSWORD') }}\",4\n";
+
+        assertThatThrownBy(() -> ReusableInputsSources.apply(SERVERS, "company.team", "bom", null, null, Map.of("servers", "kestra:///servers.csv"), uri -> stream(csv)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageStartingWith("Row 2 of the file of `servers` in reusable inputs 'bom' holds an expression in `name`.");
+    }
+
+    @Test
+    void shouldFailOnAnIonFileCellHoldingAnExpressionInAList() {
+        String rows = "{name:\"web\",cpus:[\"{% if true %}2{% endif %}\"]}\n";
+
+        assertThatThrownBy(() -> ReusableInputsSources.apply(SERVERS, "company.team", "bom", null, null, Map.of("servers", "kestra:///servers.ion"), uri -> stream(rows)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageStartingWith("Row 1 of the file of `servers` in reusable inputs 'bom' holds an expression in `cpus`.");
+    }
+
+    @Test
+    void shouldKeepAnExpressionInRowsWrittenInTheTask() throws Exception {
+        String source = ReusableInputsSources.apply(
+            SERVERS, "company.team", "bom", null, null, Map.of("servers", List.of(Map.of("name", "{{ now() }}"))), NO_FILE
+        );
+
+        assertThat(inputsOf(parse(source)).getFirst().get("defaults")).isEqualTo(List.of(Map.of("name", "{{ now() }}")));
+    }
+
+    @Test
+    void shouldNameTheAcceptedFormatsWhenAFileIsNeitherCsvNorIon() {
+        assertThatThrownBy(() -> ReusableInputsSources.apply(SERVERS, "company.team", "bom", null, null, Map.of("servers", "kestra:///servers.txt"), uri -> stream("name,cpus\nweb,2\n")))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("The file of `servers` in reusable inputs 'bom' can't be read: it must be a CSV file, with a `.csv` extension, or an ION file.");
+    }
+
+    @Test
     void shouldKeepAFileUriAsItIsForAnInputThatIsNotATable() throws Exception {
         String bom = BOM.replace("type: SELECT\n    values: [dev, prod]", "type: STRING");
 
