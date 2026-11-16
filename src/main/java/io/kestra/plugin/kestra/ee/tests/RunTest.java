@@ -1,5 +1,6 @@
 package io.kestra.plugin.kestra.ee.tests;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -30,7 +31,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @Schema(
     title = "Run a single test suite",
-    description = "Executes one unit test suite by namespace and id. Optionally restricts to listed test cases. Failures mark the task as WARNING unless failOnTestFailure is true; errors always fail."
+    description = "Executes one unit test suite by namespace and id. Optionally restricts to listed test cases. Waits until the run ends, bounded by `readTimeout`, then the task `timeout`; with neither set the wait is effectively unlimited. Failures mark the task as WARNING unless failOnTestFailure is true; errors always fail."
 )
 @Plugin(
     examples = {
@@ -92,6 +93,11 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
     private Property<Boolean> failOnTestFailure = Property.ofValue(false);
 
     @Override
+    protected Duration defaultReadTimeout() {
+        return Duration.ofMillis(Integer.MAX_VALUE);
+    }
+
+    @Override
     public Output run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
         var kestraClient = kestraClient(runContext);
@@ -107,7 +113,13 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
         var runRequest = new TestSuiteControllerRunRequest().testCases(rTestCases);
         logger.info("Running test '{}", testFullId);
 
-        var result = testSuitesApi.runTestSuite(rNamespace, rId, rTenantId, runRequest);
+        TestSuiteRunResult result;
+        try {
+            result = testSuitesApi.runTestSuite(rNamespace, rId, rTenantId, runRequest);
+        } catch (Exception e) {
+            hintOnReadTimeout(runContext, e);
+            throw e;
+        }
         Objects.requireNonNull(result.getResults());
 
         result.getResults().forEach(testCaseResult ->
