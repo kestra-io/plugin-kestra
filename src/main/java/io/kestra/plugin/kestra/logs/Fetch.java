@@ -133,10 +133,7 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
                     var logs = kestraClient.logs().listLogsFromExecution(
                         executionInfo.id(),
                         targetTenantId,
-                        sdkLogLevel,
-                        null,
-                        taskId,
-                        null
+                        logFilters(sdkLogLevel, taskId)
                     );
 
                     if (logs != null) {
@@ -151,10 +148,7 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
                 var logs = kestraClient.logs().listLogsFromExecution(
                     executionInfo.id(),
                     targetTenantId,
-                    sdkLogLevel,
-                    null,
-                    null,
-                    null
+                    logFilters(sdkLogLevel, null)
                 );
 
                 if (logs != null) {
@@ -173,8 +167,27 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
             .build();
     }
 
-    @Getter
+    private static List<io.kestra.sdk.model.QueryFilter> logFilters(io.kestra.sdk.model.Level minLevel, String taskId) {
+        var filters = new java.util.ArrayList<io.kestra.sdk.model.QueryFilter>();
+        filters.add(
+            new io.kestra.sdk.model.QueryFilter()
+                .field(io.kestra.sdk.model.QueryFilterField.MIN_LEVEL)
+                .operation(io.kestra.sdk.model.QueryFilterOp.GREATER_THAN_OR_EQUAL_TO)
+                .value(minLevel.getValue())
+        );
+        if (taskId != null) {
+            filters.add(
+                new io.kestra.sdk.model.QueryFilter()
+                    .field(io.kestra.sdk.model.QueryFilterField.TASK_ID)
+                    .operation(io.kestra.sdk.model.QueryFilterOp.EQUALS)
+                    .value(taskId)
+            );
+        }
+        return filters;
+    }
+
     @Builder
+    @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(title = "The number of rows fetched")
         private Long size;

@@ -1,6 +1,5 @@
 package io.kestra.plugin.kestra.ee.tests;
 
-import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -31,7 +30,7 @@ import static io.kestra.plugin.kestra.ee.tests.RunTest.logTestCase;
 @NoArgsConstructor
 @Schema(
     title = "Run tests by query",
-    description = "Executes unit tests matching a tenant/namespace/flow query. Defaults to the current tenant, includes child namespaces, and marks failures as WARNING unless failOnTestFailure is true. Waits until the run ends, bounded by `readTimeout`, then the task `timeout`; with neither set the wait is effectively unlimited."
+    description = "Executes unit tests matching a tenant/namespace/flow query. Defaults to the current tenant, includes child namespaces, and marks failures as WARNING unless failOnTestFailure is true. Waits until the run ends, bounded by `readTimeout`, then the task `timeout`; with neither set there is no limit."
 )
 @Plugin(
     examples = {
@@ -88,11 +87,6 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
     @Builder.Default
     @PluginProperty(group = "reliability")
     private Property<Boolean> failOnTestFailure = Property.ofValue(false);
-
-    @Override
-    protected Duration defaultReadTimeout() {
-        return Duration.ofMillis(Integer.MAX_VALUE);
-    }
 
     @Override
     public Output run(RunContext runContext) throws Exception {

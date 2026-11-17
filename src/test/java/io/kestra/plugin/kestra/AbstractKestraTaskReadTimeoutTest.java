@@ -111,10 +111,8 @@ class AbstractKestraTaskReadTimeoutTest {
 
         assertThat(task().build().resolveReadTimeout(runContext), nullValue());
 
-        var runTests = RunTests.builder().build();
-        assertThat(runTests.resolveReadTimeout(runContext), is(Duration.ofMillis(Integer.MAX_VALUE)));
-        var runTest = RunTest.builder().build();
-        assertThat(runTest.resolveReadTimeout(runContext), is(Duration.ofMillis(Integer.MAX_VALUE)));
+        assertThat(RunTests.builder().build().resolveReadTimeout(runContext), nullValue());
+        assertThat(RunTest.builder().build().resolveReadTimeout(runContext), nullValue());
 
         var overridden = RunTests.builder().readTimeout(Property.ofValue(Duration.ofMinutes(1))).build();
         assertThat(overridden.resolveReadTimeout(runContext), is(Duration.ofMinutes(1)));

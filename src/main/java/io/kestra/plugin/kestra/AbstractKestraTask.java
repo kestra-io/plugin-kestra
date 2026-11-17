@@ -57,19 +57,15 @@ public abstract class AbstractKestraTask extends Task {
     @Schema(
         title = "Read timeout",
         description = """
-            Maximum time to wait for the Kestra API to answer a request, as an ISO-8601 duration (e.g. `PT30M`). Must be positive. When unset, the task `timeout` is used if set, otherwise the SDK default applies (about 3 minutes), which can interrupt long-running calls."""
+            Maximum time to wait for the Kestra API to answer a request, as an ISO-8601 duration (e.g. `PT30M`). Must be positive. When unset, the task `timeout` is used if set, otherwise there is no limit."""
     )
     @PluginProperty(group = "advanced")
     private Property<Duration> readTimeout;
 
-    protected Duration defaultReadTimeout() {
-        return null;
-    }
-
     protected Duration resolveReadTimeout(RunContext runContext) throws IllegalVariableEvaluationException {
         var rReadTimeout = runContext.render(readTimeout).as(Duration.class)
             .or(() -> renderTaskTimeout(runContext))
-            .orElseGet(this::defaultReadTimeout);
+            .orElse(null);
         return requirePositive(rReadTimeout, "readTimeout");
     }
 
@@ -89,13 +85,19 @@ public abstract class AbstractKestraTask extends Task {
     }
 
     protected void hintOnReadTimeout(RunContext runContext, Throwable error) {
-        if (readTimeout != null) {
+        Duration resolvedReadTimeout;
+        try {
+            resolvedReadTimeout = resolveReadTimeout(runContext);
+        } catch (Exception e) {
+            return;
+        }
+        if (resolvedReadTimeout == null) {
             return;
         }
         for (var cause = error; cause != null; cause = cause.getCause()) {
             if (cause instanceof SocketTimeoutException) {
                 runContext.logger()
-                    .warn("The Kestra API call timed out while waiting for a response. Set the `readTimeout` property to a larger duration (e.g. PT30M) for long-running calls.");
+                    .warn("The Kestra API call timed out after {}. Increase `readTimeout` (or the task `timeout`) for long-running calls.", resolvedReadTimeout);
                 return;
             }
         }
