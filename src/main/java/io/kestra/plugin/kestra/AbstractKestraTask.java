@@ -57,7 +57,7 @@ public abstract class AbstractKestraTask extends Task {
     @Schema(
         title = "Read timeout",
         description = """
-            Maximum time to wait for the Kestra API to answer a request, as an ISO-8601 duration (e.g. `PT30M`). Must be positive. When unset, the task `timeout` is used if set, otherwise there is no limit."""
+            Maximum time to wait for the Kestra API to answer a request, as an ISO-8601 duration (e.g. `PT30M`). Must be positive. When unset, the task `timeout` is used if set, otherwise there is no limit: with the Kestra SDK 2.0.5 an unset read timeout never expires, for every Kestra task."""
     )
     @PluginProperty(group = "advanced")
     private Property<Duration> readTimeout;

@@ -30,7 +30,10 @@ import static io.kestra.plugin.kestra.ee.tests.RunTest.logTestCase;
 @NoArgsConstructor
 @Schema(
     title = "Run tests by query",
-    description = "Executes unit tests matching a tenant/namespace/flow query. Defaults to the current tenant, includes child namespaces, and marks failures as WARNING unless failOnTestFailure is true. Waits until the run ends, bounded by `readTimeout`, then the task `timeout`; with neither set there is no limit."
+    description = """
+        Executes unit tests matching a tenant/namespace/flow query. Defaults to the current tenant, includes child namespaces, and marks failures as WARNING unless failOnTestFailure is true.
+        Waits until the run ends, bounded by `readTimeout`, then the task `timeout`; with neither set there is no limit.
+        """
 )
 @Plugin(
     examples = {

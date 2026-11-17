@@ -2,6 +2,7 @@ package io.kestra.plugin.kestra;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
@@ -21,7 +22,6 @@ import io.kestra.plugin.kestra.namespaces.List;
 import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -77,7 +77,11 @@ class AbstractKestraTaskReadTimeoutTest {
 
         var error = assertThrows(Exception.class, () -> task.run(runContext));
 
-        assertThat(String.valueOf(error.getMessage()).toLowerCase() + error.getCause(), containsString("time"));
+        var hasSocketTimeout = false;
+        for (Throwable cause = error; cause != null; cause = cause.getCause()) {
+            hasSocketTimeout |= cause instanceof SocketTimeoutException;
+        }
+        assertThat(hasSocketTimeout, is(true));
     }
 
     @Test
