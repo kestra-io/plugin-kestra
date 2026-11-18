@@ -30,7 +30,11 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @Schema(
     title = "Run a single test suite",
-    description = "Executes one unit test suite by namespace and id. Optionally restricts to listed test cases. Failures mark the task as WARNING unless failOnTestFailure is true; errors always fail."
+    description = """
+        Executes one unit test suite by namespace and id. Optionally restricts to listed test cases.
+        Waits until the run ends, bounded by `readTimeout`, then the task `timeout`; with neither set there is no limit.
+        Failures mark the task as WARNING unless failOnTestFailure is true; errors always fail.
+        """
 )
 @Plugin(
     examples = {
@@ -107,7 +111,13 @@ public class RunTest extends AbstractKestraTask implements RunnableTask<RunTest.
         var runRequest = new TestSuiteControllerRunRequest().testCases(rTestCases);
         logger.info("Running test '{}", testFullId);
 
-        var result = testSuitesApi.runTestSuite(rNamespace, rId, rTenantId, runRequest);
+        TestSuiteRunResult result;
+        try {
+            result = testSuitesApi.runTestSuite(rNamespace, rId, rTenantId, runRequest);
+        } catch (Exception e) {
+            hintOnReadTimeout(runContext, e);
+            throw e;
+        }
         Objects.requireNonNull(result.getResults());
 
         result.getResults().forEach(testCaseResult ->

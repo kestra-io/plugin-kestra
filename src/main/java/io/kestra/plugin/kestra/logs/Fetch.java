@@ -19,6 +19,9 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
+import io.kestra.sdk.model.QueryFilter;
+import io.kestra.sdk.model.QueryFilterField;
+import io.kestra.sdk.model.QueryFilterOp;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -133,10 +136,7 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
                     var logs = kestraClient.logs().listLogsFromExecution(
                         executionInfo.id(),
                         targetTenantId,
-                        sdkLogLevel,
-                        null,
-                        taskId,
-                        null
+                        logFilters(sdkLogLevel, taskId)
                     );
 
                     if (logs != null) {
@@ -151,10 +151,7 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
                 var logs = kestraClient.logs().listLogsFromExecution(
                     executionInfo.id(),
                     targetTenantId,
-                    sdkLogLevel,
-                    null,
-                    null,
-                    null
+                    logFilters(sdkLogLevel, null)
                 );
 
                 if (logs != null) {
@@ -173,8 +170,23 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
             .build();
     }
 
-    @Getter
+    private static List<QueryFilter> logFilters(io.kestra.sdk.model.Level minLevel, String taskId) {
+        var minLevelFilter = new QueryFilter()
+            .field(QueryFilterField.MIN_LEVEL)
+            .operation(QueryFilterOp.GREATER_THAN_OR_EQUAL_TO)
+            .value(minLevel.getValue());
+        if (taskId == null) {
+            return List.of(minLevelFilter);
+        }
+        var taskIdFilter = new QueryFilter()
+            .field(QueryFilterField.TASK_ID)
+            .operation(QueryFilterOp.EQUALS)
+            .value(taskId);
+        return List.of(minLevelFilter, taskIdFilter);
+    }
+
     @Builder
+    @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(title = "The number of rows fetched")
         private Long size;

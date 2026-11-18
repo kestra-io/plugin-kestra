@@ -6,6 +6,8 @@ Interact with a Kestra instance — manage executions, flows, logs, namespaces, 
 
 Set `kestraUrl` to the target instance URL. Authenticate via `auth.apiToken` (Bearer token), or `auth.username` and `auth.password` (Basic auth). Set `auth.auto: true` (default) to automatically use the current instance's credentials when running inside Kestra itself, or `auth.auto: false` with no credentials to call a Kestra API that requires no authentication. For multi-tenant instances, set `tenantId`. Store secrets in [secrets](https://kestra.io/docs/concepts/secret) and set connection properties on each task.
 
+Timeouts: set `connectTimeout` and `readTimeout` (ISO-8601 durations, must be positive) on any task. When `readTimeout` is unset the task `timeout` is used, and when neither is set there is no read limit (Kestra SDK 2.0.5 and later).
+
 ## Tasks
 
 ### Dashboards
