@@ -1,6 +1,5 @@
 package io.kestra.plugin.kestra.logs;
 
-import java.io.InputStream;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +10,6 @@ import org.slf4j.event.Level;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.common.FetchOutput;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
@@ -61,9 +59,8 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
         kestraTestDataUtils.createRandomizedExecution("get-log", NAMESPACE);
 
-        Thread.sleep(2000);
-
         var execution = queryExecution("get-log");
+        awaitLogs(execution.getId(), "Log number 1", "Log number 2", "Log number 3");
 
         Fetch fetchTask = Fetch.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
@@ -81,52 +78,6 @@ public class FetchTest extends AbstractKestraOssContainerTest {
         Fetch.Output output = fetchTask.run(runContext);
 
         assertThat(output.getSize()).isEqualTo(3);
-    }
-
-    @Test
-    public void fetchWithTaskId() throws Exception {
-        RunContext runContext = runContextFactory.of();
-
-        String flowYaml = """
-            id: get-log-taskid
-            namespace: %s
-
-            tasks:
-              - id: specific-task
-                type: io.kestra.plugin.core.log.Log
-                message: "Target Log"
-                level: INFO
-              - id: other-task
-                type: io.kestra.plugin.core.log.Log
-                message: "Ignored Log"
-                level: INFO
-            """.formatted(NAMESPACE);
-
-        kestraTestDataUtils.getKestraClient().flows().createFlow(TENANT_ID, flowYaml);
-
-        kestraTestDataUtils.createRandomizedExecution("get-log-taskid", NAMESPACE);
-
-        Thread.sleep(2000);
-
-        var execution = queryExecution("get-log-taskid");
-
-        Fetch fetchTask = Fetch.builder()
-            .kestraUrl(Property.ofValue(KESTRA_URL))
-            .auth(
-                AbstractKestraTask.Auth.builder()
-                    .username(Property.ofValue(USERNAME))
-                    .password(Property.ofValue(PASSWORD))
-                    .build()
-            )
-            .tenantId(Property.ofValue(TENANT_ID))
-            .level(Property.ofValue(Level.INFO))
-            .executionId(Property.ofValue(execution.getId()))
-            .tasksId(Property.ofValue(java.util.List.of("specific-task")))
-            .build();
-
-        Fetch.Output output = fetchTask.run(runContext);
-
-        assertThat(output.getSize()).isGreaterThanOrEqualTo(1);
     }
 
     @Test
@@ -156,9 +107,8 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
         kestraTestDataUtils.createRandomizedExecution("get-log-executionid", NAMESPACE);
 
-        Thread.sleep(2000);
-
         var execution = queryExecution("get-log-executionid");
+        awaitLogs(execution.getId(), "Log 1", "Log 2", "Log 3");
 
         Fetch fetchTask = Fetch.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
@@ -180,7 +130,7 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
     @Test
     public void fetchWithLevel() throws Exception {
-        String flowYaml = """
+        var flowYaml = """
             id: get-log-level
             namespace: %s
 
@@ -207,7 +157,7 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
         kestraTestDataUtils.createRandomizedExecution("get-log-level", NAMESPACE);
 
-        String executionId = awaitExecutionId("get-log-level");
+        var executionId = queryExecution("get-log-level").getId();
         awaitLogs(executionId, "Debug log", "Info log", "Warn log", "Error log");
 
         // level defaults to INFO
@@ -224,7 +174,7 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
     @Test
     public void fetchWithLevelAndTaskIds() throws Exception {
-        String flowYaml = """
+        var flowYaml = """
             id: get-log-level-taskids
             namespace: %s
 
@@ -247,7 +197,7 @@ public class FetchTest extends AbstractKestraOssContainerTest {
 
         kestraTestDataUtils.createRandomizedExecution("get-log-level-taskids", NAMESPACE);
 
-        String executionId = awaitExecutionId("get-log-level-taskids");
+        var executionId = queryExecution("get-log-level-taskids").getId();
         awaitLogs(executionId, "Info log", "Warn log", "Error log");
 
         assertThat(fetchMessages(executionId, Level.WARN, List.of("warn-log")))
@@ -261,21 +211,6 @@ public class FetchTest extends AbstractKestraOssContainerTest {
             .containsExactly("Error log");
         assertThat(fetchMessages(executionId, Level.INFO, List.of("unknown-task")))
             .isEmpty();
-    }
-
-    private String awaitExecutionId(String flowId) throws Exception {
-        return Await.until(
-            () ->
-            {
-                try {
-                    return queryExecution(flowId).getId();
-                } catch (Exception | AssertionError e) {
-                    return null;
-                }
-            },
-            Duration.ofMillis(200),
-            Duration.ofSeconds(30)
-        );
     }
 
     private void awaitLogs(String executionId, String... messages) throws Exception {
@@ -299,7 +234,7 @@ public class FetchTest extends AbstractKestraOssContainerTest {
     }
 
     private List<String> fetchMessages(String executionId, Level level, List<String> tasksId) throws Exception {
-        RunContext runContext = runContextFactory.of();
+        var runContext = runContextFactory.of();
 
         var fetchTask = Fetch.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
@@ -318,24 +253,22 @@ public class FetchTest extends AbstractKestraOssContainerTest {
             fetchTask.tasksId(Property.ofValue(tasksId));
         }
 
-        Fetch.Output output = fetchTask.build().run(runContext);
+        var output = fetchTask.build().run(runContext);
 
-        List<String> messages;
-        try (InputStream is = runContext.storage().getFile(output.getUri())) {
-            messages = FileSerde.readAll(is)
+        try (var is = runContext.storage().getFile(output.getUri())) {
+            var messages = FileSerde.readAll(is)
                 .map(row -> (String) ((Map<?, ?>) row).get("message"))
                 .collectList()
                 .block();
+            assertThat(output.getSize()).isEqualTo(messages.size());
+            return messages;
         }
-
-        assertThat(output.getSize()).isEqualTo(messages.size());
-        return messages;
     }
 
     private ApiLightExecution queryExecution(String flowId) throws Exception {
-        RunContext runContext = runContextFactory.of();
+        var runContext = runContextFactory.of();
 
-        Query searchTask = Query.builder()
+        var searchTask = Query.builder()
             .kestraUrl(Property.ofValue(KESTRA_URL))
             .auth(
                 AbstractKestraTask.Auth.builder()
@@ -350,15 +283,21 @@ public class FetchTest extends AbstractKestraOssContainerTest {
             .fetchType(Property.ofValue(FetchType.FETCH))
             .build();
 
-        FetchOutput output = searchTask.run(runContext);
-
-        assertThat(output.getRows()).isNotEmpty();
-
-        var row = output.getRows().getFirst();
-        if (row instanceof ArrayList<?> arrayList) {
-            return (ApiLightExecution) arrayList.getFirst();
-        }
-
-        throw new RuntimeException("Could not extract execution from query result");
+        return Await.until(
+            () ->
+            {
+                try {
+                    var rows = searchTask.run(runContext).getRows();
+                    if (!rows.isEmpty() && rows.getFirst() instanceof ArrayList<?> page && !page.isEmpty()) {
+                        return (ApiLightExecution) page.getFirst();
+                    }
+                    return null;
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            },
+            Duration.ofMillis(200),
+            Duration.ofSeconds(30)
+        );
     }
 }
