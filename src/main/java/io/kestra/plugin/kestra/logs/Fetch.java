@@ -19,6 +19,9 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.plugin.kestra.AbstractKestraTask;
 import io.kestra.sdk.KestraClient;
+import io.kestra.sdk.model.QueryFilter;
+import io.kestra.sdk.model.QueryFilterField;
+import io.kestra.sdk.model.QueryFilterOp;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -122,22 +125,20 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
         AtomicLong count = new AtomicLong();
 
         try (OutputStream output = new FileOutputStream(tempFile)) {
-            io.kestra.sdk.model.Level sdkLogLevel = io.kestra.sdk.model.Level.fromValue(
-                runContext.render(this.level).as(Level.class).orElse(Level.INFO).name()
-            );
+            QueryFilter minLevel = new QueryFilter()
+                .field(QueryFilterField.MIN_LEVEL)
+                .operation(QueryFilterOp.GREATER_THAN_OR_EQUAL_TO)
+                .value(runContext.render(this.level).as(Level.class).orElse(Level.INFO).name());
 
             List<String> taskIds = runContext.render(this.tasksId).asList(String.class);
 
             if (!taskIds.isEmpty()) {
                 for (String taskId : taskIds) {
-                    var logs = kestraClient.logs().listLogsFromExecution(
-                        executionInfo.id(),
-                        targetTenantId,
-                        sdkLogLevel,
-                        null,
-                        taskId,
-                        null
-                    );
+                    QueryFilter task = new QueryFilter()
+                        .field(QueryFilterField.TASK_ID)
+                        .operation(QueryFilterOp.EQUALS)
+                        .value(taskId);
+                    var logs = kestraClient.logs().listLogsFromExecution(executionInfo.id(), targetTenantId, List.of(minLevel, task));
 
                     if (logs != null) {
                         logs.forEach(throwConsumer(log ->
@@ -148,14 +149,7 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
                     }
                 }
             } else {
-                var logs = kestraClient.logs().listLogsFromExecution(
-                    executionInfo.id(),
-                    targetTenantId,
-                    sdkLogLevel,
-                    null,
-                    null,
-                    null
-                );
+                var logs = kestraClient.logs().listLogsFromExecution(executionInfo.id(), targetTenantId, List.of(minLevel));
 
                 if (logs != null) {
                     logs.forEach(throwConsumer(log ->

@@ -77,6 +77,51 @@ public class FetchTest extends AbstractKestraOssContainerTest {
     }
 
     @Test
+    public void shouldExcludeLogsBelowTheMinimumLevel() throws Exception {
+        RunContext runContext = runContextFactory.of();
+
+        String flowYaml = """
+            id: get-log-level
+            namespace: %s
+
+            tasks:
+              - id: info
+                type: io.kestra.plugin.core.log.Log
+                message: "Info log"
+                level: INFO
+              - id: warn
+                type: io.kestra.plugin.core.log.Log
+                message: "Warn log"
+                level: WARN
+            """.formatted(NAMESPACE);
+
+        kestraTestDataUtils.getKestraClient().flows().createFlow(TENANT_ID, flowYaml);
+
+        kestraTestDataUtils.createRandomizedExecution("get-log-level", NAMESPACE);
+
+        Thread.sleep(2000);
+
+        var execution = queryExecution("get-log-level");
+
+        Fetch fetchTask = Fetch.builder()
+            .kestraUrl(Property.ofValue(KESTRA_URL))
+            .auth(
+                AbstractKestraTask.Auth.builder()
+                    .username(Property.ofValue(USERNAME))
+                    .password(Property.ofValue(PASSWORD))
+                    .build()
+            )
+            .tenantId(Property.ofValue(TENANT_ID))
+            .level(Property.ofValue(Level.WARN))
+            .executionId(Property.ofValue(execution.getId()))
+            .build();
+
+        Fetch.Output output = fetchTask.run(runContext);
+
+        assertThat(output.getSize()).isEqualTo(1);
+    }
+
+    @Test
     public void fetchWithTaskId() throws Exception {
         RunContext runContext = runContextFactory.of();
 
