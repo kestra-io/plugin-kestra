@@ -1,5 +1,7 @@
 package io.kestra.plugin.kestra;
 
+import java.net.SocketTimeoutException;
+import java.time.Duration;
 import java.util.Optional;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
@@ -44,6 +46,63 @@ public abstract class AbstractKestraTask extends Task {
     @PluginProperty(group = "connection")
     protected Property<String> tenantId;
 
+    @Schema(
+        title = "Connection timeout",
+        description = """
+            Maximum time to wait while opening a connection to the Kestra API, as an ISO-8601 duration (e.g. `PT10S`). Must be positive. When unset, the SDK default applies."""
+    )
+    @PluginProperty(group = "advanced")
+    private Property<Duration> connectTimeout;
+
+    @Schema(
+        title = "Read timeout",
+        description = """
+            Maximum time to wait for the Kestra API to answer a request, as an ISO-8601 duration (e.g. `PT30M`). Must be positive. When unset, the task `timeout` is used if set, otherwise there is no limit: with the Kestra SDK 2.0.5 an unset read timeout never expires, for every Kestra task."""
+    )
+    @PluginProperty(group = "advanced")
+    private Property<Duration> readTimeout;
+
+    protected Duration resolveReadTimeout(RunContext runContext) throws IllegalVariableEvaluationException {
+        var rReadTimeout = runContext.render(readTimeout).as(Duration.class)
+            .or(() -> renderTaskTimeout(runContext))
+            .orElse(null);
+        return requirePositive(rReadTimeout, "readTimeout");
+    }
+
+    private Optional<Duration> renderTaskTimeout(RunContext runContext) {
+        try {
+            return runContext.render(getTimeout()).as(Duration.class);
+        } catch (IllegalVariableEvaluationException e) {
+            throw new IllegalArgumentException("Unable to render task timeout: " + e.getMessage(), e);
+        }
+    }
+
+    private static Duration requirePositive(Duration value, String name) {
+        if (value != null && (value.isNegative() || value.isZero())) {
+            throw new IllegalArgumentException(name + " must be a positive duration");
+        }
+        return value;
+    }
+
+    protected void hintOnReadTimeout(RunContext runContext, Throwable error) {
+        Duration resolvedReadTimeout;
+        try {
+            resolvedReadTimeout = resolveReadTimeout(runContext);
+        } catch (Exception e) {
+            return;
+        }
+        if (resolvedReadTimeout == null) {
+            return;
+        }
+        for (var cause = error; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SocketTimeoutException) {
+                runContext.logger()
+                    .warn("The Kestra API call timed out after {}. Increase `readTimeout` (or the task `timeout`) for long-running calls.", resolvedReadTimeout);
+                return;
+            }
+        }
+    }
+
     protected String resolveKestraUrl(RunContext runContext) throws IllegalVariableEvaluationException {
         return resolveKestraUrl(runContext, defaultAuth(runContext));
     }
@@ -75,6 +134,14 @@ public abstract class AbstractKestraTask extends Task {
 
         var builder = KestraClient.builder();
         builder.url(normalizedUrl);
+        var rConnectTimeout = requirePositive(runContext.render(connectTimeout).as(Duration.class).orElse(null), "connectTimeout");
+        if (rConnectTimeout != null) {
+            builder.connectTimeout(rConnectTimeout);
+        }
+        var rReadTimeout = resolveReadTimeout(runContext);
+        if (rReadTimeout != null) {
+            builder.readTimeout(rReadTimeout);
+        }
         if (auth != null) {
             if (auth.apiToken != null && (auth.username != null || auth.password != null)) {
                 throw new IllegalArgumentException("Cannot use both API Token authentication and HTTP Basic authentication");
