@@ -30,7 +30,10 @@ import static io.kestra.plugin.kestra.ee.tests.RunTest.logTestCase;
 @NoArgsConstructor
 @Schema(
     title = "Run tests by query",
-    description = "Executes unit tests matching a tenant/namespace/flow query. Defaults to the current tenant, includes child namespaces, and marks failures as WARNING unless failOnTestFailure is true."
+    description = """
+        Executes unit tests matching a tenant/namespace/flow query. Defaults to the current tenant, includes child namespaces, and marks failures as WARNING unless failOnTestFailure is true.
+        Waits until the run ends, bounded by `readTimeout`, then the task `timeout`; with neither set there is no limit.
+        """
 )
 @Plugin(
     examples = {
@@ -46,6 +49,23 @@ import static io.kestra.plugin.kestra.ee.tests.RunTest.logTestCase;
                     type: io.kestra.plugin.kestra.ee.tests.RunTests
                     auth:
                       apiToken: "{{ secret('KESTRA_API_TOKEN') }}"
+                """
+        ),
+        @Example(
+            title = "Run all tests with a bounded wait",
+            full = true,
+            code = """
+                id: run_tenant_tests_bounded
+                namespace: company.team
+
+                tasks:
+                  - id: run_namespace_tests
+                    type: io.kestra.plugin.kestra.ee.tests.RunTests
+                    auth:
+                      apiToken: "{{ secret('KESTRA_API_TOKEN') }}"
+                    namespace: company.team
+                    timeout: PT1H
+                    readTimeout: PT45M
                 """
         )
     }
@@ -92,7 +112,13 @@ public class RunTests extends AbstractKestraTask implements RunnableTask<RunTest
             runByQueryRequest.getFlowId()
         );
 
-        var result = testSuitesApi.runTestSuitesByQuery(rTenantId, runByQueryRequest);
+        TestSuiteServiceTestRunByQueryResult result;
+        try {
+            result = testSuitesApi.runTestSuitesByQuery(rTenantId, runByQueryRequest);
+        } catch (Exception e) {
+            hintOnReadTimeout(runContext, e);
+            throw e;
+        }
         Objects.requireNonNull(result.getResults());
         logger.info("Requested to run {} test suites, {} test cases", result.getNumberOfTestSuitesToBeRun(), result.getNumberOfTestCasesToBeRun());
 

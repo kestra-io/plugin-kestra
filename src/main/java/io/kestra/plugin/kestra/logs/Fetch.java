@@ -167,8 +167,8 @@ public class Fetch extends AbstractKestraTask implements RunnableTask<Fetch.Outp
             .build();
     }
 
-    @Getter
     @Builder
+    @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(title = "The number of rows fetched")
         private Long size;
